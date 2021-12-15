@@ -1,0 +1,26 @@
+build*
+cmake-build-*
+install/*
+doc/html*
+doc/doxygen_warnings.txt
+tmp_clang_*
+*tests_file_location.h
+manual/*.aux
+manual/*.bbl
+manual/*.blg
+manual/*.idx
+manual/*.log
+manual/*.out
+manual/*.gz
+manual/*.toc
+manual/*.pdf
+
+# hidden files
+*.swp
+.vscode/*
+.project
+.cproject
+.idea/*
+compile_commands.json
+.lvimrc
+*.vim

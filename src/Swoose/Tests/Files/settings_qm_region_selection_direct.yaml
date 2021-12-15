@@ -1,0 +1,14 @@
+qm_region_min_size: 64
+qm_region_max_size: 65
+ref_max_size: 90
+cutting_probability: 0.8
+initial_radius: 5.5
+qm_module: MockModule
+qm_model: MOCK-QM
+tol_percentage_error: 20.0
+tol_percentage_sym_score: 250.0
+electrostatic_embedding: false
+qm_region_center_atom: 302
+num_attempts_per_radius: 25
+max_num_ref_models: 3
+ref_data_mode: direct

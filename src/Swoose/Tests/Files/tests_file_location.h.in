@@ -1,0 +1,34 @@
+/**
+ * @file
+ * @copyright Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            See LICENSE.txt for details.
+ */
+
+/*
+ * File "tests_file_location.h", generated from "tests_file_location.h.in" to set paths for the tests
+ */
+
+const char* const melatonin_xyz_file = "@Tests_dir@melatonin.xyz";
+const char* const melatonin_param_file = "@Tests_dir@melatonin_parameters.dat";
+const char* const melatonin_param_file_no_c6 = "@Tests_dir@melatonin_parameters_no_c6.dat";
+const char* const melatonin_connectivity_file = "@Tests_dir@melatonin_connectivity.dat";
+const char* const melatonin_connectivity_file_with_error = "@Tests_dir@melatonin_connectivity_with_error.dat";
+const char* const water_xyz_file = "@Tests_dir@water.xyz";
+const char* const water_param_file = "@Tests_dir@water_parameters.dat";
+const char* const dermcidin_xyz_file = "@Tests_dir@dermcidin.xyz";
+const char* const dermcidin_fragment_xyz_file = "@Tests_dir@dermcidin_fragment.xyz";
+const char* const alanine_xyz_file = "@Tests_dir@alanine.xyz";
+const char* const guanidine_fragment_xyz_file = "@Tests_dir@guanidine_fragment.xyz";
+const char* const alanine_ref_calc_dir = "@Tests_dir@alanine_reference_calculations";
+const char* const guanidine_fragment_ref_calc_dir = "@Tests_dir@guanidine_fragment_reference_calculations";
+const char* const atomic_information_file = "@Tests_dir@atomic_information_file_example.txt";
+const char* const butane_trajectory_xyz_file = "@Tests_dir@butane_trj.xyz";
+const char* const reference_energies_file = "@Tests_dir@reference_energies_butane.dat";
+const char* const reference_forces_butane_file = "@Tests_dir@reference_forces_butane.dat";
+const char* const reference_forces_insulin_file = "@Tests_dir@reference_forces_insulin.dat";
+const char* const insulin_xyz_file = "@Tests_dir@insulin_chain_A.xyz";
+const char* const insulin_connectivity_file = "@Tests_dir@insulin_connectivity.dat";
+const char* const insulin_parameter_file = "@Tests_dir@insulin_parameters.dat";
+const char* const gaff_parameter_file = "@Tests_dir@gaff.dat";
+const char* const gaff_dummy_atom_types_file = "@Tests_dir@gaff_dummy_atom_types.dat";
+const char* const qm_region_selection_yaml_file = "@Tests_dir@settings_qm_region_selection_direct.yaml";

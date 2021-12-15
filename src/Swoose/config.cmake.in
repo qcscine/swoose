@@ -1,0 +1,16 @@
+# Find/Import Dependencies
+include(CMakeFindDependencyMacro)
+find_dependency(ScineCore REQUIRED)
+find_dependency(ScineUtilsOS REQUIRED)
+find_dependency(ScineDatabase REQUIRED)
+find_dependency(ScineMolassembler REQUIRED)
+
+# Compute paths
+get_filename_component(SWOOSE_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+# Generate Target
+include("${CMAKE_CURRENT_LIST_DIR}/SwooseTargets.cmake")
+
+@PACKAGE_INIT@
+
+check_required_components(Swoose)

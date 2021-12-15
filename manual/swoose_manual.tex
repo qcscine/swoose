@@ -1,0 +1,1049 @@
+\documentclass[]{tufte-book}
+
+\hypersetup{colorlinks}% uncomment this line if you prefer colored hyperlinks (e.g., for onscreen viewing)
+
+%%
+% For graphics / images
+\usepackage{graphicx}
+\setkeys{Gin}{width=\linewidth,totalheight=\textheight,keepaspectratio}
+\graphicspath{{graphics/}}
+\usepackage{hyperref}
+\usepackage{chemformula}
+\usepackage[svgnames]{xcolor}
+\usepackage{float}
+
+\usepackage{color, soul}
+\colorlet{customblue}{LightSteelBlue!25}
+\sethlcolor{customblue}
+
+%%
+% Book metadata
+\title[SCINE Swoose manual]{User Manual \vskip 0.5em {\setlength{\parindent}{0pt} \Huge SCINE Swoose 1.0.0}}
+\author[The SCINE Swoose Developers]{\noindent Christoph Brunken, Katja-Sophia Csizi, and Markus Reiher}
+\publisher{ETH Z\"urich}
+
+%%
+% If they're installed, use Bergamo and Chantilly from www.fontsite.com.
+% They're clones of Bembo and Gill Sans, respectively.
+%\IfFileExists{bergamo.sty}{\usepackage[osf]{bergamo}}{}% Bembo
+%\IfFileExists{chantill.sty}{\usepackage{chantill}}{}% Gill Sans
+
+%\usepackage{microtype}
+
+%%
+% Just some sample text
+\usepackage{lipsum}
+
+%%
+% For nicely typeset tabular material
+\usepackage{booktabs}
+
+% The fancyvrb package lets us customize the formatting of verbatim
+% environments.  We use a slightly smaller font.
+\usepackage{fancyvrb}
+\fvset{fontsize=\normalsize}
+
+% Frames
+\usepackage{mdframed}
+
+%%
+% Prints argument within hanging parentheses (i.e., parentheses that take
+% up no horizontal space).  Useful in tabular environments.
+\newcommand{\hangp}[1]{\makebox[0pt][r]{(}#1\makebox[0pt][l]{)}}
+
+%%
+% Prints an asterisk that takes up no horizontal space.
+% Useful in tabular environments.
+\newcommand{\hangstar}{\makebox[0pt][l]{*}}
+
+%%
+% Prints a trailing space in a smart way.
+\usepackage{xspace}
+
+%%
+% Some shortcuts for Tufte's book titles.  The lowercase commands will
+% produce the initials of the book title in italics.  The all-caps commands
+% will print out the full title of the book in italics.
+\newcommand{\vdqi}{\textit{VDQI}\xspace}
+\newcommand{\ei}{\textit{EI}\xspace}
+\newcommand{\ve}{\textit{VE}\xspace}
+\newcommand{\be}{\textit{BE}\xspace}
+\newcommand{\VDQI}{\textit{The Visual Display of Quantitative Information}\xspace}
+\newcommand{\EI}{\textit{Envisioning Information}\xspace}
+\newcommand{\VE}{\textit{Visual Explanations}\xspace}
+\newcommand{\BE}{\textit{Beautiful Evidence}\xspace}
+
+\newcommand{\TL}{Tufte-\LaTeX\xspace}
+
+% Prints the month name (e.g., January) and the year (e.g., 2008)
+\newcommand{\monthyear}{%
+  \ifcase\month\or January\or February\or March\or April\or May\or June\or
+  July\or August\or September\or October\or November\or
+  December\fi\space\number\year
+}
+
+
+% Prints an epigraph and speaker in sans serif, all-caps type.
+\newcommand{\openepigraph}[2]{%
+  %\sffamily\fontsize{14}{16}\selectfont
+  \begin{fullwidth}
+  \sffamily\large
+  \begin{doublespace}
+  \noindent\allcaps{#1}\\% epigraph
+  \noindent\allcaps{#2}% author
+  \end{doublespace}
+  \end{fullwidth}
+}
+
+% Inserts a blank page
+\newcommand{\blankpage}{\newpage\hbox{}\thispagestyle{empty}\newpage}
+
+\usepackage{units}
+
+% Typesets the font size, leading, and measure in the form of 10/12x26 pc.
+\newcommand{\measure}[3]{#1/#2$\times$\unit[#3]{pc}}
+
+% Macros for typesetting the documentation
+\newcommand{\hlred}[1]{\textcolor{Maroon}{#1}}% prints in red
+\newcommand{\hangleft}[1]{\makebox[0pt][r]{#1}}
+\newcommand{\hairsp}{\hspace{1pt}}% hair space
+\newcommand{\hquad}{\hskip0.5em\relax}% half quad space
+\newcommand{\TODO}{\textcolor{red}{\bf TODO!}\xspace}
+\newcommand{\ie}{\textit{i.\hairsp{}e.}\xspace}
+\newcommand{\eg}{\textit{e.\hairsp{}g.}\xspace}
+\newcommand{\na}{\quad--}% used in tables for N/A cells
+\providecommand{\XeLaTeX}{X\lower.5ex\hbox{\kern-0.15em\reflectbox{E}}\kern-0.1em\LaTeX}
+\newcommand{\tXeLaTeX}{\XeLaTeX\index{XeLaTeX@\protect\XeLaTeX}}
+% \index{\texttt{\textbackslash xyz}@\hangleft{\texttt{\textbackslash}}\texttt{xyz}}
+\newcommand{\tuftebs}{\symbol{'134}}% a backslash in tt type in OT1/T1
+\newcommand{\doccmdnoindex}[2][]{\texttt{\tuftebs#2}}% command name -- adds backslash automatically (and doesn't add cmd to the index)
+\newcommand{\doccmddef}[2][]{%
+  \hlred{\texttt{\tuftebs#2}}\label{cmd:#2}%
+  \ifthenelse{\isempty{#1}}%
+    {% add the command to the index
+      \index{#2 command@\protect\hangleft{\texttt{\tuftebs}}\texttt{#2}}% command name
+    }%
+    {% add the command and package to the index
+      \index{#2 command@\protect\hangleft{\texttt{\tuftebs}}\texttt{#2} (\texttt{#1} package)}% command name
+      \index{#1 package@\texttt{#1} package}\index{packages!#1@\texttt{#1}}% package name
+    }%
+}% command name -- adds backslash automatically
+\newcommand{\doccmd}[2][]{%
+  \texttt{\tuftebs#2}%
+  \ifthenelse{\isempty{#1}}%
+    {% add the command to the index
+      \index{#2 command@\protect\hangleft{\texttt{\tuftebs}}\texttt{#2}}% command name
+    }%
+    {% add the command and package to the index
+      \index{#2 command@\protect\hangleft{\texttt{\tuftebs}}\texttt{#2} (\texttt{#1} package)}% command name
+      \index{#1 package@\texttt{#1} package}\index{packages!#1@\texttt{#1}}% package name
+    }%
+}% command name -- adds backslash automatically
+\newcommand{\docopt}[1]{\ensuremath{\langle}\textrm{\textit{#1}}\ensuremath{\rangle}}% optional command argument
+\newcommand{\docarg}[1]{\textrm{\textit{#1}}}% (required) command argument
+\newenvironment{docspec}{\begin{quotation}\ttfamily\parskip0pt\parindent0pt\ignorespaces}{\end{quotation}}% command specification environment
+\newcommand{\docenv}[1]{\texttt{#1}\index{#1 environment@\texttt{#1} environment}\index{environments!#1@\texttt{#1}}}% environment name
+\newcommand{\docenvdef}[1]{\hlred{\texttt{#1}}\label{env:#1}\index{#1 environment@\texttt{#1} environment}\index{environments!#1@\texttt{#1}}}% environment name
+\newcommand{\docpkg}[1]{\texttt{#1}\index{#1 package@\texttt{#1} package}\index{packages!#1@\texttt{#1}}}% package name
+\newcommand{\doccls}[1]{\texttt{#1}}% document class name
+\newcommand{\docclsopt}[1]{\texttt{#1}\index{#1 class option@\texttt{#1} class option}\index{class options!#1@\texttt{#1}}}% document class option name
+\newcommand{\docclsoptdef}[1]{\hlred{\texttt{#1}}\label{clsopt:#1}\index{#1 class option@\texttt{#1} class option}\index{class options!#1@\texttt{#1}}}% document class option name defined
+\newcommand{\docmsg}[2]{\bigskip\begin{fullwidth}\noindent\ttfamily#1\end{fullwidth}\medskip\par\noindent#2}
+\newcommand{\docfilehook}[2]{\texttt{#1}\index{file hooks!#2}\index{#1@\texttt{#1}}}
+\newcommand{\doccounter}[1]{\texttt{#1}\index{#1 counter@\texttt{#1} counter}}
+
+%attempt to allow footnotes in verbatim
+\usepackage{verbatim}
+\newcommand{\vfchar}[1]{%
+  % the usual trick for using a "variable" active character
+  \begingroup\lccode`~=`#1 \lowercase{\endgroup\def~##1~}{%
+    % separate the footnote mark from the footnote text
+    % so the footnote mark will occupy the same space as
+    % any other character
+    \makebox[0.5em][l]{\footnotemark}%
+    \footnotetext{##1}%
+  }%
+  \catcode`#1=\active
+}
+\newenvironment{fverbatim}[1]
+ {\verbatim\vfchar{#1}}
+ {\endverbatim}
+
+
+% Generates the index
+\usepackage{makeidx}
+\makeindex
+
+%\usepackage{natbib}
+\setcitestyle{numbers,square}
+
+\usepackage{parskip}
+
+% left fixed width:
+\usepackage{array}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\begin{document}
+
+\setlength{\parindent}{0pt}
+
+% Front matter
+\frontmatter
+
+
+% r.3 full title page
+\maketitle
+
+% v.4 copyright page
+\newpage
+\begin{fullwidth}
+~\vfill
+\thispagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{\baselineskip}
+Copyright \copyright\ \the\year\ \thanklessauthor
+
+%\par\smallcaps{Published by \thanklesspublisher}
+
+\par Unless required by applicable law or agreed to in writing, the software
+is distributed on an \smallcaps{``AS IS'' BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND}, either express or implied. \index{license}
+
+%\par\textit{First printing, \monthyear}
+\end{fullwidth}
+
+% r.5 contents
+\tableofcontents
+
+%\listoffigures
+
+%\listoftables
+
+
+%%
+% Start the main matter (normal chapters)
+\mainmatter
+
+\let\cleardoublepage\clearpage
+\chapter{Introduction}
+
+SCINE \textsc{Swoose} provides functionalities for treating large molecular systems in theoretical chemistry with self-parametrizing system-focused atomistic models (SFAMs).\cite{brunken20} This includes the full automated parametrization of such models for arbitrary systems. With the model, it is then possible to perform single point calculations, structure optimizations and simulate molecular dynamics trajectories. Furthermore, these models can be extended towards QM/MM-like hybrid models in order to, for example, describe chemical reactions at the active site of enzymes.
+
+In this manual, we describe the installation of the software, give a hands-on introduction to the program, and all of the functions and options.\footnote{Throughout this manual, the most
+import information is displayed in the main text, whereas useful additional information is given as a side note like this one.}
+At the end of this manual, we provide a prospect on features in future releases as well as references.
+
+For information on how to cite \textsc{Swoose}, check out the \textit{References} section on \href{https://scine.ethz.ch/download/swoose}{https://scine.ethz.ch/download/swoose}.
+
+\enlargethispage{\baselineskip}
+
+\chapter{Installation}\label{ch:installation}
+
+\section{Conan package}
+Conan\footnote{\texttt{conan.io}} is a Python-based package distribution
+solution. It integrates well with C++ code built with CMake, greatly simplifying
+the installation of libraries with multiple dependencies. Conan is installed
+with \texttt{pip}:
+
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+python3 -m pip install conan
+\end{verbatim}
+\end{mdframed}
+
+\textsc{Swoose} packages are distributed from our research group's remote,
+which can be added with:
+
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, userdefinedwidth=16.1cm, linewidth=0pt]
+\begin{verbatim}
+conan remote add scine https://scine-artifactory.ethz.ch/artifactory/api/conan/public
+\end{verbatim}
+\end{mdframed}
+
+Before we install \textsc{Swoose}, consider the options the package
+provides. They are summarized below, with valid values and the default option
+value in bold face:
+
+\begin{itemize}
+  \item \texttt{python=[True, \textbf{False}]}: Build the Python bindings
+  \item \texttt{tests=[True, \textbf{False}]}: Build and run tests
+  \item \texttt{microarch=[detect, \textbf{none}]}: Tune build to CPU
+    instruction set
+  \item \texttt{database=[True, \textbf{False}]}: Builds the SCINE Database module\footnote{\textcolor{magenta}{The SCINE Database module may not be released yet, but will be available soon. Check the SCINE website for updates.}}
+\end{itemize}
+
+The base command to install \textsc{Swoose} is:
+
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+conan install scine_swoose/1.0.0@
+\end{verbatim}
+\end{mdframed}
+
+Changes to default options can be supplied right after \hl{\:\texttt{conan} \texttt{install}\:} with \hl{\:\texttt{-o} \texttt{scine\_swoose:<option>=<value>}\:}.
+
+For instance, if you want Python bindings, your install command will be:
+
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, userdefinedwidth=12cm, linewidth=0pt]
+\begin{verbatim}
+conan install -o scine_swoose:python=True scine_swoose/1.0.0@
+\end{verbatim}
+\end{mdframed}
+
+Conan will proceed to identify your operating system, architecture and compiler.
+It will scan the dependencies of \textsc{Swoose} and try to find a prebuilt
+package for your system. If no package is available in binary form for your
+system, \texttt{conan} can handle its build with the addition of
+\hl{\:\texttt{-{}-build=missing}\:} as advised by \texttt{conan}'s error message. If the package is
+available in binary form, it will be downloaded.
+
+By default, Conan does not modify the environment, it will just create the package in the local cache.
+In order to automatically add the required libraries to the \hl{\:\texttt{LD\_LIBRARY\_PATH}\:} environment variable and to directly use the \textsc{Swoose} executable without specifiying its full location, you can execute:
+
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+conan install scine_swoose/1.0.0@ -g virtualrunenv
+\end{verbatim}
+\end{mdframed}
+
+This will generate files that can be called to activate or deactive your environment via:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+source activate_run.sh
+source deactivate_run.sh
+\end{verbatim}
+\end{mdframed}
+
+After activation, the \textsc{Swoose} executable is present in your \texttt{PATH}.
+
+If you also want to install the modules \textsc{Sparrow} and \textsc{xTB} via Conan, you can create a file with the name \texttt{conanfile.txt}. It should have the following content:
+
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+[requires]
+scine_swoose/[>=1.0.0]@
+scine_sparrow/[>=3.0.0]@
+scine_xtb_wrapper/[>=1.0.0]@
+
+[options]
+scine_swoose:database=False
+
+[generators]
+virtualenv
+\end{verbatim}
+\end{mdframed}
+
+Subsequently, you can run the following command in the directory in which the file \texttt{conanfile.txt} is located:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+conan install . --build=missing
+\end{verbatim}
+\end{mdframed}
+
+\section{Python bindings on PyPI}
+If you want to experiment with just the Python bindings, those are available as
+a package from PyPI for Linux platforms.\footnote{Caveat: Your CPU architecture
+must be x86--64 or i686.} If you are using Linux, then you can install
+\textsc{Swoose} with:
+
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+python3 -m pip upgrade --user pip
+python3 -m pip install --user scine_swoose
+\end{verbatim}
+\end{mdframed}
+
+When installed this way, the Python bindings are not optimized to your
+particular CPU instruction set and may therefore be slower than if you had
+compiled them yourself.
+
+\section{From source code with CMake}
+
+In order to compile \textsc{Swoose} from its source code (available on \href{https://scine.ethz.ch/}{www.scine.ethz.ch}) you need
+\begin{itemize}
+ \item a C++ compiler supporting the C++14 standard (we recommend gcc 8.3.0),
+ \item cmake (we recommend version 3.14.7),
+ \item the Boost library (we recommend version 1.69.0),
+ \item the Eigen3 library (we recommend version 3.3.7), and
+ \item the mongocxx library (we recommend version 3.4.0).
+\end{itemize}
+In order to compile the software, clone the repository with git, change
+to the source directory and execute the following steps:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, userdefinedwidth=18cm, linewidth=0pt]
+\begin{verbatim}
+git submodule init
+git submodule update
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=../install \
+      -DSCINE_BUILD_PYTHON_BINDINGS=ON ..
+make
+make test
+make install
+export PATH=$PATH:<source code directory>/install/bin
+export PYTHONPATH=$PYTHONPATH:<source code directory>/install/lib/<python version>/site-packages:\
+       <source code directory>/install/lib64/<python version>/site-packages
+export SCINE_MODULE_PATH=source code directory>/install/lib
+\end{verbatim}
+\end{mdframed}
+This will configure everything, compile the software, run the tests, and install the software
+into the folder ``install''. Moreover, it will add the \textsc{Swoose} binary to your \texttt{PATH} such that you can use
+it without having to specify its full location. In this command, you have to replace \texttt{<source code directory>}
+with the full path where you stored the source code of \textsc{Swoose}. Finally, the Python library will be added to your \texttt{PYTHONPATH}. In this last command, you have to replace \texttt{<python version>} with the correct directory name, which depends on your Python version (e.g., it may be \texttt{python3.6} or \texttt{python3.7}).
+
+By adding the option \hl{\:\texttt{-DSWOOSE\_COMPILE\_SPARROW=ON}\:} to the execution of \hl{\:\texttt{cmake}\:}, one can automatically compile the SCINE module \textsc{Sparrow}\cite{sparrow_zenodo} along with \textsc{Swoose}.
+
+Similarly, the option \hl{\:\texttt{-DSWOOSE\_COMPILE\_XTB=ON}\:} enables the download and installation of the SCINE module \textsc{xTB}, which is a wrapper for the \textsc{xTB} program\cite{bannwarth20} by Stefan Grimme.
+
+We strongly recommend compiling with support for the \textsc{Sparrow} and \textsc{xTB} modules as this will enable calculations with a variety of semi-empirical quantum chemistry methods.
+
+\newpage % otherwise footnotes will be too crowded
+The \texttt{cmake} option \hl{\:\texttt{-DSWOOSE\_COMPILE\_DATABASE=ON}\:} can be used to turn on the support for the SCINE Database module.\footnote{\textcolor{magenta}{The SCINE Database module may not be released yet, but will be available soon. Check the SCINE website for updates.}}
+
+Note that \textsc{Swoose} also links to the SCINE libraries \textsc{Molassembler}\cite{molassembler} and \textsc{Utilities}~\cite{utils}.
+
+In case you need support with the setup of \textsc{Swoose}, please contact us by writing to \href{scine@phys.chem.ethz.ch}{scine@phys.chem.ethz.ch}.
+
+\chapter{Using the Standalone Binary}
+
+\textsc{Swoose} is a command-line-only binary. There is no graphical user interface. Therefore, you always work with the
+\textsc{Swoose} binary on a command line such as the Gnome Terminal or KDE Konsole.
+
+With the command
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+swoose -h
+\end{verbatim}
+\end{mdframed}
+the help message of the binary is printed. It gives an overview of the command-line
+options of the binary. These options are explained in Tab.~\ref{tab:command_line_options}.
+
+For example, if a molecular mechanics model shall be parametrized for a molecule stored in the file "struc.xyz" and with the settings present in the file "settings.yaml", one applies the command:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+swoose -m parametrize -s struc.xyz -y settings.yaml
+\end{verbatim}
+\end{mdframed}
+Subsequently, a molecular dynamics trajectory starting from this the same molecular structure can be generated by
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+swoose -m md -s struc.xyz -y settings.yaml
+\end{verbatim}
+\end{mdframed}
+and an MM-level Hessian matrix can be calculated by the following command:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+swoose -m calculate -s struc.xyz -y settings.yaml -H
+\end{verbatim}
+\end{mdframed}
+In the following chapters, the available settings for the different program modes ("-m" option) are presented in detail. As many settings have default values, it is sometimes optional to provide any. The exceptions are clearly described in this manual.
+
+
+\newpage
+The settings input file is based on the YAML format\footnote{Example calculations, including YAML settings files, can be found in section \nameref{ch:example_calculations}.}, but as all settings are of a simple
+key/value pair format it can always be written in the following form:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+setting_key_1: setting_value_1
+setting_key_2: setting_value_2
+setting_key_3: setting_value_3
+\end{verbatim}
+\end{mdframed}
+
+\vspace*{0.75cm}
+
+\begin{table}[h]
+\renewcommand{\baselinestretch}{1.3}
+\renewcommand{\arraystretch}{1.3}
+\caption{\label{tab:command_line_options} \small The command-line options of the
+\textsc{Swoose} binary.}
+\begin{center}
+\begin{tabular}{L{3.3cm} L{6.7cm}}
+\hline
+\hline
+ option & description \\
+\hline
+-h~~[-{}-help] & Prints the help message of the binary. \\
+-m~~[-{}-mode]~~\textit{arg} & Sets the mode of the binary. The current options are: \textit{calculate} (single point calculation, by default with the SFAM molecular mechanics model),
+\textit{parametrize} (parametrizes the SFAM force field), \textit{optimize} (optimizing the molecular structure), \textit{md} (performing a molecular dynamics simulation), and \textit{select\_qm} (performs an automated QM region selection). \\
+-y~~[-{}-settings]~~\textit{arg} & Sets the path to the settings file (YAML file format). \\
+-s~~[-{}-structure]~~\textit{arg} & Sets the path to the molecular structure input (XYZ file format). \\
+-q~~[-{}-quantum] & Activates the use of a QM/MM hybrid model instead of pure molecular mechanics.\\
+-H~~[-{}-hessian] & Activates the option to calculate the Hessian. This option is only available in the \textit{calculate} mode and without the "-q" option. \\
+-v~~[-{}-verbose] & Activates a more verbose output from the binary. \\
+\hline
+\hline
+\end{tabular}
+\renewcommand{\baselinestretch}{1.0}
+\renewcommand{\arraystretch}{1.0}
+\end{center}
+\end{table}
+
+
+\chapter{Using the Python Library}
+
+After the installation, one can also use the \textsc{Swoose} Python library. It can be imported into
+a Python script or Python console via:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+import scine_swoose as swoose
+\end{verbatim}
+\end{mdframed}
+This library provides the same functionalities as the standalone binary. The function names correspond to the different modes of the binary combined with the "-q" option for whether a QM/MM hybrid model shall be applied. Therefore, the available functions are:
+\begin{itemize}
+\item \hl{\texttt{parametrize\:(structure\_file,\:**kwargs)}}
+\item \hl{\texttt{calculate\_mm\:(structure\_file,\:**kwargs)}}
+\item \hl{\texttt{calculate\_qmmm\:(structure\_file,\:**kwargs)}}
+\item \hl{\texttt{optimize\_mm\:(structure\_file,\:**kwargs)}}
+\item \hl{\texttt{optimize\_qmmm\:(structure\_file,\:**kwargs)}}
+\item \hl{\texttt{md\_simulate\_mm\:(structure\_file,\:**kwargs)}}
+\item \hl{\texttt{md\_simulate\_qmmm\:(structure\_file,\:**kwargs)}}
+\item \hl{\texttt{select\_qm\_region\:(structure\_file,\:**kwargs)}}
+\end{itemize}
+
+Each function takes the path to the XYZ file with the molecular structure ("-s" option for the binary) as its first argument and several keyword arguments after that. The settings unique to each of the functions are not put into a YAML file as for the binary, instead they are provided as keyword arguments to the functions. Furthermore, the options "-H" and "-v" of the binary can also be set in the Python binary by adding keyword arguments with the keys \hl{\texttt{hessian}} and \hl{\texttt{verbose}}, respectively.
+
+By typing the following into a Python console,
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+import scine_swoose as swoose
+help(swoose)
+\end{verbatim}
+\end{mdframed}
+one can also get an overview of all the available functions listed above.
+
+For example, if you want to perform a single point calculation with the SFAM molecular mechanics model while also obtaining the Hessian matrix and a more verbose output, the function call is:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, userdefinedwidth=13.7cm, linewidth=0pt]
+\begin{verbatim}
+calculate_mm("struc.xyz", hessian=True, verbose=True, s1="test", s2=100)
+\end{verbatim}
+\end{mdframed}
+In this example, the molecular structure was assumed to be stored in the file "struc.xyz" and two settings were added with the keys "s1" and "s2". Note that there exists an alternative way of writing the function call from above:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, userdefinedwidth=16cm, linewidth=0pt]
+\begin{verbatim}
+settings_dictionary = {"hessian" : True, "verbose" : True, "s1" : "test", "s2" : 100}
+calculate_mm("struc.xyz", **settings_dictionary)
+\end{verbatim}
+\end{mdframed}
+
+\chapter{The Parametrization of SFAM}
+\label{sec:parametrization}
+
+As described in the previous chapter, a SFAM molecular mechanics model is parametrized in full automation using the program mode \textit{parametrize} ("-m" option). For large molecular systems, an automated fragmentation protocol is applied first, so that reference data can be computed for the resulting fragments.
+
+After a successful parametrization, the system-focused parameters as well as the connectivity information of the system are written to two separate files.
+The paths to these files can be specified by the following settings:
+
+\begin{itemize}
+\item \hl{mm\_parameter\_file}: Sets the path to the file to which the parameters are written. Default: \textit{Parameters.dat}
+\item \hl{mm\_connectivity\_file}: Sets the path to the file to which the connectivity of the system is written. Default: \textit{Connectivity.dat}. If the file that is specified with this setting is already present before the parametrization (also if it is the default), the initial connectivity of the system is read from it instead of employing a covalent radii-based guess connectivity.
+\end{itemize}
+
+If the molecular system that is parametrized does not have a molecular charge of 0 and a spin multiplicity of 1, one has to specify the path to an atomic information file by the following setting:
+
+\begin{itemize}
+\item \hl{atomic\_info\_file}: Sets the path to the atomic information file. By default, it is set to an empty string and therefore it is assumed that the molecular system has a total charge of 0 and a spin multiplicity of 1.
+\end{itemize}
+
+The atomic information file is a text file listing the formal charges of the atoms along with the associated number of unpaired electrons. Only atoms that either carry a formal charge (not equal to zero) or unpaired electrons have to be listed.
+Each line of this file represents the information given for one relevant atom. The first number given in that line is the atom index (starting at 0), the second one is the formal charge and the third number provides the number of unpaired electrons (separated by whitespaces). An example file looks like:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+0     0   1
+3    -1   0
+172   2   3
+\end{verbatim}
+\end{mdframed}
+In this example, atom 0 has no formal charge, but one unpaired electron. Atom 3 has a formal charge of -1 and no unpaired electrons. The atom with the index 172 carries a formal charge of 2 and 3 unpaired electrons.
+
+\vspace{0.3cm}
+\hrule
+\vspace{0.3cm}
+
+For the parametrization, reference data has to be generated. This includes the optimized structures for the molecule or the molecular fragments, Hessian matrices, atomic partial charges (preferably CM5 charges\cite{marenich12}), and Mayer bond orders\cite{mayer83}. The latter does not have to be calculated, but instead the initial guess connectivity of the system based on distance rules can be employed.
+
+\begin{itemize}
+\item \hl{refine\_connectivity\_qm}: Sets whether the inital guess connectivity is refined by quantum-mechanically-derived bond orders provided as part of the reference calculations. By default, this setting is set to \textit{true}.
+\end{itemize}
+
+The reference data can be calculated with a variety of programs. For instance, this includes the \textsc{Orca}\cite{orca} and the \textsc{Turbomole}\cite{ahlrichs89} quantum chemistry software, as well as the \textsc{Sparrow}\cite{sparrow_zenodo} and \textsc{xTB}\cite{bannwarth20} modules of SCINE. The availability of these options might be limited depending on the reference data generation mode selected (more details below). The following settings apply:
+
+\begin{itemize}
+\item \hl{reference\_program}: The program calculating the reference data. The options are: \textit{orca} (default), \textit{turbomole}, \textit{sparrow}, and \textit{xtb}. This setting is case-insensitive. Note that for the \textit{direct} reference data generation mode, the option \textit{orca} requires the \textsc{Orca} program binary path to be set as an environment variable, \hl{ORCA\_BINARY\_PATH}. Likewise, the option \textit{turbomole} requires the environment variable \hl{TURBODIR} to be set to the \textsc{Turbomole} root directory. The options \textit{sparrow} and \textit{xtb} require prior installation of the corresponding SCINE modules (see section \nameref{ch:installation}).
+\item \hl{reference\_method}: The method for the reference calculation. The string for the method needs to be specified in the same way as it would be written in a typical input file of the
+corresponding program. Note that for D3 dispersion corrections, one can apply the \textsc{Orca} format to the case of \textsc{Turbomole} as well, i.e., appending the corresponding \textsc{Orca} keyword (see default string below) to the density functional.
+If this setting is not specified or set to an empty string, the default is set based on the selected reference program. For \textit{orca}, it is \textit{PBE D3BJ}, for \textit{turbomole} it is \textit{pbe D3BJ}, for \textit{xtb} it is \textit{gfn2}, and for \textit{sparrow} it is \textit{pm6}.
+When selecting the program option \textit{sparrow}, check the \textsc{Sparrow} manual\cite{sparrow_zenodo} for available methods (e.g., \textit{pm6}). For the \textsc{xTB} module, the methods \textit{gfn0}, \textit{gfn1}, and \textit{gfn2} are available methods.
+\item \hl{reference\_basis\_set}: The basis set for the reference calculation. The defaults for the respective programs are applied if the reference method was not specified. The defaults for \textit{orca} and \textit{turbomole} are \textit{def2-SVP} and the defaults for \textit{xtb} and \textit{sparrow} are empty strings. The string for the basis set needs to be specified in the same way as it would be written in a typical input file of the corresponding program, in analogy to the method setting. The methods of the \textsc{Sparrow} and \textsc{xTB} modules require to specify the basis set as an empty string if a non-default reference method is selected: \hl{"\:"}.
+\item \hl{external\_program\_nprocs}: The number of processors to use in the calculations. This setting applies for the program options \textit{orca}, \textit{turbomole}, and \textit{xtb}.
+By default, it is one, i.e., serial calculations are carried out.
+\item \hl{external\_program\_memory}: The total amount of memory in MB that should be available for the external program. By default set to \textit{1024}.
+\end{itemize}
+
+However, there also exists the option to apply the \textsc{Gaussian} quantum chemistry software\cite{gaussian09} to calculate the CM5 charges (only the CM5 charges, not the rest of the reference data). By default, \textsc{Orca} calculates Hirshfeld charges, which are then converted to CM5 charges by \textsc{Swoose}. \textsc{Turbomole} calculates L\"owdin charges instead of Hirshfeld charges, however, these are also converted by the same algorithm to obtain approximate CM5 charges. In general, the conversion with the CM5 algorithm can be disabled with the following setting:
+\begin{itemize}
+\item \hl{convert\_charges\_cm5}: This setting decides whether to apply the CM5 algorithm to the calculated atomic charges. By default, it is \textit{true}. For reference calculations with \textsc{Sparrow} or \textsc{xTB} (these calculate Mulliken charges), we recommend setting this option to \textit{false} in order to obtain more accurate atomic charges for most systems.
+\end{itemize}
+
+Note that there may be small deviations in the resulting charges if \textsc{Gaussian} is applied. The reasons for this are still investigated, however, we emphasize that our charges are in agreement with the ones from the original paper and the charges obtained by the script available at \href{https://github.com/leelasd/ligpargen}{https://github.com/leelasd/ligpargen}. 
+The following settings apply for the use of \textsc{Gaussian}:
+\begin{itemize}
+\item \hl{use\_gaussian}: Enables the CM5 reference calculation with \textsc{Gaussian} instead of the reference program. By default, it is set to \textit{false}.
+\item \hl{gaussian\_method}: The method for the CM5 calculation with \textsc{Gaussian}. By default, it is set to \textit{PBEPBE}. The string for the method needs to be specified in the same way as it would be written in a typical \textsc{Gaussian} input file.
+\item \hl{gaussian\_basis\_set}: The basis set for the CM5 calculation with \textsc{Gaussian}. By default, it is set to \textit{def2SVP}. The string for the basis set needs to be specified in the same way as it would be written in a typical \textsc{Gaussian} input file.
+\end{itemize}
+
+\vspace{0.3cm}
+\hrule
+\vspace{0.3cm}
+
+As mentioned above, reference data can be calculated using one of four available modes. The mode is specified by the setting:
+
+\begin{itemize}
+\item \hl{ref\_data\_mode}: The reference data generation mode. Options are: \textit{direct} (default), \textit{database}, \textit{write}, and \textit{read}. Details are given below.
+\end{itemize}
+
+Option \textit{\textbf{database}}\footnote{\textcolor{magenta}{The SCINE Database module may not be released yet, but will be available soon. Check the SCINE website for updates.}}:
+
+Reference calculations are processed through a \textsc{MongoDB} database\cite{mongodb} and the Python program \textsc{Puffin}\footnote{\textcolor{magenta}{The program \textsc{Puffin} will also be available soon. It will be released together with the Database module.}}. The following settings apply:
+
+\begin{itemize}
+\item \hl{database\_host}: The hostname or IP adress of the database host. The default is set to \textit{localhost}.
+\item \hl{database\_port}: The port at which the database is reached. Default is set to \textit{27017}.
+\item \hl{database\_name}: The name of the \textsc{MongoDB} database. The default is set to \textit{scine\_swoose\_mm\_parametrization}.
+\item \hl{database\_sleep\_time}: The time in seconds the \textsc{Swoose} binary waits after it has checked the database for results until it checks again. The default is set to \textit{60}.
+\end{itemize}
+
+Furthermore, two more options exist, which can only be activated in \textit{database} mode:
+
+\begin{itemize}
+\item \hl{reuse\_database}: If this setting is set to \textit{true}, the parametrization uses all of the reference data that is already present in the specified database. This allows to terminate the \textsc{Swoose} app any time during the reference data generation stage and restart it without re-calculating any data. The default is \textit{false}.
+\item \hl{ref\_data\_generation\_only}: If this setting is set to \textit{true}, the parametrization procedure automatically terminates after the reference data generation step. It can then later be restarted with the option above. Default: \textit{false}.
+\end{itemize}
+
+Option \textit{\textbf{direct}}:
+
+Reference calculations are processed directly through the \textsc{Swoose} binary. The following setting applies:
+
+\begin{itemize}
+\item \hl{base\_working\_directory}: The path to the directory in which the reference calculations are performed. The default is set to the current working directory.
+\end{itemize}
+
+Further settings that are available when performing calculations with the \textsc{Orca}, \textsc{Turbomole} and \textit{xTB} SCINE wrappers or the \textsc{Sparrow} module, can be added to the YAML settings file. For a detailed description of these settings, check the manuals of the \textsc{ReaDuct}\cite{readuct} and the \textsc{Sparrow}\cite{sparrow_zenodo} modules of SCINE.
+
+\medskip
+Option \textit{\textbf{write}}:
+
+Instead of calculating the reference data right away, all information needed for the calculations can be written to disk instead. The following setting applies:
+
+\begin{itemize}
+\item \hl{ref\_data\_directory}: The path to the directory to which the information about the reference calculations is written or from which it is read. The default is \textit{reference\_data}.
+\end{itemize}
+
+The following directory is created for each molecular structure/fragment: \texttt{<ref\_data\_directory>/<fragment\_index}. If no fragmentation was performed, the directory for the full system is \texttt{<ref\_data\_directory>/0}. In these directories, the following files are written: \texttt{fragment.xyz} (the fragment structure), \texttt{info.dat} (containing the charge and spin multiplicity values for the fragment separated by whitespaces) and optionally \texttt{constr.dat} (containing the indices of the atoms which must be constrained during the structure optimization separated by whitespaces) if any constrains apply for the corresponding fragment. For superfluous fragments, which are identical to others and therefore do not require reference calculations, the directory is created but left empty. If no fragmentation took place, the full system's structure can be found in the file \texttt{<ref\_data\_directory>/0/molecule.xyz} and its charge and multiplicity in \texttt{<ref\_data\_directory>/0/info.dat}.
+
+Option \textit{\textbf{read}}:
+
+If this option is chosen, the reference data is read from the same directory structure introduced for the previous option. The same setting (\hl{ref\_data\_directory}) applies. Two options exists for the file formats from which the data is read. One can switch between the two options via the setting:
+\begin{itemize}
+\item \hl{use\_csv}: Decides whether to use the generic CSV file format to read in Hessians and atomic forces. Moreover, if this is set to \textit{true}, the bond orders are read in from the \textsc{Swoose} connectivity file format. If the setting is set to \textit{false}, the data is read from \textsc{Orca} or \textsc{Turbomole} output files, respectively (in this case, it is important to specify the setting \hl{reference\_program} to indicate the format of the output files). The default of this setting is \textit{true}, i.e., the generic CSV format is employed.
+\end{itemize}
+However, the optimized structure is always read from an 
+\texttt{opt.xyz} file in XYZ file format. This file must be present in each
+directory (for each fragment). Furthermore, if \textsc{Turbomole} is the reference program, a file with the name \texttt{coord} must also be present. The format of this \texttt{coord} file is the standard \textsc{Turbomole} coordinates file format.
+
+In the case of \hl{use\_csv} being \textit{false}, the following files must be present in each directory depending on the selected reference program: 
+
+{\renewcommand{\arraystretch}{1.3}
+\begin{table}[h!]
+\flushleft
+\begin{tabular}{p{3.5cm}lll}
+\hline \hline
+\textbf{type of property} & \multicolumn{2}{c}{\textbf{filename}}      \\
+                  & \textsc{Orca}                                                               & \textsc{Turbomole} &                      \\
+\hline
+Hessian           & \texttt{orca.hess                                                 } & \texttt{hessian}                        \\
+atomic charges    & \texttt{hirshfeld.out} & \texttt{ridft.out}  \\ 
+bond orders             &  \texttt{bonds.out}  & \texttt{ridft.out} \\
+\hline
+\hline
+\end{tabular}
+\end{table}
+{\renewcommand{\arraystretch}{1.0}
+\bigskip
+
+For \textsc{Turbomole}, these files are the standard output files obtained from a \textsc{Turbomole} calculation. For \textsc{Orca}, the Hessian is parsed from the separate \textsc{Orca} Hessian output file and the atomic charges and bond orders are parsed from regular \textsc{Orca} output files that contain these properties. Hence, the files \texttt{hirshfeld.out} and \texttt{bonds.out} may be identical regarding their content, however, both files must be present.
+
+The bond orders file is only needed if the option for QM connectivity refinement was set to \textit{true}. If the option to use \textsc{Gaussian} was enabled, a file with the name \texttt{cm5.out} (\textsc{Gaussian} output file with CM5 charges) needs to be present instead of the atomic charges file. 
+Regardless of the setting \hl{convert\_charges\_cm5}, the Hirshfeld charges in \textsc{Orca} or the Loewdin charges in \textsc{Turbomole} are always converted to CM5 charges when provided via the output file.
+Note that for \textsc{Orca}, the bond orders are Mayer bond orders, while for \textsc{Turbomole}, Wiberg bond orders are calculated.
+
+
+If one employs other quantum chemistry software to calculate the reference data, the generic input format can be used instead (\hl{use\_csv} should be set to \textit{true}, which is the default). For the connectivity of each fragment, this format is the connectivity file format, which is also applied to encode the resulting connectivity of the whole system. In this format, the lines of the file represent the atoms of the system in order and each line contains the indices of the covalently bonded atoms (indices start at zero) separated by whitespaces.
+
+An example of this file for a water molecule (oxygen is at position zero) would be:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+1 2
+0
+0
+\end{verbatim}
+\end{mdframed}
+This is because the zero-th atom (oxygen) is bonded to the atoms 1 and 2 (hydrogens) and the atoms 1 and 2 are each bonded to atom 0. Note that an incorrect connectivity file (e.g., atom 1 is bonded to atom 2, but not \textit{vice versa}) results in an error. This connectivity file must be present in each directory (for each fragment) with the name \texttt{connectivity.dat}.
+
+For the Hessian matrix and the atomic charges, the files \texttt{hessian.csv} and \texttt{atomic\_charges.csv} must be present, respectively. These files contain the corresponding data in the CSV file format with a \textit{comma} as the delimiter.
+As an example, this file could look like this for a 3x3 matrix:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+0.14,1.83,2.8
+-3.8,9.114,0.023
+0.11,-0.14,2.29
+\end{verbatim}
+\end{mdframed}
+For the atomic charges, the file \texttt{atomic\_charges.csv} might look like
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+0.25
+-0.12
+-0.18
+0.02
+0.03
+\end{verbatim}
+\end{mdframed}
+for a molecule with 5 atoms. Note that the atomic charges should ideally be Hirshfeld charges. As for the other reference data generation modes, the setting \hl{convert\_charges\_cm5} decides whether a CM5 correction is applied afterwards (default is \textit{true}).
+
+\vspace{0.3cm}
+\hrule
+\vspace{0.3cm}
+
+Furthermore, there exist the following additional settings:
+
+\begin{itemize}
+\item \hl{number\_atoms\_threshold}: The maximum number of atoms for which reference data is still generated for the whole system and no fragmentation algorithm is applied. The default is \textit{150}.
+\item \hl{subsystem\_radius}: The initial radius of the spheres defining the volume of the fragments. The unit is \AA. The default is \textit{6.0}.
+\item \hl{bond\_order\_threshold}: Sets the threshold for which bond orders to still consider as bonds. The default is \textit{0.5}.
+\item \hl{atom\_type\_level}: Sets the atom type level, i.e. how atom types are defined for the MM model. Options are: \textit{elements} (each element is one atom type), \textit{low} (the number of covalently bonded atoms is included), \textit{high} (the exact composition of the covalently bonded atoms is included, which is the default option) and \textit{unique} (each atom is its own atom type, which is not recommended due to risk of instabilities in the parameter optimization).
+\item \hl{constrain\_mm\_parameters}: Decides whether there should be constraints during the MM parameter optimization. This is recommended and the default is therefore set to \textit{true}.
+\item \hl{optimize\_improper\_dihedral\_force\_constants}: Decides whether the improper dihedral force constants of non-planar groups should be optimized during the MM parameter optimization or whether their value should be fixed at zero. The default is set to \textit{true}, i.e., the force constants are optimized.
+\item \hl{increase\_scf\_safety}: Decides whether to apply safer SCF convergence settings when using the \textsc{Orca} or \textsc{Turbomole} reference program. In both cases, SCF damping is switched on and for \textsc{Turbomole} an orbital shift of 0.5\,Hartree is applied additionally. This setting currently only works in the \textit{database} mode.
+\item \hl{existing\_parameters}: The path to an already existing SFAM parameter file, which contains parameters that can be re-used for the current parametrization. If a parameter is available in that file, it is not optimized again. Reference data is only calculated for the fragments, which are still needed. This setting currently only works if the atoms and their order are identical between the two systems that are considered and just their connectivity varies. This will be extended in the future. The default is an empty string, i.e., no existing parameters are considered and the parametrization is carried out normally.
+\item \hl{enable\_early\_termination}: Decides whether the reference data generation in \textit{database} mode will be terminated once enough data for a parametrization has been collected. This may speed up the parametrization procedure significantly. The default is set to \textit{true}.
+\end{itemize}
+
+\chapter{Calculations With SFAM}
+\label{sec:sfam_calc}
+
+For a single point calculation with the SFAM molecular mechanics model (with already existing parameters for the molecular system), the following settings are available:
+
+\begin{itemize}
+\item \hl{mm\_parameter\_file}: Sets the path to the file from which the parameters are read. The default is an empty string. This setting must therefore always exist.
+\item \hl{mm\_connectivity\_file}: Sets the path to the file from which the connectivity of the system is read. The default is an empty string. This setting must therefore always exist if the bond detection by covalent radii is disabled.
+\item \hl{covalent\_radii\_bond\_detection}: Ignore the connectivity file setting and apply a bond detection algorithm based on distance rules. By default, it is set to \textit{false}.
+\item \hl{atom\_type\_level}: Sets the atom type level, i.e. how atom types are defined for the MM model. Make sure that the atom type level matches the one employed during parametrization. Options are: \textit{elements} (each element is one atom type), \textit{low} (the number of covalently bonded atoms is included), \textit{high} (the exact composition of the covalently bonded atoms is included, which is the default option) and \textit{unique} (each atom is its own atom type).
+\item \hl{covalent\_contributions\_only}: Ignore all non-covalent potentials in the MM model. By default, this setting is set to \textit{false}.
+\item \hl{hydrogen\_bond\_correction}: Apply potentials to model hydrogen bonds. By default, it is set to \textit{true}.
+\item \hl{non\_covalent\_cutoff}: The cutoff radius for non-covalent interactions in \AA. By default, this value is set to \textit{12.0}.
+\item \hl{apply\_cutoff\_during\_initialization}: This setting decides whether the \hl{non\_covalent\_cutoff} is enforced during the initialization stage of the calculation to exclude the interactions beyond the distance cutoff. This results in a larger computational speed-up related to the cutoff setting. However, a consequence is that, for instance during an MD simulation, these interactions are not included either for structures later visited during a simulation, for which the interaction may have fallen below the distance threshold. Setting this option to \textit{true} is recommended for single-point Hessian calculations. For MD simulations and structure optimizations, use it carefully. The default is \textit{false}. Note that if this setting is \textit{false}, the non-covalent cutoff is still applied, by including the interaction terms in the model and evaluating them to zero in a calculation, which results in a smaller speed-up, but allows for more flexibility during an MD simulation or structure optimization.
+\item \hl{print\_mm\_contributions}: Enables a very verbose output level, where the energy contributions of all types of potentials are printed individually. By default, this is set to \textit{false}. If the verbose output flag of the command-line app ("-v" option) is not set, this setting will be ignored.
+\end{itemize}
+
+\chapter{Calculations With Other Molecular Mechanics Models}
+
+Currently, \textsc{Swoose} also offers the GAFF method\cite{gaff} as an alternative to SFAM for molecular mechanics calculations. It can also be applied in QM/MM calculations. To enable it, one can set the following setting:
+\begin{itemize}
+\item \hl{mm\_model}: The type of molecular mechanics model to apply. The current options are \textit{SFAM} and \textit{GAFF} with the default being \textit{SFAM}.
+\end{itemize}
+
+The following settings, which are explained in the section \nameref{sec:sfam_calc}, are also available for GAFF:
+
+\begin{itemize}
+\item \hl{mm\_parameter\_file}
+\item \hl{mm\_connectivity\_file}
+\item \hl{covalent\_radii\_bond\_detection}
+\item \hl{covalent\_contributions\_only}
+\item \hl{non\_covalent\_cutoff}
+\item \hl{apply\_cutoff\_during\_initialization}
+\item \hl{very\_verbose\_output}
+\end{itemize}
+
+The default for the setting \hl{mm\_parameter\_file} is an empty string. This default results in the standard GAFF parameters being employed (version 1.4, March 2010). Of course, one can also provide a custom parameter file as long as it complies with the standard GAFF parameter file format.
+Furthermore, the following settings are only available for GAFF (not for SFAM):
+
+\begin{itemize}
+\item \hl{gaff\_atomic\_charges\_file}: The path to a file containing the atomic charges of the system to be applied in the GAFF calculation for the electrostatic interactions. This file should be a simple text file with the atomic partial charge of each atom on a separate line. Note that the order of the atoms must be the same as in the structure file. For an example, see the information about the atomic charges file for the \textit{read} reference data mode in section \nameref{sec:parametrization}. The default of this setting is an empty string, i.e., only atomic charges of zero are used in the GAFF calculation.
+\item \hl{gaff\_atom\_types\_file}: The path to a file containing the atom types of the system. The default is an empty string, which means that the automated atom type identifier will be applied instead. Note that our automated atom type identifier is still in beta phase and may assign some atom types incorrectly (especially for aromatic systems), which can lead to missing parameters. The format of this file is as follows: the file contains one atom type (case-insensitive) in each line, hence, there should be as many lines with atom types as there are atoms in the system (the order must be equal to the order of atoms in the provided XYZ file). Note that an empty line will result in the file parsing to stop, which means one can add additional comments to the file after such an empty line was inserted.
+\end{itemize}
+
+
+\chapter{The Hybrid QM/MM Model}
+\label{sec:qm_mm}
+
+When applying the QM/MM hybrid model of SFAM ("-q" option), the same settings apply as for a regular MM-only calculation. Furthermore, the settings of the chosen QM method can also be set.\footnote{For example, the DFT method of choice can be specified with the \hl{method} and \hl{basis\_set} settings, as described in the manual of the SCINE module \textsc{ReaDuct}.} However, there are some additional settings, namely:
+
+\begin{itemize}
+\item \hl{qm\_atoms}: The atoms in the QM region. This setting is given as a list (e.g., \texttt{[0, 7, 12, 32, 42]}) containing the atom indices of these atoms (indices start at 0). There is no default for this setting. It must be set by the user. Note that one should only cut through single bonds at the QM--MM boundary when choosing the QM region as only these can be saturated correctly by hydrogen link atoms in the current state of the program.
+
+
+\item \hl{qm\_module} and \hl{qm\_model}: The SCINE module from which to take the QM calculator and what model (calculator name) should be taken from that module. If you want to use \textsc{Orca} or \textsc{Turbomole}, you can set both the module and the model to \textit{orca} or \textit{turbomole}, respectively. If PM6 is supposed to be the QM method, the strings \textit{sparrow} and \textit{PM6} need to be set. If GFN2-xTB is supposed to be the method, set the strings \textit{xtb} and \textit{GFN2}. The modules that are currently available are \textit{Orca}, \textit{Turbomole}, \textit{Sparrow} and \textit{xTB}. These settings are case-insensitive.
+\item \hl{electrostatic\_embedding}: Sets whether electrostatic embedding is applied. The alternative is mechanical embedding. The default is \textit{true} (currently only available with \textsc{Orca} as the QM program)
+\item \hl{qm\_region\_file}: The path to the file to which the QM region is written in XYZ format. By default it is set to an empty string, which results in no such file being created.
+\item \hl{charge\_redistribution}: The scheme to apply for the redistribution of charges close to the QM--MM boundary. The two options are \textit{rc} and \textit{rcd}. The former implements a simple redistribution of charges (RC) scheme, which is described in Fig.~2 of the review article by Senn and Thiel\cite{senn09}. The latter implements a redistribution of charges and dipoles (RCD) scheme as described by Truhlar et al.\cite{lin05}. The default is set to \textit{rc}.
+\item \hl{reduced\_qmmm\_energy}: Calculate the reduced QM/MM energy as it is defined in our recent publication\cite{brunken21}, i.e., that any covalent MM contributions and the noncovalent interactions
+within the environment are neglected. The default is \textit{false}.
+
+\end{itemize}
+
+
+\chapter{Automated QM Region Selection}
+
+A QM region can be generated in full automation using the program mode \textit{select\_qm} ("-m" option). One can choose either to generate only a single QM region deterministically or to generate multiple QM region candidates via our sampling method, for which the optimal QM region is then evaluated based on the atomic forces close to the center of the QM region.\cite{brunken21} The important setting that decides which option is applied, is the following:
+
+\begin{itemize}
+\item \hl{cutting\_probability}: The probability that a bond that is considered cleavable is actually cut during the generation of the QM region. If it is set to \textit{1.0} (which is the default), the deterministic option is chosen, and only a single QM region is generated.
+If the value of this setting is less than one, several QM regions are generated. Subsequently, reference data is calculated with each of the generated models to evaluate the optimal selection. The random seed for this generation can be set via \hl{qm\_region\_selection\_seed} (default is \textit{42}).
+\end{itemize}
+
+Furthermore, one can set the initial radius for the QM region generation:
+
+\begin{itemize}
+\item \hl{initial\_radius}:  The initial radius of the sphere defining the volume of the QM region. The unit is \AA. The default is \textit{6.0}. The value must be between 5 and 12 \AA.
+\end{itemize}
+
+If the setting \hl{cutting\_probability} is set to a value less than \textit{1.0}, $N$ generation attempts are performed with the initial radius and then the radius is iteratively increased by 0.1~\AA~until each of the $N$ attempts per radius generates a QM region that is larger than the maximum allowed size for the reference models or until each of the $N$ attempts generates the full system as the QM region. The corresponding settings are:
+\begin{itemize}
+\item \hl{num\_attempts\_per\_radius}: The number of attempts $N$ described above. The default is \textit{100}.
+\item \hl{ref\_max\_size}: The maximum number of atoms that the QM regions of the reference models are allowed to contain. If the full system contains less atoms than this number, a QM calculation on the full system will be the only reference. Otherwise, the minimum number of atoms in the QM region of the reference models is automatically set to 95\% of this value. The default is \textit{200}.
+\end{itemize}
+
+If \hl{cutting\_probability} is set to the value \textit{1.0}, only a single QM region is generated with the initial fragmentation radius of \hl{initial\_radius}. Regardless of the choice for \hl{cutting\_probability}, an important setting is:
+
+\begin{itemize}
+\item \hl{qm\_region\_center\_atom}: The index of the atom (indices start at zero) around which the QM region will be constructed. The default is \textit{0}.
+\end{itemize}
+
+If more than one QM region is generated, the following settings apply for the QM region sizes of the candidate models:
+
+\begin{itemize}
+\item \hl{qm\_region\_min\_size}: The minimum number of atoms in the QM region (including link atoms) for the candidate models. The default is \textit{100}.
+\item \hl{qm\_region\_max\_size}: The maximum number of atoms in the QM region (including link atoms) for the candidate models. The default is \textit{120}. This number must always be larger than or equal to the minimum number of atoms. Furthermore, it must be smaller than or equal to the maximum number of atoms in the QM regions of the reference models.
+\end{itemize}
+
+The number of reference models that one wants to employ can be limited. The corresponding setting is:
+
+\begin{itemize}
+\item \hl{max\_num\_ref\_models}: The maximum number of reference models that $N_\text{ref}$ are employed to obtain the reference forces. The default is \textit{10}. Note that the last $N_\text{ref}$ models that were generated are used, while the first ones are discarded.
+\end{itemize}
+
+Moreover, one must specify the path to the connectivity file:
+
+\begin{itemize}
+\item \hl{mm\_connectivity\_file}: Sets the path to the file to which the connectivity of the system is written. Default: \textit{Connectivity.dat}.
+\end{itemize}
+
+The reference data can be calculated via a database mode similar to the database mode\footnote{\textcolor{magenta}{The SCINE Database module may not be released yet, but will be available soon. Check the SCINE website for updates.}} of the SFAM parametrization or in a direct mode (default). If the mode \textit{database} is chosen via the setting \hl{ref\_data\_mode}, the four database-related settings
+\hl{database\_host}, 
+\hl{database\_port}, 
+\hl{database\_name} and
+\hl{database\_sleep\_time}
+also apply for the QM region selection task. The same defaults are available as described in the section \nameref{sec:parametrization}. One must also set all the settings that shall be applied for the QM/MM reference calculations. These settings are described section \nameref{sec:qm_mm}. The most important ones are \hl{qm\_module}, \hl{qm\_model}, and the \hl{mm\_parameter\_file}. Obviously, the settings \hl{qm\_atoms}, \hl{molecular\_charge} and \hl{spin\_multiplicity} must not be set manually, but are set by the program automatically for each QM/MM candidate or reference model.
+
+As mentioned above, the mode \textit{direct} is the default option for the setting \hl{ref\_data\_mode}. With this option, the QM/MM calculations are directly excuted by the \textsc{Swoose} binary. The settings described in the section \nameref{sec:qm_mm} also apply. The QM/MM reference calculations can be parallized by setting the \hl{OMP\_NUM\_THREADS} environment variable to the number of desired parallel calculations. Note that the number of threads set by this variable multiplied by the number of cores chosen for one reference calculation (via setting \hl{external\_program\_nprocs}) should not exceed the system limit.
+
+Per default, the candidate models that have a symmetry score $m_\text{sym}$ that is 50\% larger than the minimum one among the candidates, are discarded. Their reference calculations are written to the database, but their status is set to \textit{hold}. The symmetry score $m_\text{sym}$ is defined as,
+\begin{equation}
+ m_\text{sym} = \frac{\overline{r}_\text{LDM}}{\overline{r}_\text{MDQ}} \quad , \label{eq:symm_score}
+\end{equation}
+where $\overline{r}_\text{LDM}$ is the mean distance of the central atom to the three least distant MM atoms~(LDM) and $\overline{r}_\text{MDQ}$
+is the mean distance of the central atom to the three most distant QM atoms~(MDQ). This tolerance percentage of 50\% can be modified via the setting:
+
+\begin{itemize}
+\item \hl{tol\_percentage\_sym\_score}: Tolerance for the symmetry score of a candidate model in percent of the minimum symmetry score among all of the candidate models. \textit{50.0} is set as the default.
+\end{itemize}
+
+After the reference data is calculated, the model with the QM region that contains the smallest number of link atoms is selected, if that model's mean error on the forces is small enough. This is the case if this error is within an error tolerance of the candidate with the minimum error. This tolerance is calculated as a percentage of the minimum error. The setting is:
+
+\begin{itemize}
+\item \hl{tol\_percentage\_error}: Tolerance for mean error of the forces in percent of the minimum error among all of the candidate models. \textit{20.0} is set as the default.
+\end{itemize}
+
+
+\chapter{Structure Optimizations}
+
+For structure optimizations in \textsc{Swoose}, the BFGS algorithm is applied as described in the manual of SCINE \textsc{ReaDuct}\cite{readuct}. All the settings available in \textsc{ReaDuct} for this algorithm as well as all general optimization settings are also available in \textsc{Swoose}. Furthermore, the settings of the methods discussed in the previous chapters are available.
+
+After a completed optimization, the optimized molecular structure is written to the file \texttt{opt\_structure.xyz} and the trajectory of the optimization procedure is written to \texttt{opt\_trajectory.xyz}. These files can be found in a results directory, which can be specified by the following setting:
+
+\begin{itemize}
+\item \hl{results\_directory}: The directory to which the results of structure optimizations are written to. By default, it is set to \textit{opt\_results}.
+\end{itemize}
+
+For QM/MM structure optimizations, a special microiteration-based algorithm is applied, for which the following settings can be set:
+
+\begin{itemize}
+\item \hl{qmmm\_opt\_max\_macroiterations}: The maximum number of macrocycles allowed. One macrocycle contains one full system optimization and one environment-only optimization. Default: \textit{30}.
+\item \hl{qmmm\_opt\_max\_full\_microiterations}: The maximum number of full system optimization microcycles (with the full QM/MM gradients) allowed per macrocycle. The default is set to \textit{15}.
+\item \hl{qmmm\_opt\_max\_env\_microiterations}: The maximum number of environment-only (MM-only) optimization microcycles allowed per macrocycle. The default is set to \textit{1000}.
+\item \hl{qmmm\_opt\_boundary\_distance\_thresh}: The distance threshold in \AA~determining which atoms of the environment are also frozen during the environment-only microiterations. By default, it is set to \textit{4.0}.
+\item \hl{qmmm\_opt\_env\_switch\_off}: The number of macrocycles after which the environment-only optimization is switched off. The default value is \textit{12}.
+\item \hl{qmmm\_opt\_env\_start}: Decides whether the MM-only optimization of the environment is performed at the very beginning. By default, it is set to \textit{true}.
+\end{itemize}
+
+
+\chapter{Molecular Dynamics Simulations}
+
+When performing an MD simulation, all settings for the single point calculations are also available. Furthermore, the following MD-specific settings are:
+
+\begin{itemize}
+\item \hl{md\_time\_step}: MD integration time step in femtoseconds. The default is \textit{1.0}.
+\item \hl{number\_md\_steps}: The number of MD steps that will be performed. The default is \textit{10}.
+\item \hl{md\_integration\_scheme}: The integration algorithm used in the MD simulation. Options are: \textit{leap\_frog} (default), \textit{euler}, \textit{velocity\_verlet}, and \textit{stochastic\_dynamics}. The latter\cite{goga12} includes temperature control.
+\item \hl{md\_thermostat}: The thermostat applied in the MD simulation. Currently, two options are available: \textit{none} (no thermostat) and \textit{berendsen} (Berendsen thermostat\cite{berendsen84}). By default, it is set to \textit{none}.
+\item \hl{generation\_temperature}: The temperature in Kelvin for which initial velocities are drawn from a Boltzmann distribution. The default is \textit{300}. If it is set to zero, all initial velocities are set to zero.
+\item \hl{target\_temperature}: The target temperature in Kelvin, which is only a valid setting if the thermostat is \textit{berendsen} or the integration scheme is \textit{stochastic\_dynamics}. The default is \textit{0}, which means that the \hl{generation\_temperature} is used as the \hl{target\_temperature}.
+\item \hl{temperature\_coupling\_time}: The temperature coupling time in femtoseconds. If a value of \textit{0.0} is chosen (which is also the default), the defaults of the two different thermostats are applied. These defaults are: \textit{10.0} (Berendsen), \textit{2000.0} (Stochastic Dynamics).
+\item \hl{record\_frequency}: The frequency with which structures and their energies are written to disk during the simulation. The default is \textit{1}, which means that the structure is written in every step. The structures are written to the file \texttt{MD\_trajectory.xyz} and the energies to \texttt{MD\_energies.dat}.
+\item \hl{linear\_momentum\_removal\_frequency}: The frequency with which the linear momentum of the center of mass is removed. If zero, no action is taken. The default is \textit{1}.
+\item \hl{angular\_momentum\_removal\_frequency}: The frequency with which the angular momentum of the center of mass is removed. If zero, no action is taken. The default is \textit{1}.
+\end{itemize}
+
+\chapter{Example Calculations}\label{ch:example_calculations}
+
+In this section, we provide some example YAML settings files and execution commands for a typical workflow with \textsc{Swoose} using the standalone binary.
+
+Let's start by parametrizing a SFAM molecular mechanics model for a water molecule. First, one has to provide the coordinates in an XYZ file, which may look like this (unoptimized):
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+3
+water molecule
+H    0.75    0.00    0.45
+O    0.00    0.00   -0.15
+H   -0.75    0.00    0.45
+\end{verbatim}
+\end{mdframed}
+Let's store it in a file with the name \texttt{water.xyz}. Second, create the following example YAML settings file with the name \texttt{settings.yaml}:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+mm_parameter_file: final_parameters.dat
+mm_connectivity_file: final_connectivity.dat
+reference_program: ORCA
+reference_method: PBE0 D3BJ
+reference_basis_set: def2-TZVP
+ref_data_mode: direct
+refine_connectivity_qm: false
+external_program_nprocs: 2
+base_working_directory: reference_calculations
+max_scf_iterations: 150
+\end{verbatim}
+\end{mdframed}
+Note that the directory \texttt{reference\_calculations} will be created by \textsc{Swoose} automatically if it does not exist yet. In this example, we disabled the calculation of quantum chemically derived bond orders for the evaluation of the system connectivity, because the distance-based guess connectivity will be sufficient for such a simple molecule. The setting \hl{\texttt{max\_scf\_iterations}} is an additional setting that can be set for \textsc{Orca} calculations in SCINE (to increase the maximum number of SCF iterations). The descriptions of such additional settings can be found in the manual of the SCINE \textsc{ReaDuct} module\cite{readuct}.
+
+With the two files we created, one can start a parametrization via the console:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+swoose -m parametrize -s water.xyz -y settings.yaml -v
+\end{verbatim}
+\end{mdframed}
+The verbose output (requested via "-v" option) is then printed to the console and once the parametrization is completed, the files \texttt{final\_parameters.dat} and \texttt{final\_connectivity.dat} will be available in the directory from which the command above was executed.
+
+Subsequently, we can perform a single-point calculation with our generated model for the unoptimized structure in the file \texttt{water.xyz}. The settings file may now look like this:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+mm_parameter_file: final_parameters.dat
+mm_connectivity_file: final_connectivity.dat
+\end{verbatim}
+\end{mdframed}
+Additional settings are not necessary for our simple system. However, see section \nameref{sec:sfam_calc} for a list of all available settings. The calculation (including the Hessian matrix) can be started via:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+swoose -m calculate -s water.xyz -y settings.yaml -v -H
+\end{verbatim}
+\end{mdframed}
+The command-line output will contain the energy and the gradients that were calculated. The Hessian will be written to the file \texttt{hessian.csv}.
+
+A structure optimization may require additional settings for the optimizer, which are decribed in detail in the \textsc{ReaDuct} manual. An example settings file may look like this:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+mm_parameter_file: final_parameters.dat
+covalent_radii_bond_detection: true
+results_directory: optimization_results
+convergence_max_iterations: 250
+bfgs_use_trust_radius: true
+bfgs_trust_radius: 1.0
+\end{verbatim}
+\end{mdframed}
+This example file also demonstrates that one can allow for a distance-based connectivity detection instead of specifying a connectivity file.
+The structure optimization can be executed with the following command:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+swoose -m optimize -s water.xyz -y settings.yaml -v
+\end{verbatim}
+\end{mdframed}
+The results (optimized structure and optimization trajectory as XYZ files) can be found in the directory \texttt{optimization\_results} as specified in the YAML settings file.
+
+Finally, we provide an example of a QM/SFAM calculation. Obviously, the water molecule is not a suitable example for this. Let's assume that our large molecular system, e.g., a protein, is stored in the file \texttt{protein.xyz} and the generated parameters are stored in the file \texttt{protein\_parameters.dat}.
+
+As a first step, one can evaluate a QM region automatically for our system with the following settings file:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+mm_parameter_file: protein_parameters.dat
+covalent_radii_bond_detection: true
+ref_data_mode: direct
+qm_module: ORCA
+qm_model: ORCA
+method: PBE D3BJ
+basis_set: def2-SVP
+qm_region_center_atom: 7
+cutting_probability: 0.9
+ref_max_size: 300
+qm_region_min_size: 80
+qm_region_max_size: 100
+\end{verbatim}
+\end{mdframed}
+The selected QM region will be between 80 and 100 atoms and the center atom of the QM region was specified as the atom with index 7 (indices start at zero).
+The command
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+swoose -m select_qm -s protein.xyz -y settings.yaml -v
+\end{verbatim}
+\end{mdframed}
+executes the QM region selection. The console output provides you with the resulting QM region in a format which can be directly copied to the settings file of a QM/SFAM calculation:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+mm_parameter_file: protein_parameters.dat
+covalent_radii_bond_detection: true
+qm_module: ORCA
+qm_model: ORCA
+method: PBE D3BJ
+basis_set: def2-SVP
+qm_atoms: [3, 18, 19, ..., 89, 97]
+\end{verbatim}
+\end{mdframed}
+For the sake of brevity, we did not write out the 80-100 atom indices for the \hl{\texttt{qm\_atoms}} setting. To perform a calculation, one can employ the "-q" option to signal the quantum--classical hybrid character of the model:
+\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
+\begin{verbatim}
+swoose -m calculate -q -s protein.xyz -y settings.yaml -v
+\end{verbatim}
+\end{mdframed}
+For additional settings that are available for QM/MM structure optimizations or molecular dynamics simulations, check the detailed descriptions of these modes in the previous sections of this manual.
+
+
+\chapter{Extensions Planned in the Future}
+\begin{itemize}
+\item Automated PDB file processing for a more convenient preparation of a SFAM parametrization.
+\item More extensive Python bindings.
+\end{itemize}
+
+
+%%
+% The back matter contains appendices, bibliographies, indices, glossaries, etc.
+
+\backmatter
+
+\renewcommand\bibname{References}
+\bibliography{references}
+\bibliographystyle{achemso}
+
+%\printindex
+
+\end{document}
