@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -26,6 +26,7 @@ class BondOrderCollection;
 
 namespace Qmmm {
 struct QmmmModel;
+class QmmmCalculator;
 using ForcesCollection = Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
 /**
@@ -52,7 +53,8 @@ class QmmmReferenceDataManager {
   /**
    * @brief Constructor.
    */
-  QmmmReferenceDataManager(const Utils::Settings& settings, Core::Log& log, const Utils::AtomCollection& structure,
+  QmmmReferenceDataManager(std::shared_ptr<QmmmCalculator> qmmmCalculator, const Utils::Settings& settings,
+                           Core::Log& log, const Utils::AtomCollection& structure,
                            const Utils::BondOrderCollection& bondOrders, const std::vector<QmmmModel>& qmmmModelCandidates,
                            const std::vector<QmmmModel>& qmmmReferenceModels);
 
@@ -81,6 +83,8 @@ class QmmmReferenceDataManager {
   const std::vector<QmmmModel>& qmmmReferenceModels_;
   // The bond orders of the system
   const Utils::BondOrderCollection& bondOrders_;
+  // The QMMM Calculator that performs the reference calculations
+  std::shared_ptr<QmmmCalculator> qmmmCalculator_;
 };
 
 } // namespace Qmmm

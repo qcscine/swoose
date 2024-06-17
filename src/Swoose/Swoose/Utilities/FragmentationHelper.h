@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -100,6 +100,14 @@ bool atomIsCloseToExistingAtom(const Utils::Atom& atom, const Utils::AtomCollect
 bool isDivisibleAtBond(int atomInside, int atomOutside, const Utils::AtomCollection& fullStructure,
                        const std::vector<std::list<int>>& listsOfNeighbors, double probabilityToDivide,
                        std::shared_ptr<std::mt19937> randomEngine);
+/**
+ * @brief Merges to subsystems that are generated separately, but should become one subsystem.
+ *
+ * @param subsystems Vector of the subsystems molecular structures.
+ * @param atomIndexMappings Vector of the subsystems indices in the full structure
+ */
+Utils::AtomCollection mergeSubsystems(std::vector<int>& atomIndexMapping, std::vector<Utils::AtomCollection> subsystems,
+                                      std::vector<std::vector<int>> atomIndexMappings);
 
 } // namespace FragmentationHelper
 } // namespace SwooseUtilities

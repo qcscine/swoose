@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -94,6 +94,10 @@ void GaffParameters::addImproperDihedral(ImproperDihedralType improperDihedralTy
 void GaffParameters::addLennardJones(std::string atomType,
                                      Scine::MolecularMechanics::LennardJonesParameters lennardJonesParameters) {
   lennardJonesPairs_.emplace(atomType, lennardJonesParameters);
+}
+
+bool GaffParameters::empty() {
+  return lennardJonesPairs_.empty() && dihedrals_.empty() && improperDihedrals_.empty();
 }
 
 } // namespace MolecularMechanics

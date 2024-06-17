@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -26,7 +26,7 @@ class GaffCalculatorSettings : public Scine::Utils::Settings {
     using namespace SwooseUtilities;
     SettingsPopulator::addPrintContributionsMolecularMechanicsOption(_fields);
     SettingsPopulator::addOnlyCalculateBondedContribution(_fields);
-    SettingsPopulator::addParameterAndConnectivityFile(_fields);
+    SettingsPopulator::addParameterAndConnectivityFile(_fields, true);
     SettingsPopulator::addDetectBondsWithCovalentRadiiOption(_fields);
     SettingsPopulator::addNonCovalentCutoffRadius(_fields);
     SettingsPopulator::addGaffAtomicChargesFile(_fields);

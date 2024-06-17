@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -36,7 +36,7 @@ std::vector<std::list<int>> ConnectivityFileHandler::readListsOfNeighbors(const 
 
     while (iter != end) {
       int atomIndex = std::stoi(*iter++);
-      if (listsOfNeighbors.size() == atomIndex) // atom cannot be bonded to itself
+      if (int(listsOfNeighbors.size()) == atomIndex) // atom cannot be bonded to itself
         throw std::runtime_error("Error in connectivity file. Atom " + std::to_string(atomIndex) + " is bonded to itself.");
       if (atomIndex >= 0)
         listForOneAtom.push_back(atomIndex);
@@ -49,9 +49,9 @@ std::vector<std::list<int>> ConnectivityFileHandler::readListsOfNeighbors(const 
   }
 
   // Check for validity
-  for (int i = 0; i < listsOfNeighbors.size(); ++i) {
+  for (int i = 0; i < int(listsOfNeighbors.size()); ++i) {
     for (const auto& neighbor : listsOfNeighbors[i]) {
-      bool indexIsValid = neighbor >= 0 && neighbor < listsOfNeighbors.size();
+      bool indexIsValid = neighbor >= 0 && neighbor < int(listsOfNeighbors.size());
       bool foundInCorrespondingPlace = std::find(listsOfNeighbors[neighbor].begin(), listsOfNeighbors[neighbor].end(), i) !=
                                        listsOfNeighbors[neighbor].end();
       if (!indexIsValid || !foundInCorrespondingPlace)
@@ -66,7 +66,7 @@ void ConnectivityFileHandler::writeListsOfNeighbors(const std::string& filename,
                                                     const std::vector<std::list<int>>& listsOfNeighbors) {
   std::ofstream connectivityFile(filename);
 
-  for (int i = 0; i < listsOfNeighbors.size(); ++i) {
+  for (int i = 0; i < int(listsOfNeighbors.size()); ++i) {
     for (const auto& neighbor : listsOfNeighbors[i]) {
       connectivityFile << neighbor << "  ";
     }

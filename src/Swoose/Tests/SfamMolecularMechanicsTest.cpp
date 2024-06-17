@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -39,7 +39,7 @@ TEST_F(ASfamMolecularMechanicsTest, SettingsAreSetCorrectly) {
   using namespace SwooseUtilities::SettingsNames;
   calculator.settings().modifyBool(onlyCalculateBondedContribution, true);
   calculator.settings().modifyBool(printContributionsMolecularMechanics, true);
-  calculator.settings().modifyString(parameterFilePath, "pfp");
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, "pfp");
   calculator.settings().modifyString(connectivityFilePath, "cfp");
   calculator.settings().modifyString(sfamAtomTypeLevel, "unique");
   calculator.settings().modifyBool(detectBondsWithCovalentRadii, false);
@@ -48,7 +48,7 @@ TEST_F(ASfamMolecularMechanicsTest, SettingsAreSetCorrectly) {
 
   ASSERT_THAT(calculator.settings().getBool(onlyCalculateBondedContribution), Eq(true));
   ASSERT_THAT(calculator.settings().getBool(printContributionsMolecularMechanics), Eq(true));
-  ASSERT_THAT(calculator.settings().getString(parameterFilePath), Eq("pfp"));
+  ASSERT_THAT(calculator.settings().getString(Utils::SettingsNames::parameterFilePath), Eq("pfp"));
   ASSERT_THAT(calculator.settings().getString(connectivityFilePath), Eq("cfp"));
   ASSERT_THAT(calculator.settings().getString(sfamAtomTypeLevel), Eq("unique"));
   ASSERT_THAT(calculator.settings().getBool(detectBondsWithCovalentRadii), Eq(false));
@@ -60,7 +60,7 @@ TEST_F(ASfamMolecularMechanicsTest, SettingsAreSetCorrectly) {
 TEST_F(ASfamMolecularMechanicsTest, EnergyAndGradientsAreCalculatedCorrectlyForMelatonin) {
   Utils::AtomCollection testStructure = Utils::ChemicalFileHandler::read(melatonin_xyz_file).first;
 
-  calculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   calculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
   calculator.settings().modifyDouble(SwooseUtilities::SettingsNames::nonCovalentCutoffRadius, 20.0); // basically no
                                                                                                      // cutoff radius
@@ -113,9 +113,9 @@ TEST_F(ASfamMolecularMechanicsTest, EnergyAndGradientsAreCalculatedCorrectlyForM
 
   // Assertions
   ASSERT_THAT(energy, DoubleNear(-4.009964844, 1e-6));
-  ASSERT_THAT(hessian(0, 0), DoubleNear(92.95206847, 1e-3));
-  ASSERT_THAT(hessian(2, 7), DoubleNear(0.697864568, 1e-3));
-  ASSERT_THAT(hessian(11, 11), DoubleNear(381.965531, 1e-3));
+  ASSERT_THAT(hessian(0, 0), DoubleNear(92.95714161, 1e-3));
+  ASSERT_THAT(hessian(2, 7), DoubleNear(0.6978703803, 1e-3));
+  ASSERT_THAT(hessian(11, 11), DoubleNear(381.9659289, 1e-3));
 
   for (int k = 0; k < gradients.rows(); ++k) {
     for (int l = 0; l < 3; ++l) {
@@ -123,6 +123,25 @@ TEST_F(ASfamMolecularMechanicsTest, EnergyAndGradientsAreCalculatedCorrectlyForM
     }
   }
 
+  // Check if SFAM is translationally invariant
+  Utils::PositionCollection translatedPositions(positions.rows(), 3);
+  for (int i = 0; i < positions.rows(); ++i) {
+    for (int j = 0; j < 3; ++j) {
+      translatedPositions.row(i)[j] = positions.row(i)[j] + 1.0;
+    }
+  }
+  calculator.modifyPositions(translatedPositions);
+  Utils::Results resultsAfterTranslation = calculator.calculate("for translated molecule");
+  double transEnergy = resultsAfterTranslation.get<Utils::Property::Energy>() * Utils::Constants::kCalPerMol_per_hartree;
+  auto transGradients = resultsAfterTranslation.get<Utils::Property::Gradients>() * Utils::Constants::kCalPerMol_per_hartree;
+  ASSERT_THAT(transEnergy, DoubleNear(energy, 1e-6));
+  for (int k = 0; k < transGradients.rows(); ++k) {
+    for (int l = 0; l < 3; ++l) {
+      ASSERT_THAT(transGradients(k, l), DoubleNear(gradients(k, l), 1e-3));
+    }
+  }
+
+  calculator.modifyPositions(positions);
   /*
    * The same calculation with the original calculator and no connectivity file given.
    */
@@ -154,7 +173,7 @@ TEST_F(ASfamMolecularMechanicsTest, EnergyAndGradientsAreCalculatedCorrectlyForM
   auto silentLogger = Core::Log::silent();
   calculator.setLog(silentLogger);
   Utils::FilesystemHelpers::copyFile(melatonin_param_file_no_c6, tmpFile);
-  calculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, tmpFile);
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, tmpFile);
   calculator.setRequiredProperties(Utils::Property::Energy);
   calculator.setStructure(testStructure); // new set structure because re-initialization is necessary
   newResults = calculator.calculate("test calculation 3");
@@ -172,7 +191,7 @@ TEST_F(ASfamMolecularMechanicsTest, EnergyAndGradientsAreCalculatedCorrectlyForM
 TEST_F(ASfamMolecularMechanicsTest, HessianIsIdenticalToTheFullyNumericalHessianForMelatonin) {
   Utils::AtomCollection testStructure = Utils::ChemicalFileHandler::read(melatonin_xyz_file).first;
 
-  calculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   calculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
   calculator.settings().modifyDouble(SwooseUtilities::SettingsNames::nonCovalentCutoffRadius, 20.0); // basically no
                                                                                                      // cutoff radius
@@ -239,7 +258,7 @@ TEST_F(ASfamMolecularMechanicsTest, TopologyUtilsDividesAStructureCorrectly) {
 
 TEST_F(ASfamMolecularMechanicsTest, IncorrectConnectivityFileCausesException) {
   Utils::AtomCollection testStructure = Utils::ChemicalFileHandler::read(melatonin_xyz_file).first;
-  calculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   calculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath,
                                      melatonin_connectivity_file_with_error);
   calculator.setRequiredProperties(Utils::Property::Energy | Utils::Property::Gradients | Utils::Property::Hessian);

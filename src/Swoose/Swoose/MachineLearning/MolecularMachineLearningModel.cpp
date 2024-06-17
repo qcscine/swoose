@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -19,7 +19,7 @@ namespace MachineLearning {
 
 void MolecularMachineLearningModel::setReferenceData(const Utils::MolecularTrajectory& structures,
                                                      const std::vector<ForcesCollection>& refForces) {
-  if (refForces.size() != 0 && refForces.size() != structures.size())
+  if (refForces.size() != 0 && int(refForces.size()) != structures.size())
     throw std::runtime_error(
         "The number of structures is not equal to the number of individual collections of forces.");
 
@@ -155,7 +155,7 @@ std::pair<double, double> MolecularMachineLearningModel::evaluateForcesModel(int
 
   // Calculate true combined variance:
   auto total = 0.0;
-  for (int i = 0; i < variances.size(); ++i) {
+  for (int i = 0; i < int(variances.size()); ++i) {
     total += variances[i] + (errors[i] - combinedMeanAbsoluteError) * (errors[i] - combinedMeanAbsoluteError);
   }
 
@@ -182,7 +182,7 @@ Eigen::VectorXd MolecularMachineLearningModel::getEnergyTargets() {
 }
 
 Eigen::MatrixXd MolecularMachineLearningModel::getSingleForceFeatures(int atomIndex) {
-  auto nDataPoints = forcesFeatures_.size();
+  int nDataPoints = forcesFeatures_.size();
   Eigen::MatrixXd features(nDataPoints, forcesFeatures_[0].at(atomIndex).size());
   for (int i = 0; i < nDataPoints; ++i) {
     features.row(i) = forcesFeatures_[i].at(atomIndex);
@@ -191,9 +191,9 @@ Eigen::MatrixXd MolecularMachineLearningModel::getSingleForceFeatures(int atomIn
 }
 
 Eigen::MatrixXd MolecularMachineLearningModel::getSingleForceTargets(int atomIndex) {
-  auto nDataPoints = forcesFeatures_.size();
+  int nDataPoints = forcesFeatures_.size();
   Eigen::MatrixXd targets(nDataPoints, 3);
-  for (int j = 0; j < nDataPoints; ++j) {
+  for (long unsigned int j = 0; j < nDataPoints; ++j) {
     targets.row(j) = refForces_[j].row(atomIndex);
   }
   return targets;
@@ -210,9 +210,11 @@ Utils::MachineLearning::KernelRidgeRegression& MolecularMachineLearningModel::fo
 // TODO: The hyperparameters should be optimized again.
 // TODO: The choice of the kernel should be depending on amount of available reference data.
 void MolecularMachineLearningModel::setDefaultHyperparameters() {
-  energyPredictor_.setKernel(Utils::MachineLearning::Kernels::laplacianKernel, {50.0});
+  Eigen::VectorXd sigma(1);
+  sigma[0] = 50.0;
+  energyPredictor_.setKernel(Utils::MachineLearning::Kernels::laplacianKernel, sigma);
   for (auto& predictor : forcePredictors_) {
-    predictor.setKernel(Utils::MachineLearning::Kernels::laplacianKernel, {50.0});
+    predictor.setKernel(Utils::MachineLearning::Kernels::laplacianKernel, sigma);
   }
 }
 

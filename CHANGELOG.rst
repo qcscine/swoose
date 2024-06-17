@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Release 2.0.0
+-------------
+- enable electrostatic embedding QM/MM with Turbomole and xtb as QM calculators
+- interface to any SCINE calculator for QM
+- automated construction of QM regions around multiple QM region center atoms
+- identify critical failed calculations for a parametrization as debug information
+- semi-automated processing of molecular input structures (ASAP)
+- Python bindings for SFAM parametrization and QM region selection objects with release of the global interpreter lock for threading long-running operations
+- Update address in license
+
 Release 1.0.0
 -------------
 - parametrization of SFAM molecular mechanics model (large and small systems)

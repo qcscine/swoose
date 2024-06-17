@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -24,14 +24,12 @@ MockQmCalculator::MockQmCalculator() {
   applySettings();
 }
 
-MockQmCalculator::MockQmCalculator(const MockQmCalculator& rhs) {
+MockQmCalculator::MockQmCalculator(const MockQmCalculator& rhs) : CloneInterface(rhs) {
   this->requiredProperties_ = rhs.requiredProperties_;
   auto valueCollection = dynamic_cast<const Utils::UniversalSettings::ValueCollection&>(rhs.settings());
   this->settings_ =
       std::make_unique<Utils::Settings>(Utils::Settings(valueCollection, rhs.settings().getDescriptorCollection()));
   applySettings();
-  this->results() = rhs.results();
-  this->setStructure(rhs.structure_);
 }
 
 void MockQmCalculator::applySettings() {
@@ -69,7 +67,7 @@ Utils::PropertyList MockQmCalculator::getRequiredProperties() const {
 }
 
 Utils::PropertyList MockQmCalculator::possibleProperties() const {
-  return Utils::Property::Energy | Utils::Property::Gradients;
+  return Utils::Property::Energy | Utils::Property::Gradients | Utils::Property::Hessian;
 }
 
 const Utils::Results& MockQmCalculator::calculate(std::string description) {
@@ -83,12 +81,20 @@ const Utils::Results& MockQmCalculator::calculate(std::string description) {
     }
   }
 
+  Utils::HessianMatrix hessian(3 * structure_.size(), 3 * structure_.size());
+  for (int i = 0; i < 3 * structure_.size(); ++i) {
+    for (int j = 0; j < 3 * structure_.size(); ++j) {
+      hessian(i, j) = 10.0;
+    }
+  }
+
   results_.set<Utils::Property::Description>(description);
   if (requiredProperties_.containsSubSet(Utils::Property::Energy))
     results_.set<Utils::Property::Energy>(energy);
   if (requiredProperties_.containsSubSet(Utils::Property::Gradients))
     results_.set<Utils::Property::Gradients>(gradients);
-
+  if (requiredProperties_.containsSubSet(Utils::Property::Hessian))
+    results_.set<Utils::Property::Hessian>(hessian);
   results_.set<Utils::Property::SuccessfulCalculation>(true);
   results_.set<Utils::Property::ProgramName>("mock");
   return results_;

@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -18,7 +18,6 @@ namespace SettingsNames {
 static constexpr const char* onlyCalculateBondedContribution = "covalent_contributions_only";
 static constexpr const char* printContributionsMolecularMechanics = "print_mm_contributions";
 static constexpr const char* sfamAtomTypeLevel = "atom_type_level";
-static constexpr const char* parameterFilePath = "mm_parameter_file";
 static constexpr const char* connectivityFilePath = "mm_connectivity_file";
 static constexpr const char* detectBondsWithCovalentRadii = "covalent_radii_bond_detection";
 static constexpr const char* nonCovalentCutoffRadius = "non_covalent_cutoff";
@@ -28,12 +27,10 @@ static constexpr const char* gaffAtomicChargesFile = "gaff_atomic_charges_file";
 static constexpr const char* gaffAtomTypesFile = "gaff_atom_types_file";
 
 // Mostly used for QM/MM
-static constexpr const char* qmAtomsList = "qm_atoms";
-static constexpr const char* electrostaticEmbedding = "electrostatic_embedding";
 static constexpr const char* chargeRedistributionKey = "charge_redistribution";
-static constexpr const char* ignoreQmOption = "ignore_qm";
 static constexpr const char* calculateReducedQmMmEnergy = "reduced_qmmm_energy";
 static constexpr const char* qmRegionXyzFile = "qm_region_file";
+static constexpr const char* silenceUnderlyingCalculators = "silence_underlying_calculators";
 
 // Mostly used for MM parametrization
 static constexpr const char* bondOrderThreshold = "bond_order_threshold";
@@ -63,9 +60,13 @@ static constexpr const char* terminateAfterReferenceDataGeneration = "ref_data_g
 static constexpr const char* useCsvInputFormat = "use_csv";
 static constexpr const char* convertChargesCm5 = "convert_charges_cm5";
 static constexpr const char* yamlSettingsFilePath = "yaml_settings_file_path";
+static constexpr const char* titrate = "titrate";
+static constexpr const char* useThermoChemistryForTitration = "use_thermochemistry_for_titration";
+static constexpr const char* trainingDataDirectory = "training_data_directory";
+static constexpr const char* titrationSiteFile = "titration_site_file";
 
 // Mostly used for QM/MM region selection
-static constexpr const char* qmRegionCenterAtom = "qm_region_center_atom";
+static constexpr const char* qmRegionCenterAtoms = "qm_region_center_atoms";
 static constexpr const char* initialRadiusForQmRegionSelection = "initial_radius";
 static constexpr const char* cuttingProbability = "cutting_probability";
 static constexpr const char* qmRegionCandidateMinSize = "qm_region_min_size";
@@ -76,6 +77,14 @@ static constexpr const char* maxNumRefModels = "max_num_ref_models";
 static constexpr const char* tolerancePercentageError = "tol_percentage_error";
 static constexpr const char* tolerancePercentageSymmetryScore = "tol_percentage_sym_score";
 static constexpr const char* qmRegionSelectionRandomSeed = "qm_region_selection_seed";
+
+// Mostly used for structure preparation
+static constexpr const char* preparationDataDirectory = "preparation_directory";
+static constexpr const char* atomicInfoFile = "atomic_info_file";
+static constexpr const char* solvateStructure = "solvate_structure";
+static constexpr const char* numberOfSolventShells = "num_solvent_shells";
+static constexpr const char* phValueOfSystem = "pH_value_for_protonation";
+static constexpr const char* chargedCandNTermini = "charged_termini";
 
 } // namespace SettingsNames
 } // namespace SwooseUtilities

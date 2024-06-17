@@ -1,16 +1,21 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
+#include <string>
 #include <vector>
 
 #ifndef MMPARAMETRIZATION_FRAGMENTDATADISTRIBUTOR_H
 #  define MMPARAMETRIZATION_FRAGMENTDATADISTRIBUTOR_H
 
 namespace Scine {
+namespace Core {
+struct Log;
+}
+
 namespace MMParametrization {
 struct ParametrizationData;
 
@@ -26,7 +31,7 @@ class FragmentDataDistributor {
    * @brief Constructor.
    * @param data The parametrization data object used throughout the whole parametrization process.
    */
-  explicit FragmentDataDistributor(ParametrizationData& data);
+  explicit FragmentDataDistributor(ParametrizationData& data, Core::Log& log);
   /**
    * @brief Checks whether the reference data that has already been collected is sufficient to
    *        perform the parametrization. Returns true, if this is the case.
@@ -35,10 +40,14 @@ class FragmentDataDistributor {
    *                           fragment: Multiple of 2 -> Hessian failed, Multiple of 3 -> Atomic charges failed,
    *                           Multiple of 5 -> Bond orders failed. Default: empty list -> this check will not be
    *                           performed.
+   * @param failedCalculationIds A vector containing the Database IDs of the failed calculations. Note that this can be
+   *                             useful for debugging when only few calculations fail and the parametrization
+   * cannot be successful anymore.
    * @throws std::runtime_error Throws if the parametrization cannot be completed anymore
    *                            because too many calculations already failed.
    */
-  bool referenceDataIsSufficient(bool refineConnectivity, std::vector<int> failedCalculations = {}) const;
+  bool referenceDataIsSufficient(bool refineConnectivity, std::vector<int> failedCalculations = {},
+                                 std::vector<std::vector<std::string>> failedCalculationIds = {}) const;
   /**
    * @brief Returns the indices of candidate fragments to get the data from
    *        for the given fragment index 'fragmentIndex'.
@@ -64,8 +73,9 @@ class FragmentDataDistributor {
    * @throws std::runtime_error Throws if the parametrization cannot be completed anymore
    *                            because too many calculations already failed.
    */
-  bool fragmentIsCoveredByData(const std::vector<int>& candidates, bool refineConnectivity,
-                               const std::vector<int>& failedCalculations) const;
+  bool fragmentIsCoveredByData(int fragmentIndex, const std::vector<int>& candidates, bool refineConnectivity,
+                               const std::vector<int>& failedCalculations,
+                               std::vector<std::vector<std::string>> failedCalculationIds) const;
   /*
    * Returns whether the fragment with the given candidates can not be covered anymore because too many calculations
    * have failed already.
@@ -73,6 +83,8 @@ class FragmentDataDistributor {
   bool fragmentIsHopeless(const std::vector<int>& candidates, const std::vector<int>& failedCalculations) const;
   // The parametrization data
   ParametrizationData& data_;
+  // The logger
+  Core::Log& log_;
 };
 
 } // namespace MMParametrization

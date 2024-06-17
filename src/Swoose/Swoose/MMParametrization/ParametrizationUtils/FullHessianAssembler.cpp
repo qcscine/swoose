@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -14,7 +14,7 @@ namespace Scine {
 namespace MMParametrization {
 
 FullHessianAssembler::FullHessianAssembler(ParametrizationData& data, Core::Log& log) : data_(data), log_(log) {
-  fragmentDataDistributor_ = std::make_unique<FragmentDataDistributor>(data);
+  fragmentDataDistributor_ = std::make_unique<FragmentDataDistributor>(data, log);
 }
 
 void FullHessianAssembler::assembleFullHessian() {

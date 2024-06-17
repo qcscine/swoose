@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -9,13 +9,16 @@
 #include "../CalculationManager.h"
 #include "../MMParametrizationSettings.h"
 #include "../ParametrizationData.h"
-#include "BasicJobSubmissionHelper.h"
 #include "DatabaseOrderNames.h"
 #include <Database/Collection.h>
 #include <Database/Manager.h>
 #include <Database/Objects/Calculation.h>
 #include <Database/Objects/DenseMatrixProperty.h>
 #include <Database/Objects/Structure.h>
+#include <Swoose/Utilities/BasicJobSubmissionHelper.h>
+#include <Utils/GeometryOptimization/GeometryOptimizer.h>
+#include <Utils/IO/Yaml.h>
+#include <yaml-cpp/yaml.h>
 
 namespace Scine {
 namespace MMParametrization {
@@ -36,8 +39,8 @@ void submitStructureOptimization(int fragmentIndex, std::shared_ptr<Database::Co
 
   auto method = settings.getString(SwooseUtilities::SettingsNames::referenceMethod);
   auto referenceProgram = settings.getString(SwooseUtilities::SettingsNames::referenceProgram);
-  Database::Model model(BasicJobSubmissionHelper::determineMethodFamily(method, referenceProgram), method,
-                        BasicJobSubmissionHelper::determineBasisSet(settings));
+  Database::Model model(SwooseUtilities::BasicJobSubmissionHelper::determineMethodFamily(method, referenceProgram),
+                        method, SwooseUtilities::BasicJobSubmissionHelper::determineBasisSet(settings));
   model.program = referenceProgram;
   calc.create(model, job, {structureID});
 
@@ -64,6 +67,27 @@ void submitStructureOptimization(int fragmentIndex, std::shared_ptr<Database::Co
   if (orderName == DatabaseOrderNames::nameOfScineStructureOptimizationOrder) {
     calc.setSetting("optimizer", "bfgs");
     calc.setSetting("bfgs_use_trust_radius", true);
+
+    // Get the calculator settings:
+    auto yamlSettingsPath = settings.getString(SwooseUtilities::SettingsNames::yamlSettingsFilePath);
+    YAML::Node yamlSettings;
+    if (!yamlSettingsPath.empty())
+      yamlSettings = YAML::LoadFile(yamlSettingsPath);
+
+    // set custom settings from the YAML file for the optimizer
+    std::shared_ptr<Core::Calculator> calculator;
+    auto optimizer = std::make_unique<Utils::GeometryOptimizer<Utils::Bfgs>>(*calculator);
+
+    auto optimizerSettings = optimizer->getSettings();
+    auto settingsCollection = optimizerSettings.getDescriptorCollection();
+    Utils::nodeToSettings(optimizerSettings, yamlSettings, true);
+    optimizer->setSettings(optimizerSettings);
+    for (auto it = optimizerSettings.begin(); it != optimizerSettings.end(); it++) {
+      for (auto d : settingsCollection) {
+        if (it->first == d.first && it->second != d.second.getDefaultValue())
+          calc.setSetting(it->first, it->second);
+      }
+    }
   }
 
   if (!settings.getBool(SwooseUtilities::SettingsNames::useGaussianOptionKey)) {
@@ -98,8 +122,8 @@ void submitBondOrdersCalculation(int fragmentIndex, std::shared_ptr<Database::Co
   job.disk = 4.0 + (data.vectorOfStructures.at(fragmentIndex)->size() / 10.0);
   auto method = settings.getString(SwooseUtilities::SettingsNames::referenceMethod);
   auto referenceProgram = settings.getString(SwooseUtilities::SettingsNames::referenceProgram);
-  Database::Model model(BasicJobSubmissionHelper::determineMethodFamily(method, referenceProgram), method,
-                        BasicJobSubmissionHelper::determineBasisSet(settings));
+  Database::Model model(SwooseUtilities::BasicJobSubmissionHelper::determineMethodFamily(method, referenceProgram),
+                        method, SwooseUtilities::BasicJobSubmissionHelper::determineBasisSet(settings));
   model.program = referenceProgram;
   calc.create(model, job, {structureID});
 
@@ -136,8 +160,8 @@ bool submitHessianCalculation(int fragmentIndex, std::shared_ptr<Database::Colle
 
   auto method = settings.getString(SwooseUtilities::SettingsNames::referenceMethod);
   auto referenceProgram = settings.getString(SwooseUtilities::SettingsNames::referenceProgram);
-  Database::Model model(BasicJobSubmissionHelper::determineMethodFamily(method, referenceProgram), method,
-                        BasicJobSubmissionHelper::determineBasisSet(settings));
+  Database::Model model(SwooseUtilities::BasicJobSubmissionHelper::determineMethodFamily(method, referenceProgram),
+                        method, SwooseUtilities::BasicJobSubmissionHelper::determineBasisSet(settings));
   model.program = referenceProgram;
 
   if (!optimizedStructureIDString.empty()) {
@@ -194,8 +218,8 @@ bool submitAtomicChargesCalculation(int fragmentIndex, std::shared_ptr<Database:
   else {
     auto referenceProgram = settings.getString(SwooseUtilities::SettingsNames::referenceProgram);
     model.method = settings.getString(SwooseUtilities::SettingsNames::referenceMethod);
-    model.methodFamily = BasicJobSubmissionHelper::determineMethodFamily(model.method, referenceProgram);
-    model.basisSet = BasicJobSubmissionHelper::determineBasisSet(settings);
+    model.methodFamily = SwooseUtilities::BasicJobSubmissionHelper::determineMethodFamily(model.method, referenceProgram);
+    model.basisSet = SwooseUtilities::BasicJobSubmissionHelper::determineBasisSet(settings);
     model.program = referenceProgram;
   }
 
@@ -230,7 +254,7 @@ void applyScfSafetySettings(Database::Calculation& calculation, const Utils::Set
   std::string referenceProgram = settings.getString(SwooseUtilities::SettingsNames::referenceProgram);
   if (referenceProgram == SwooseUtilities::OptionNames::turbomoleOption) {
     calculation.setSetting("scf_orbitalshift", 0.5);
-    calculation.setSetting("scf_damping", true);
+    calculation.setSetting("scf_damping", "high");
   }
   else if (referenceProgram == SwooseUtilities::OptionNames::orcaOption) {
     calculation.setSetting("scf_damping", true);

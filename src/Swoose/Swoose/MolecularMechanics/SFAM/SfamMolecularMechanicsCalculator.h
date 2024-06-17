@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -47,7 +47,7 @@ class ImproperDihedralType;
  *        which reads in the parameters and connectivity from the previously specified files.
  */
 class SfamMolecularMechanicsCalculator final
-  : public Utils::CloneInterface<SfamMolecularMechanicsCalculator, MolecularMechanicsCalculator> {
+  : public Utils::CloneInterface<SfamMolecularMechanicsCalculator, MolecularMechanicsCalculator, Core::Calculator> {
  public:
   static constexpr const char* model = "SFAM";
   /// @brief Constructor.
@@ -61,6 +61,11 @@ class SfamMolecularMechanicsCalculator final
    * @param structure A new Utils::AtomCollection to save.
    */
   void setStructure(const Utils::AtomCollection& structure) override;
+  /**
+   * @brief Allows to modify the positions of the underlying Utils::AtomCollection.
+   * @param newPositions The new positions to be assigned to the underlying Utils::AtomCollection.
+   */
+  void modifyPositions(Utils::PositionCollection newPositions) override;
   /**
    * @brief The main function running calculations.
    *
@@ -102,6 +107,8 @@ class SfamMolecularMechanicsCalculator final
   std::unique_ptr<RepulsionEvaluator> repulsionEvaluator_;
   std::unique_ptr<ElectrostaticEvaluator> electrostaticEvaluator_;
   std::unique_ptr<HydrogenBondEvaluator> hydrogenBondEvaluator_;
+  IndexedStructuralTopology topology_;
+  AtomTypesHolder atomTypes_;
   bool printContributionsMolecularMechanics_;
   bool onlyCalculateBondedContribution_;
   bool detectBondsWithCovalentRadii_;

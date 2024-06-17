@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -14,16 +14,20 @@
 namespace Scine {
 namespace MolecularMechanics {
 
-bool SfamParameters::sanityCheck() const {
-  auto numDistinctAtomTypes = charges_.size();
-  if (c6Matrix_.rows() != numDistinctAtomTypes)
+bool SfamParameters::sanityCheck(const AtomTypesHolder& atomTypes) const {
+  int numDistinctAtomTypes = evaluateNumDistinctAtomTypes(atomTypes);
+  if (c6Matrix_.rows() != numDistinctAtomTypes) {
     return false;
-  if (c6Matrix_.cols() != numDistinctAtomTypes)
+  }
+  if (c6Matrix_.cols() != numDistinctAtomTypes) {
     return false;
-  if (c6IndicesMap_.size() != numDistinctAtomTypes)
+  }
+  if (int(c6IndicesMap_.size()) != numDistinctAtomTypes) {
     return false;
-  if (nonCovalentParameters_.size() != 5)
+  }
+  if (nonCovalentParameters_.size() != 5) {
     return false;
+  }
   return true;
 }
 
@@ -36,7 +40,8 @@ std::vector<double> SfamParameters::getChargesForEachAtom(const AtomTypesHolder&
       charges.push_back(charge);
     }
     catch (const std::out_of_range& e) {
-      throw std::runtime_error("There is no atomic charge parameter available for atom " + std::to_string(i));
+      throw std::runtime_error("There is no atomic charge parameter available for atom " + std::to_string(i) + " " +
+                               atomTypes.getAtomType(i));
     }
   }
   return charges;
@@ -179,6 +184,16 @@ const std::map<std::string, double>& SfamParameters::getCharges() const {
 
 const std::map<std::string, int>& SfamParameters::getC6IndicesMap() const {
   return c6IndicesMap_;
+}
+
+int SfamParameters::evaluateNumDistinctAtomTypes(const AtomTypesHolder& atomTypes) const {
+  std::vector<std::string> distinctAtomTypes;
+  for (int i = 0; i < atomTypes.size(); ++i) {
+    if (std::find(distinctAtomTypes.begin(), distinctAtomTypes.end(), atomTypes.getAtomType(i)) == distinctAtomTypes.end()) {
+      distinctAtomTypes.push_back(atomTypes.getAtomType(i));
+    }
+  }
+  return distinctAtomTypes.size();
 }
 
 } // namespace MolecularMechanics

@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -44,12 +44,16 @@ class MockQmCalculatorSettings : public Scine::Utils::Settings {
     molecularCharge.setDefaultValue(0);
     _fields.push_back(Utils::SettingsNames::molecularCharge, std::move(molecularCharge));
 
+    Utils::UniversalSettings::StringDescriptor method("The applied method.");
+    method.setDefaultValue("MOCK-QM");
+    _fields.push_back(Utils::SettingsNames::method, std::move(method));
+
     resetToDefaults();
   }
 };
 
 /// @brief Mock class for a QM calculator to use in QM/MM tests.
-class MockQmCalculator : public Utils::CloneInterface<MockQmCalculator, Core::Calculator> {
+class MockQmCalculator : public Utils::CloneInterface<MockQmCalculator, Core::Calculator, Core::Calculator> {
  public:
   static constexpr const char* model = "MOCK-QM";
   /// @brief Default Constructor.
@@ -151,6 +155,13 @@ class MockQmCalculator : public Utils::CloneInterface<MockQmCalculator, Core::Ca
    * @return whether the calculator supports a method family
    */
   bool supportsMethodFamily(const std::string& methodFamily) const override;
+  /**
+   * @brief Whether the calculator has no underlying Python code and can therefore
+   * release the global interpreter lock in Python bindings
+   */
+  bool allowsPythonGILRelease() const override {
+    return true;
+  };
 
  private:
   /*

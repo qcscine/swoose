@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -48,7 +48,8 @@ class QmmmDatabaseHelper {
    */
   QmmmDatabaseHelper(const Utils::Settings& settings, Core::Log& log, const Utils::AtomCollection& structure,
                      const Utils::BondOrderCollection& bondOrders, const std::vector<QmmmModel>& qmmmModelCandidates,
-                     const std::vector<QmmmModel>& qmmmReferenceModels, const QmmmData& qmmmData);
+                     const std::vector<QmmmModel>& qmmmReferenceModels, const QmmmData& qmmmData,
+                     const Utils::Settings& calculatorSettings);
 
   /**
    * @brief Calculates the forces for the QM/MM candidate and reference models.
@@ -85,6 +86,8 @@ class QmmmDatabaseHelper {
   const Utils::BondOrderCollection& bondOrders_;
   // The data calculated for the QM/MM candidate and reference models.
   const QmmmData& qmmmData_;
+  // The settings of the QM/MM calculator
+  const Utils::Settings& calculatorSettings_;
 };
 
 } // namespace Qmmm

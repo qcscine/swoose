@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -31,7 +31,8 @@ void MolecularMechanicsCalculator::setRequiredProperties(const Utils::PropertyLi
 }
 
 Utils::PropertyList MolecularMechanicsCalculator::possibleProperties() const {
-  return Utils::Property::Energy | Utils::Property::Gradients | Utils::Property::Hessian | Utils::Property::AtomicCharges;
+  return Utils::Property::Energy | Utils::Property::Gradients | Utils::Property::Hessian | Utils::Property::AtomicCharges |
+         Utils::Property::SuccessfulCalculation | Utils::Property::BondOrderMatrix | Utils::Property::PartialEnergies;
 }
 
 Utils::PropertyList MolecularMechanicsCalculator::getRequiredProperties() const {

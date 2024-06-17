@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -45,7 +45,7 @@ AtomTypesHolder GaffAtomTypeIdentifier::getAtomTypes() {
 
   // Automated algorithm (still beta version, not working perfectly)
   setArraysForElementTypes();
-  calculateNumberOfNeighbors();
+  SwooseUtilities::TopologyUtils::calculateNumberOfNeighbors(nAtoms_, listsOfNeighbors_, nNeighbors_);
 
   handleHalogens();
   handleOxygenFunctionalGroups();
@@ -95,27 +95,32 @@ void GaffAtomTypeIdentifier::setArraysForElementTypes() {
   }
 }
 
-void GaffAtomTypeIdentifier::verifyNeighborNumber(int atomIndex, int imposedNumberOfNeighbors) {
-  if (nNeighbors_[atomIndex] != imposedNumberOfNeighbors)
-    throw std::runtime_error("MM atom does not have suitable number of neighbors.");
+void GaffAtomTypeIdentifier::verifyNeighborNumber(int atomIndex, int imposedNumberOfNeighbors, bool upper_limit) {
+  bool throwError = (upper_limit && nNeighbors_[atomIndex] > imposedNumberOfNeighbors) ||
+                    (!upper_limit && nNeighbors_[atomIndex] != imposedNumberOfNeighbors);
+  if (throwError) {
+    throw std::runtime_error("GAFF atom type detection failed! MM atom does not have a suitable number of neighbors."
+                             " Please provide the atom types manually! Atom index: " +
+                             std::to_string(atomIndex));
+  }
 }
 
 void GaffAtomTypeIdentifier::handleHalogens() {
   for (auto a : atomsF_) {
     setAtomType(a, "f");
-    verifyNeighborNumber(a, 1);
+    verifyNeighborNumber(a, 1, true);
   }
   for (auto a : atomsCl_) {
     setAtomType(a, "cl");
-    verifyNeighborNumber(a, 1);
+    verifyNeighborNumber(a, 1, true);
   }
   for (auto a : atomsBr_) {
     setAtomType(a, "br");
-    verifyNeighborNumber(a, 1);
+    verifyNeighborNumber(a, 1, true);
   }
   for (auto a : atomsI_) {
     setAtomType(a, "i");
-    verifyNeighborNumber(a, 1);
+    verifyNeighborNumber(a, 1, true);
   }
 }
 
@@ -338,11 +343,6 @@ void GaffAtomTypeIdentifier::handleHydrogens() {
     else
       throw std::runtime_error("The atom type could not be generated for atom with index " + std::to_string(a));
   }
-}
-
-void GaffAtomTypeIdentifier::calculateNumberOfNeighbors() {
-  for (int i = 0; i < nAtoms_; ++i)
-    nNeighbors_[i] = static_cast<int>(listsOfNeighbors_[i].size());
 }
 
 void GaffAtomTypeIdentifier::lookForCycles() {

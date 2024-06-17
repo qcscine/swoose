@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -37,7 +37,7 @@ static constexpr const char* nameOfLoewdinChargesProperty = "loewdin_charges";
 static constexpr const char* nameOfAtomicChargesProperty = "atomic_charges";
 } // namespace
 
-DatabaseHelper::DatabaseHelper(ParametrizationData& data, std::shared_ptr<Utils::Settings> settings, Core::Log& log)
+DatabaseHelper::DatabaseHelper(ParametrizationData& data, const std::shared_ptr<Utils::Settings>& settings, Core::Log& log)
   : data_(data), settings_(settings), database_(std::make_unique<Database::Manager>()), log_(log) {
   numberOfStructures_ = static_cast<int>(data_.vectorOfStructures.size());
   reuseDatabase_ = settings->getBool(SwooseUtilities::SettingsNames::reuseDatabaseKey);
@@ -65,10 +65,17 @@ DatabaseHelper::DatabaseHelper(ParametrizationData& data, std::shared_ptr<Utils:
   failedCalculationsScoreForEachFragment_.resize(numberOfStructures_);
   std::fill(failedCalculationsScoreForEachFragment_.begin(), failedCalculationsScoreForEachFragment_.end(), 1);
 
+  // Initialize the vector holding the IDs of the failed calculations
+  failedCalculationsForEachFragment_.resize(numberOfStructures_);
+
   // Try to connect to database
   try {
     log_.output << "Connecting to database..." << Core::Log::endl;
     database_->connect();
+    if (!reuseDatabase_) {
+      database_->wipe();
+    }
+    database_->init();
   }
   catch (const std::exception& e) {
     throw std::runtime_error("Connecting to the specified database failed!");
@@ -163,7 +170,7 @@ void DatabaseHelper::collectResultsAndSubmitSubsequentCalculations() {
    * The loop will also stop if enough data has been collected already.
    */
   bool calculationsMissing = true;
-  FragmentDataDistributor completenessCheck(data_);
+  FragmentDataDistributor completenessCheck(data_, log_);
   bool enoughDataCollected = false;
   while (calculationsMissing) {
     // Verify connection to database
@@ -198,8 +205,8 @@ void DatabaseHelper::collectResultsAndSubmitSubsequentCalculations() {
 
     // Check whether reference data is already sufficient for the parametrization
     if (earlyTerminationEnabled_ && numberOfStructures_ != 1) {
-      enoughDataCollected =
-          completenessCheck.referenceDataIsSufficient(refineConnectivity_, failedCalculationsScoreForEachFragment_);
+      enoughDataCollected = completenessCheck.referenceDataIsSufficient(
+          refineConnectivity_, failedCalculationsScoreForEachFragment_, failedCalculationsForEachFragment_);
       if (enoughDataCollected)
         log_.output << "Enough data has been collected." << Core::Log::endl;
     }
@@ -345,16 +352,19 @@ int DatabaseHelper::handleFailedCalculations(std::shared_ptr<Database::Collectio
     if (calc.getJob().order == nameOfHessianOrder_) {
       data_.vectorOfHessians[structureIndex] = nullptr;
       failedCalculationsScoreForEachFragment_.at(structureIndex) *= 2;
+      failedCalculationsForEachFragment_.at(structureIndex).push_back(calc.id().string());
     }
     else if (calc.getJob().order == nameOfAtomicChargesOrder_) {
       data_.atomicChargesForEachFragment[structureIndex].clear(); // Should already be empty, but still for consistency
       failedCalculationsScoreForEachFragment_.at(structureIndex) *= 3;
+      failedCalculationsForEachFragment_.at(structureIndex).push_back(calc.id().string());
     }
     else if (calc.getJob().order == nameOfStructureOptimizationOrder_) {
       data_.vectorOfOptimizedStructures[structureIndex] = nullptr;
       if (!mustCalculateAtomicChargesSeparately()) {
         data_.atomicChargesForEachFragment[structureIndex].clear(); // Should already be empty, but still for consistency
         failedCalculationsScoreForEachFragment_.at(structureIndex) *= 3;
+        failedCalculationsForEachFragment_.at(structureIndex).push_back(calc.id().string());
       }
 
       // Submit Hessian calculation

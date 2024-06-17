@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -37,7 +37,7 @@ class AtomTypesHolder;
 class SfamParameters : public MMParameters {
  public:
   /** @brief Checks whether the SFAM parameters are valid. */
-  bool sanityCheck() const;
+  bool sanityCheck(const AtomTypesHolder& atomTypes) const;
   /** @brief Getter for the partial atomic charges for each atom*/
   std::vector<double> getChargesForEachAtom(const AtomTypesHolder& atomTypes) const;
   /**
@@ -76,6 +76,8 @@ class SfamParameters : public MMParameters {
   void addCharge(std::string atomType, double charge);
   void addDihedral(DihedralType dihedralType, DihedralParameters dihedralParameters);
   void addImproperDihedral(ImproperDihedralType improperDihedralType, ImproperDihedralParameters improperDihedralParameters);
+
+  int evaluateNumDistinctAtomTypes(const AtomTypesHolder& atomTypes) const;
 
   // These functions return all parameters of a certain type by reference
   std::map<BondType, BondParameters>& getBonds();

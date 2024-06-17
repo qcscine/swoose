@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -32,12 +32,17 @@ class QmmmCalculatorSettings : public Scine::Utils::Settings {
     SettingsPopulator::addIgnoreQmOption(_fields);
     SettingsPopulator::addChargeRedistributionOption(_fields);
     SettingsPopulator::addReducedQmMmEnergyOption(_fields);
+    SettingsPopulator::addOptimizeLinksOption(_fields);
+    SettingsPopulator::addSilenceOption(_fields);
     resetToDefaults();
   };
 };
 
 inline void QmmmCalculatorSettings::addExternalSettings(const Utils::Settings& externalSettings) {
   for (const auto& d : externalSettings.getDescriptorCollection()) {
+    if (_fields.exists(d.first)) {
+      continue;
+    }
     _fields.push_back(d.first, d.second);
     this->addGenericValue(d.first, d.second.getDefaultValue());
   }

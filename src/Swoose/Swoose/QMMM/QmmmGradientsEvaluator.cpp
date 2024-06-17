@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -29,7 +29,7 @@ QmmmGradientsEvaluator::QmmmGradientsEvaluator(const Utils::GradientCollection& 
 
 Utils::GradientCollection QmmmGradientsEvaluator::calculateQmmmGradients() {
   Utils::GradientCollection combinedGradients = mmGradients_;
-  for (int i = 0; i < listOfQmAtoms_.size(); ++i) {
+  for (int i = 0; i < int(listOfQmAtoms_.size()); ++i) {
     // This works since the link atoms in the QM region are ALWAYS listed at the end of the AtomCollection.
     combinedGradients.row(listOfQmAtoms_.at(i)) += qmGradients_.row(i);
   }
@@ -53,7 +53,7 @@ void QmmmGradientsEvaluator::addBoundaryGradientsContributions(Utils::GradientCo
   auto linkAtomIndex = listOfQmAtoms_.size(); // First link atom is right after the real QM atoms.
   int mmAtomCounter = 0;
 
-  for (int i = 0; i < listOfQmAtoms_.size(); ++i) {
+  for (int i = 0; i < int(listOfQmAtoms_.size()); ++i) {
     int qmAtomIndex = listOfQmAtoms_.at(i);
     auto neighbors = listsOfNeighbors_.at(qmAtomIndex);
     // Iterate over all atoms bonded to the QM atom

@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 #include "SwooseModule.h"
@@ -9,6 +9,7 @@
 #include "MolecularMechanics/GAFF/GaffMolecularMechanicsCalculator.h"
 #include "MolecularMechanics/SFAM/SfamMolecularMechanicsCalculator.h"
 #include "QMMM/QmmmCalculator.h"
+#include "StructurePreparation/StructureProcessor.h"
 #include <Core/DerivedModule.h>
 #include <Core/Exceptions.h>
 
@@ -16,8 +17,10 @@ namespace Scine {
 namespace Swoose {
 
 using InterfaceModelMap =
-    boost::mpl::map<boost::mpl::pair<Core::Calculator, boost::mpl::vector<MolecularMechanics::SfamMolecularMechanicsCalculator, MolecularMechanics::GaffMolecularMechanicsCalculator>>,
-                    boost::mpl::pair<Core::MMParametrizer, boost::mpl::vector<MMParametrization::Parametrizer>>>;
+    boost::mpl::map<boost::mpl::pair<Core::Calculator, boost::mpl::vector<Qmmm::QmmmCalculator, MolecularMechanics::SfamMolecularMechanicsCalculator,
+                                                                          MolecularMechanics::GaffMolecularMechanicsCalculator>>,
+                    boost::mpl::pair<Core::MMParametrizer, boost::mpl::vector<MMParametrization::Parametrizer>>,
+                    boost::mpl::pair<Core::EmbeddingCalculator, boost::mpl::vector<Qmmm::QmmmCalculator>>>;
 
 std::string SwooseModule::name() const noexcept {
   return "Swoose";

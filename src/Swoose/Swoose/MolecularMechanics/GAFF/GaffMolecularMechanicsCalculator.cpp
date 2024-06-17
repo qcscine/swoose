@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -39,7 +39,8 @@ GaffMolecularMechanicsCalculator::GaffMolecularMechanicsCalculator()
   applySettings();
 }
 
-GaffMolecularMechanicsCalculator::GaffMolecularMechanicsCalculator(const GaffMolecularMechanicsCalculator& rhs) {
+GaffMolecularMechanicsCalculator::GaffMolecularMechanicsCalculator(const GaffMolecularMechanicsCalculator& rhs)
+  : CloneInterface(rhs), parameterFilePath_(rhs.parameterFilePath_), hessianMode_(rhs.hessianMode_) {
   this->bondsEvaluator_ = std::make_unique<BondsEvaluator>(structure_.getPositions());
   this->anglesEvaluator_ = std::make_unique<AnglesEvaluator>(structure_.getPositions());
   this->dihedralsEvaluator_ = std::make_unique<DihedralsEvaluator>(structure_.getPositions());
@@ -47,34 +48,36 @@ GaffMolecularMechanicsCalculator::GaffMolecularMechanicsCalculator(const GaffMol
   this->electrostaticEvaluator_ = std::make_unique<ElectrostaticEvaluator>(structure_.getPositions(), atomicCharges_);
   this->lennardJonesEvaluator_ = std::make_unique<LennardJonesEvaluator>(structure_.getPositions());
 
-  this->parameterFilePath_ = rhs.parameterFilePath_;
-  this->hessianMode_ = rhs.hessianMode_;
   this->requiredProperties_ = rhs.requiredProperties_;
   this->setLog(rhs.getLog());
   auto valueCollection = dynamic_cast<const Utils::UniversalSettings::ValueCollection&>(rhs.settings());
   this->settings_ =
       std::make_unique<Utils::Settings>(Utils::Settings(valueCollection, rhs.settings().getDescriptorCollection()));
   applySettings();
-  this->results() = rhs.results();
+  results_ = rhs.results_;
   this->listsOfNeighbors_ = rhs.listsOfNeighbors_; // has to be set before "setStructure"
   this->setParameters(rhs.parameters_);            // has to be set before "setStructure"
-  this->setStructure(rhs.structure_);              // has to be set last
+  structure_ = rhs.structure_;                     // has to be set last
+  applySettings();
+  if (structure_.size() != 0) {
+    initialize();
+  }
 }
 
 void GaffMolecularMechanicsCalculator::applySettings() {
   using namespace SwooseUtilities::SettingsNames;
   settings_->normalizeStringCases(); // convert all option names to lower case letters
   if (settings_->valid()) {
-    applyCutoffDuringInitialization_ = settings().getBool(applyCutoffDuringInitialization);
-    nonCovalentCutoffRadius_ = settings().getDouble(nonCovalentCutoffRadius) * Utils::Constants::bohr_per_angstrom;
-    detectBondsWithCovalentRadii_ = settings().getBool(detectBondsWithCovalentRadii);
-    connectivityFilePath_ = settings().getString(connectivityFilePath);
-    onlyCalculateBondedContribution_ = settings().getBool(onlyCalculateBondedContribution);
-    printContributionsMolecularMechanics_ = settings().getBool(printContributionsMolecularMechanics);
-    atomicChargesFile_ = settings().getString(gaffAtomicChargesFile);
-    atomTypesFile_ = settings().getString(gaffAtomTypesFile);
+    applyCutoffDuringInitialization_ = settings_->getBool(applyCutoffDuringInitialization);
+    nonCovalentCutoffRadius_ = settings_->getDouble(nonCovalentCutoffRadius) * Utils::Constants::bohr_per_angstrom;
+    detectBondsWithCovalentRadii_ = settings_->getBool(detectBondsWithCovalentRadii);
+    connectivityFilePath_ = settings_->getString(connectivityFilePath);
+    onlyCalculateBondedContribution_ = settings_->getBool(onlyCalculateBondedContribution);
+    printContributionsMolecularMechanics_ = settings_->getBool(printContributionsMolecularMechanics);
+    atomicChargesFile_ = settings_->getString(gaffAtomicChargesFile);
+    atomTypesFile_ = settings_->getString(gaffAtomTypesFile);
 
-    std::string parameterFilePathFromSettings = settings().getString(parameterFilePath);
+    std::string parameterFilePathFromSettings = settings_->getString(Utils::SettingsNames::parameterFilePath);
     if (parameterFilePath_ != parameterFilePathFromSettings) {
       parameterFilePath_ = parameterFilePathFromSettings;
       parameterFilePathHasBeenChanged_ = true;
@@ -138,18 +141,18 @@ const Utils::Results& GaffMolecularMechanicsCalculator::calculateImpl(std::strin
   energy += energyElectro;
 
   if (printContributionsMolecularMechanics_ && !hessianMode_) {
-    this->getLog().debug << Core::Log::nl << "Detailed output (unit: kcal/mol):" << Core::Log::endl;
-    this->getLog().debug << "-----------------------------------" << Core::Log::endl;
-    this->getLog().debug << "Bond energy: " << energyBonds * Utils::Constants::kCalPerMol_per_hartree << Core::Log::endl;
-    this->getLog().debug << "Angle energy: " << energyAngles * Utils::Constants::kCalPerMol_per_hartree << Core::Log::endl;
-    this->getLog().debug << "Dihedral energy: " << energyDihedrals * Utils::Constants::kCalPerMol_per_hartree
-                         << Core::Log::endl;
-    this->getLog().debug << "Improper dihedral energy: " << energyImproperDihedrals * Utils::Constants::kCalPerMol_per_hartree
-                         << Core::Log::endl;
-    this->getLog().debug << "Van der Waals (LJ) energy: " << energyLennardJones * Utils::Constants::kCalPerMol_per_hartree
-                         << Core::Log::endl;
-    this->getLog().debug << "Electrostatic energy: " << energyElectro * Utils::Constants::kCalPerMol_per_hartree
-                         << Core::Log::nl << Core::Log::endl;
+    this->getLog().output << Core::Log::nl << "Detailed output (unit: kcal/mol):" << Core::Log::endl;
+    this->getLog().output << "-----------------------------------" << Core::Log::endl;
+    this->getLog().output << "Bond energy: " << energyBonds * Utils::Constants::kCalPerMol_per_hartree << Core::Log::endl;
+    this->getLog().output << "Angle energy: " << energyAngles * Utils::Constants::kCalPerMol_per_hartree << Core::Log::endl;
+    this->getLog().output << "Dihedral energy: " << energyDihedrals * Utils::Constants::kCalPerMol_per_hartree
+                          << Core::Log::endl;
+    this->getLog().output << "Improper dihedral energy: " << energyImproperDihedrals * Utils::Constants::kCalPerMol_per_hartree
+                          << Core::Log::endl;
+    this->getLog().output << "Van der Waals (LJ) energy: " << energyLennardJones * Utils::Constants::kCalPerMol_per_hartree
+                          << Core::Log::endl;
+    this->getLog().output << "Electrostatic energy: " << energyElectro * Utils::Constants::kCalPerMol_per_hartree
+                          << Core::Log::nl << Core::Log::endl;
   }
 
   // Assemble results
@@ -187,6 +190,20 @@ const Utils::Results& GaffMolecularMechanicsCalculator::calculateImpl(std::strin
   }
   if (requiredProperties_.containsSubSet(Utils::Property::AtomicCharges)) {
     results_.set<Utils::Property::AtomicCharges>(electrostaticEvaluator_->getAtomicCharges());
+  }
+  if (requiredProperties_.containsSubSet(Utils::Property::BondOrderMatrix)) {
+    results_.set<Utils::Property::BondOrderMatrix>(
+        SwooseUtilities::TopologyUtils::generateBondOrderMatrixFromListsOfNeighbors(listsOfNeighbors_));
+  }
+  if (requiredProperties_.containsSubSet(Utils::Property::PartialEnergies)) {
+    std::unordered_map<std::string, double> partialEnergies;
+    partialEnergies.insert(std::make_pair("bonds", energyBonds));
+    partialEnergies.insert(std::make_pair("angles", energyAngles));
+    partialEnergies.insert(std::make_pair("dihedral", energyDihedrals));
+    partialEnergies.insert(std::make_pair("improper_dihedral", energyImproperDihedrals));
+    partialEnergies.insert(std::make_pair("lennard_jones", energyLennardJones));
+    partialEnergies.insert(std::make_pair("electrostatic", energyElectro));
+    results_.set<Utils::Property::PartialEnergies>(partialEnergies);
   }
   results_.set<Utils::Property::SuccessfulCalculation>(true);
 
@@ -226,9 +243,8 @@ void GaffMolecularMechanicsCalculator::generatePotentialTerms(const GaffParamete
                                                               const AtomTypesHolder& atomTypes) {
   // Get atomic charges
   if (atomicChargesFile_.empty()) {
-    atomicCharges_.resize(structure_.size());
-    for (auto& charge : atomicCharges_)
-      charge = 0.0;
+    throw std::runtime_error("No atomic charges file provided! No electrostatic contributions will be evaluated. "
+                             "Please provide an atomic charges file");
   }
   else {
     Eigen::MatrixXd chargesMatrix = Utils::csvToMatrix(atomicChargesFile_, ',');
@@ -257,7 +273,7 @@ void GaffMolecularMechanicsCalculator::initialize() {
     if (!detectBondsWithCovalentRadii_) {
       if (!connectivityFilePath_.empty()) {
         listsOfNeighbors_ = SwooseUtilities::ConnectivityFileHandler::readListsOfNeighbors(connectivityFilePath_);
-        if (listsOfNeighbors_.size() != structure_.size())
+        if (int(listsOfNeighbors_.size()) != structure_.size())
           throw std::runtime_error("The number of atoms in the provided connectivity file does not match the one of "
                                    "the molecular structure.");
       }
@@ -281,7 +297,7 @@ void GaffMolecularMechanicsCalculator::initialize() {
 // hence, parameters need to be stored as member.
 void GaffMolecularMechanicsCalculator::setParameters(GaffParameters parameters) {
   parameters_ = std::move(parameters);
-  parametersHaveBeenSetInternally_ = true;
+  parametersHaveBeenSetInternally_ = !parameters_.empty();
 }
 
 } // namespace MolecularMechanics

@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -9,6 +9,7 @@
 #define MMPARAMETRIZATION_DATABASEHELPER_H
 
 #include <memory>
+#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -37,7 +38,7 @@ class DatabaseHelper {
   /**
    * @brief Constructor.
    */
-  DatabaseHelper(ParametrizationData& data, std::shared_ptr<Utils::Settings> settings, Core::Log& log);
+  DatabaseHelper(ParametrizationData& data, const std::shared_ptr<Utils::Settings>& settings, Core::Log& log);
   /**
    * @brief Destructor.
    */
@@ -148,6 +149,8 @@ class DatabaseHelper {
    * if a structure optimization fails, then the Hessian also fails immediately.
    */
   std::vector<int> failedCalculationsScoreForEachFragment_;
+  // Tracks the database IDs of the failed calculations for each fragment.
+  std::vector<std::vector<std::string>> failedCalculationsForEachFragment_;
   // Whether an existing database is exploited
   bool reuseDatabase_;
   // In the case of reusing an existing database, this keeps track of existing Hessian calculations.

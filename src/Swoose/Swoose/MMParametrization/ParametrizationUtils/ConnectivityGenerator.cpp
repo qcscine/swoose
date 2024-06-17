@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -34,7 +34,7 @@ void ConnectivityGenerator::generateInitialListsOfNeighbors() {
     data_.listsOfNeighbors = SwooseUtilities::ConnectivityFileHandler::readListsOfNeighbors(existingConnFile);
 
     // Check if connectivity file was valid
-    if (data_.listsOfNeighbors.size() != data_.numberOfAtoms)
+    if (int(data_.listsOfNeighbors.size()) != data_.numberOfAtoms)
       throw std::runtime_error(
           "The number of atoms in the provided connectivity file does not match the one of the molecular structure.");
 
@@ -53,7 +53,7 @@ void ConnectivityGenerator::refineListsOfNeighbors() {
   std::vector<std::list<int>> initialListsOfNeighbors = data_.listsOfNeighbors;
 
   // Initialize for later use
-  FragmentDataDistributor fragmentDataDistributor(data_);
+  FragmentDataDistributor fragmentDataDistributor(data_, log_);
   // Loop over all atoms
   std::vector<std::vector<int>> candidates;
   candidates.reserve(data_.numberOfAtoms);
@@ -92,7 +92,7 @@ void ConnectivityGenerator::refineListsOfNeighbors() {
                             std::find(data_.atomIndexMapping[candidate].begin(), data_.atomIndexMapping[candidate].end(), j));
 
           // Make sure both atoms are actually in the given fragment
-          auto numberOfAtomsInFragments = data_.atomIndexMapping[candidate].size();
+          int numberOfAtomsInFragments = data_.atomIndexMapping[candidate].size();
           if ((indexOfI >= numberOfAtomsInFragments) || (indexOfJ >= numberOfAtomsInFragments))
             continue;
 

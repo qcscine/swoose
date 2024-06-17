@@ -1,13 +1,14 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
 #ifndef SWOOSE_QMMM_QMREGIONCANDIDATEGENERATOR_H
 #define SWOOSE_QMMM_QMREGIONCANDIDATEGENERATOR_H
 
+#include <list>
 #include <vector>
 
 namespace Scine {
@@ -52,12 +53,13 @@ void generateQmRegionCandidates(std::vector<QmmmModel>& qmmmModelCandidates, std
  * @param generator An already prepared instance of a subsystem generator class.
  * @param fragmentAnalyzer An instance of the fragment analyzer that was passed to the generator.
  * @param initialRadius The initial radius for the the QM region generation.
- * @param centerAtom The index of the center atom around which the QM region will be constructed.
+ * @param centerAtoms A list of the center atom(s) around which the QM region(s) will be constructed.
+ * @return The generated qmmm model.
  */
-void generateSingleQmRegionNonRandomly(std::vector<QmmmModel>& qmmmModelCandidates,
-                                       SwooseUtilities::SubsystemGenerator& generator,
-                                       const SwooseUtilities::FragmentAnalyzer& fragmentAnalyzer,
-                                       const double& initialRadius, int centerAtom);
+QmmmModel generateSingleQmRegionNonRandomly(SwooseUtilities::SubsystemGenerator& generator,
+                                            SwooseUtilities::FragmentAnalyzer& fragmentAnalyzer, const double& initialRadius,
+                                            std::vector<int> centerAtoms, const Utils::AtomCollection fullStructure,
+                                            const std::vector<std::list<int>> listsOfNeighbors);
 
 } // namespace QmRegionCandidateGenerator
 } // namespace Qmmm

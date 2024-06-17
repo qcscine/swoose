@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -283,7 +283,7 @@ TEST_F(DatabaseParametrizationTests, ParametrizationFromDatabaseWorks) {
   parametrizer.setLog(silentLogger);
   parametrizer.settings() = *settings;
   parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::reuseDatabaseKey, true);
-  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, parFile);
+  parametrizer.settings().modifyString(Utils::SettingsNames::parameterFilePath, parFile);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, connFile);
 
   parametrizer.parametrize(data.fullStructure);
@@ -306,7 +306,7 @@ TEST_F(DatabaseParametrizationTests, QmRegionSelectionInDatabaseModeWorks) {
 
   Qmmm::QmRegionSelector qmRegionSelector;
   qmRegionSelector.setLog(silentLogger);
-  qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCenterAtom, 302);
+  qmRegionSelector.settings().modifyIntList(SwooseUtilities::SettingsNames::qmRegionCenterAtoms, {302});
   qmRegionSelector.settings().modifyDouble(SwooseUtilities::SettingsNames::initialRadiusForQmRegionSelection, 2.0);
   qmRegionSelector.settings().modifyDouble(SwooseUtilities::SettingsNames::cuttingProbability, 0.99);
   qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCandidateMinSize, 20);
@@ -328,7 +328,7 @@ TEST_F(DatabaseParametrizationTests, QmRegionSelectionInDatabaseModeWorks) {
   // Should raise an error when SFAM parameter file is not available
   ASSERT_THROW(qmRegionSelector.generateQmRegion(structure), std::runtime_error);
 
-  qmRegionSelector.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, insulin_parameter_file);
+  qmRegionSelector.settings().modifyString(Utils::SettingsNames::parameterFilePath, insulin_parameter_file);
 
   auto properties = db.getCollection("properties");
   auto calculations = db.getCollection("calculations");
@@ -366,7 +366,7 @@ TEST_F(DatabaseParametrizationTests, QmRegionSelectionInDatabaseModeWorks) {
       calc.setModel(model);
 
       // Get all the qm atoms for this structure
-      std::vector<int> listOfQmAtoms = calc.getSetting(SwooseUtilities::SettingsNames::qmAtomsList);
+      std::vector<int> listOfQmAtoms = calc.getSetting(Utils::SettingsNames::qmAtomsList);
 
       auto results = calc.getResults();
       if (calc.getStatus() == Database::Calculation::STATUS::HOLD) {

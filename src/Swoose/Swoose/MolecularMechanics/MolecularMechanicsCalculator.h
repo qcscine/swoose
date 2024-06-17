@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -31,6 +31,7 @@ class MolecularMechanicsCalculator
   MolecularMechanicsCalculator() = default;
   /// @brief Default Destructor.
   virtual ~MolecularMechanicsCalculator() override = default;
+  MolecularMechanicsCalculator(const MolecularMechanicsCalculator& rhs) : CloneInterface(rhs){};
   /**
    * @brief Gets the molecular structure as a const Utils::AtomCollection&.
    * @return a const Utils::AtomCollection&.
@@ -103,6 +104,13 @@ class MolecularMechanicsCalculator
    * @brief Const accessor for the lists of neighbors (the connectivity of the molecular system).
    */
   const std::vector<std::list<int>>& listsOfNeighbors() const;
+  /**
+   * @brief Whether the calculator has no underlying Python code and can therefore
+   * release the global interpreter lock in Python bindings
+   */
+  bool allowsPythonGILRelease() const override {
+    return true;
+  };
 
  protected:
   std::unique_ptr<Utils::Settings> settings_;

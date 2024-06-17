@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -24,7 +24,7 @@ class QmRegionSelectorSettings : public Utils::Settings {
    */
   QmRegionSelectorSettings() : Settings("QmRegionSelectorSettings") {
     using namespace SwooseUtilities;
-    SettingsPopulator::addQmRegionCenterAtom(_fields);
+    SettingsPopulator::addQmRegionCenterAtoms(_fields);
     SettingsPopulator::addAtomicInformationFile(_fields);
     SettingsPopulator::addParameterAndConnectivityFile(_fields, false);
     SettingsPopulator::addInitialRadius(_fields);
@@ -35,6 +35,9 @@ class QmRegionSelectorSettings : public Utils::Settings {
     SettingsPopulator::addTolerancesForQmRegionSelection(_fields);
     SettingsPopulator::addReferenceDataGenerationOptions(_fields, false);
     SettingsPopulator::addQmRegionSelectionRandomSeed(_fields);
+    SettingsPopulator::addReuseDatabaseOption(_fields);
+    SettingsPopulator::addMethodFamily(_fields);
+    SettingsPopulator::addProgram(_fields);
     SettingsPopulator::addYamlSettingsForDirectMode(_fields); // used only for internal use by app and python bindings
 
     // Database related settings:

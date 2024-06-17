@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -24,6 +24,12 @@ static constexpr const char* orcaOption = "orca";
 static constexpr const char* turbomoleOption = "turbomole";
 static constexpr const char* sparrowOption = "sparrow";
 static constexpr const char* xtbOption = "xtb";
+
+// mostly used for structure preparation
+static constexpr const char* analyzeMode = "prepare-analyze";
+static constexpr const char* protonationMode = "prepare-protonate";
+static constexpr const char* finalizeMode = "prepare-finalize";
+static constexpr const char* automateMode = "prepare-automate";
 
 } // namespace OptionNames
 } // namespace SwooseUtilities

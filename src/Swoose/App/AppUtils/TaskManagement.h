@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -12,6 +12,7 @@
 #include <Core/Log.h>
 #include <Core/ModuleManager.h>
 #include <Swoose/QMMM/QmmmCalculator.h>
+#include <Swoose/StructurePreparation/StructureProcessor.h>
 #include <Swoose/Utilities/CalculatorOptions.h>
 #include <Swoose/Utilities/SettingsNames.h>
 #include <Utils/GeometryOptimization/QmmmGeometryOptimizer.h>
@@ -22,32 +23,6 @@
 namespace Scine {
 namespace Swoose {
 namespace TaskManagement {
-
-/**
- * @brief Helper function that constructs the correct MM and QM calculators from the YAML settings and passes them
- *        to the provided QM/MM calculator, which is passed by reference.
- * @param qmmmCalculator The QM/MM calculator.
- * @param manager The module manager.
- * @param yamlNode The settings as a YAML node.
- */
-void fillQmmmCalculatorWithUnderlyingCalculators(Qmmm::QmmmCalculator& qmmmCalculator, Core::ModuleManager& manager,
-                                                 YAML::Node& yamlNode) {
-  std::shared_ptr<Core::Calculator> qmCalculator, mmCalculator;
-  auto qmCalculatorOption = SwooseUtilities::getChosenQmCalculatorOption(yamlNode);
-  auto mmModel = SwooseUtilities::getChosenMMCalculatorOption(yamlNode);
-  try {
-    qmCalculator = manager.get<Core::Calculator>(qmCalculatorOption.first, qmCalculatorOption.second);
-    mmCalculator = manager.get<Core::Calculator>(mmModel);
-  }
-  catch (const std::runtime_error& e) {
-    throw std::runtime_error(
-        "The QM or MM calculator could not be loaded via the module system.\nCheck: (i) whether the requested "
-        "calculators are available (see manual), (ii) that you have installed all "
-        "relevant modules, and (iii) that all necessary environment variables are set (e.g., ORCA_BINARY_PATH or "
-        "TURBODIR).");
-  }
-  qmmmCalculator.setUnderlyingCalculators(qmCalculator, mmCalculator);
-}
 
 /**
  * @brief Helper function to load MM calculator via module system with correct error message.
@@ -94,11 +69,11 @@ void manageTasks(Core::ModuleManager& manager, std::string mode, bool quantum, b
     Tasks::runMMCalculationTask(*calculator, structureFile, properties, log);
   }
   else if (mode == "calculate") {
-    Qmmm::QmmmCalculator calculator;
-    calculator.setLog(log);
-    fillQmmmCalculatorWithUnderlyingCalculators(calculator, manager, yamlNode);
+    std::shared_ptr<Qmmm::QmmmCalculator> calculator;
+    SwooseUtilities::fillQmmmCalculatorWithUnderlyingCalculators(calculator, yamlNode);
+    calculator->setLog(log);
     Utils::PropertyList properties = Utils::Property::Energy | Utils::Property::Gradients;
-    Tasks::runQmmmCalculationTask(calculator, structureFile, properties, log, yamlNode);
+    Tasks::runQmmmCalculationTask(*calculator, structureFile, properties, log, yamlNode);
   }
   else if (mode == "parametrize") {
     std::shared_ptr<Core::MMParametrizer> parametrizer;
@@ -124,11 +99,11 @@ void manageTasks(Core::ModuleManager& manager, std::string mode, bool quantum, b
     Tasks::runMDSimulationTask(molecularDynamics, structureFile, log);
   }
   else if (mode == "md") {
-    Qmmm::QmmmCalculator calculator;
-    calculator.setLog(warningLog);
-    fillQmmmCalculatorWithUnderlyingCalculators(calculator, manager, yamlNode);
-    Utils::nodeToSettings(calculator.settings(), yamlNode, true);
-    Utils::MolecularDynamics molecularDynamics(calculator);
+    std::shared_ptr<Qmmm::QmmmCalculator> calculator;
+    calculator->setLog(warningLog);
+    SwooseUtilities::fillQmmmCalculatorWithUnderlyingCalculators(calculator, yamlNode);
+    Utils::nodeToSettings(calculator->settings(), yamlNode, true);
+    Utils::MolecularDynamics molecularDynamics(*calculator);
     Utils::nodeToSettings(molecularDynamics.settings(), yamlNode, true);
     Tasks::runMDSimulationTask(molecularDynamics, structureFile, log);
   }
@@ -144,21 +119,26 @@ void manageTasks(Core::ModuleManager& manager, std::string mode, bool quantum, b
     Tasks::runMMOptimizationTask(*calculator, *optimizer, structureFile, log, yamlNode);
   }
   else if (mode == "optimize") {
-    Qmmm::QmmmCalculator calculator;
-    calculator.setLog(warningLog);
-    fillQmmmCalculatorWithUnderlyingCalculators(calculator, manager, yamlNode);
-    auto optimizer = std::make_unique<Utils::QmmmGeometryOptimizer<Utils::Bfgs>>(calculator);
+    std::shared_ptr<Qmmm::QmmmCalculator> calculator;
+    calculator->setLog(warningLog);
+    SwooseUtilities::fillQmmmCalculatorWithUnderlyingCalculators(calculator, yamlNode);
+    auto optimizer = std::make_unique<Utils::QmmmGeometryOptimizer<Utils::Bfgs>>(*calculator);
     auto optSettings = optimizer->getSettings();
     Utils::nodeToSettings(optSettings, yamlNode, true);
     optimizer->setSettings(optSettings);
-    Tasks::runQmmmOptimizationTask<Utils::Bfgs>(calculator, *optimizer, structureFile, log, yamlNode);
+    Tasks::runQmmmOptimizationTask<Utils::Bfgs>(*calculator, *optimizer, structureFile, log, yamlNode);
   }
   else if (mode == "select_qm") {
     Tasks::runQmRegionSelectionTask(structureFile, log, yamlNode, yamlSettingsPath);
   }
+  else if (mode == "prepare-analyze" || mode == "prepare-protonate" || mode == "prepare-finalize" || mode == "prepare-automate") {
+    auto processor = std::make_unique<Scine::StructurePreparation::StructureProcessor>();
+    Utils::nodeToSettings(processor->settings(), yamlNode, false); // TODO: allow superfluous?
+    Tasks::runPDBPreparationTask(*processor, structureFile, mode, log);
+  }
   else {
     throw std::runtime_error(
-        "Your specified mode is not valid. Options are: parametrize, calculate, md, optimize, select_qm.");
+        "Your specified mode is not valid. Options are: parametrize, calculate, md, optimize, and select_qm.");
   }
 }
 

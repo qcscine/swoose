@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -45,7 +45,7 @@ CommandLineOptions::CommandLineOptions(int argc, char* argv[]) : pImpl_(std::mak
   // clang-format off
   pImpl_->desc_.add_options()
     (helpOption.c_str(), "Prints this help message.")
-    (modeOption.c_str(), value<std::string>(), "Sets the mode of the Swoose app. Options: parametrize, calculate, md, optimize, select_qm.")
+    (modeOption.c_str(), value<std::string>(), "Sets the mode of the Swoose app. Options: prepare-analyze, prepare-protonate, prepare-finalize, prepare-automate, parametrize, calculate, md, optimize, select_qm.")
     (settingsFileOption.c_str(), value<std::string>(), "Sets the path to the settings YAML file.")
     (structureOption.c_str(), value<std::string>(), "Sets the path to the molecular structure's XYZ file.")
     (quantumOption.c_str(), "Activates the QM/MM hybrid model.")

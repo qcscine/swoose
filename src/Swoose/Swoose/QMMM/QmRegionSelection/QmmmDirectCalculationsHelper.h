@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -27,6 +27,7 @@ class BondOrderCollection;
 namespace Qmmm {
 struct QmmmModel;
 struct QmmmData;
+class QmmmCalculator;
 using ForcesCollection = Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
 /**
@@ -38,8 +39,8 @@ class QmmmDirectCalculationsHelper {
   /**
    * @brief Constructor.
    */
-  QmmmDirectCalculationsHelper(const Utils::Settings& settings, Core::Log& log, const Utils::AtomCollection& structure,
-                               const std::vector<QmmmModel>& qmmmModelCandidates,
+  QmmmDirectCalculationsHelper(std::shared_ptr<QmmmCalculator> qmmmCalculator, const Utils::Settings& settings, Core::Log& log,
+                               const Utils::AtomCollection& structure, const std::vector<QmmmModel>& qmmmModelCandidates,
                                const std::vector<QmmmModel>& qmmmReferenceModels, const QmmmData& qmmmData);
 
   /**
@@ -61,6 +62,7 @@ class QmmmDirectCalculationsHelper {
   const std::vector<QmmmModel>& qmmmReferenceModels_;
   // The data calculated for the QM/MM candidate and reference models.
   const QmmmData& qmmmData_;
+  std::shared_ptr<Qmmm::QmmmCalculator> qmmmCalculator_;
 };
 
 } // namespace Qmmm

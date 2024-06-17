@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -31,7 +31,7 @@ class OptimizationSetup {
   /**
    * @brief Constructor.
    */
-  OptimizationSetup(ParametrizationData& data, std::shared_ptr<Utils::Settings> settings);
+  OptimizationSetup(ParametrizationData& data, std::shared_ptr<Utils::Settings> settings, Core::Log& log);
   /**
    * @brief This function generates the initial MM parameters.
    */
@@ -110,6 +110,8 @@ class OptimizationSetup {
   ParametrizationData& data_;
   // The settings
   std::shared_ptr<Utils::Settings> settings_;
+  // The logger.
+  Core::Log& log_;
   // Pointer to an instance of the fragment data distributor class needed to find fragment candidates to get data from.
   std::unique_ptr<FragmentDataDistributor> fragmentDataDistributor_;
   // Initial force constant values

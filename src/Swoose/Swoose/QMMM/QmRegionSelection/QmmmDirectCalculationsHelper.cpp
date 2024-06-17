@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -19,11 +19,13 @@
 #include <Utils/UniversalSettings/SettingsNames.h>
 #include <yaml-cpp/yaml.h>
 #include <thread>
+#include <utility>
 
 namespace Scine {
 namespace Qmmm {
 
-QmmmDirectCalculationsHelper::QmmmDirectCalculationsHelper(const Utils::Settings& settings, Core::Log& log,
+QmmmDirectCalculationsHelper::QmmmDirectCalculationsHelper(std::shared_ptr<QmmmCalculator> qmmmCalculator,
+                                                           const Utils::Settings& settings, Core::Log& log,
                                                            const Utils::AtomCollection& structure,
                                                            const std::vector<QmmmModel>& qmmmModelCandidates,
                                                            const std::vector<QmmmModel>& qmmmReferenceModels,
@@ -33,47 +35,29 @@ QmmmDirectCalculationsHelper::QmmmDirectCalculationsHelper(const Utils::Settings
     structure_(structure),
     qmmmModelCandidates_(qmmmModelCandidates),
     qmmmReferenceModels_(qmmmReferenceModels),
-    qmmmData_(qmmmData) {
+    qmmmData_(qmmmData),
+    qmmmCalculator_(std::move(qmmmCalculator)) {
 }
 
 std::vector<ForcesCollection> QmmmDirectCalculationsHelper::calculateForces() {
   // Initialize some variables
-  auto numCandidateModels = qmmmModelCandidates_.size();
-  auto numModels = numCandidateModels + qmmmReferenceModels_.size();
+  int numCandidateModels = qmmmModelCandidates_.size();
+  int numModels = numCandidateModels + qmmmReferenceModels_.size();
   std::vector<ForcesCollection> forces(numModels);
-
-  // Get yaml settings for QM/MM
-  auto yamlSettingsPath = settings_.getString(SwooseUtilities::SettingsNames::yamlSettingsFilePath);
-  YAML::Node yamlNodeQmmmSettings;
-  if (!yamlSettingsPath.empty())
-    yamlNodeQmmmSettings = YAML::LoadFile(yamlSettingsPath);
-
-  // Get the models
-  const auto qmCalculatorModelAndModule = SwooseUtilities::getChosenQmCalculatorOption(yamlNodeQmmmSettings);
-  const auto mmModel = SwooseUtilities::getChosenMMCalculatorOption(yamlNodeQmmmSettings);
-
-  // Get a module manager
-  auto& manager = Core::ModuleManager::getInstance();
-  // See whether Swoose has to be loaded as a module and whether the MM calculator is already available.
-  try {
-    auto mmCalculatorFirstTest = manager.get<Core::Calculator>(mmModel);
-  }
-  catch (const std::exception& e) {
-    if (!manager.moduleLoaded("Swoose"))
-      manager.load("swoose");
-    try {
-      auto mmCalculatorSecondTest = manager.get<Core::Calculator>(mmModel);
-    }
-    catch (const std::exception& e) {
-      throw std::runtime_error("MM calculator could not be loaded via the module system.");
-    }
-  }
 
   // Get max allowed symmetry score
   const double maxAllowedSymmetryScore = calculateMaxAllowedSymmetryScore(qmmmData_, settings_);
 
+  // setup cloned calculators outside of OMP region, because they might not be thread safe
+  std::vector<std::shared_ptr<QmmmCalculator>> calculators;
+  auto nThreads = omp_get_max_threads();
+  calculators.reserve(nThreads);
+  for (int i = 0; i < nThreads; ++i) {
+    calculators.push_back(qmmmCalculator_->clone());
+  }
+
 #pragma omp parallel for
-  for (int i = 0; i < numModels; ++i) {
+  for (long unsigned int i = 0; i < numModels; ++i) {
     int molecularCharge, spinMultiplicity;
     if (i < numCandidateModels) {
       molecularCharge = qmmmModelCandidates_.at(i).molecularCharge;
@@ -91,56 +75,35 @@ std::vector<ForcesCollection> QmmmDirectCalculationsHelper::calculateForces() {
       continue;
     }
 
+    auto& calculator = calculators.at(omp_get_thread_num());
+
     try {
-      // Get MM and QM calculators
-      std::shared_ptr<Core::Calculator> qmCalculator, mmCalculator;
-      try {
-        qmCalculator = manager.get<Core::Calculator>(qmCalculatorModelAndModule.first, qmCalculatorModelAndModule.second);
-        mmCalculator = manager.get<Core::Calculator>(mmModel);
-      }
-      catch (const std::runtime_error& e) {
-        throw std::runtime_error(
-            "The QM or MM calculator could not be loaded via the module system.\nCheck: (i) whether the requested "
-            "calculators are available (see manual), (ii) that you have installed all "
-            "relevant modules, and (iii) that all necessary environment variables are set (e.g., ORCA_BINARY_PATH or "
-            "TURBODIR).");
-      }
-
-      // Create and configure QM/MM calculator
-      Qmmm::QmmmCalculator calculator;
-
       // Set logger
-      Core::Log warningLog = Core::Log::silent();
-      warningLog.warning.add("cerr", Core::Log::cerrSink());
-      warningLog.error.add("cerr", Core::Log::cerrSink());
-      calculator.setLog(warningLog);
+      Utils::CalculationRoutines::setLog(*calculator, true, true, false);
 
-      calculator.setUnderlyingCalculators(qmCalculator, mmCalculator);
-      Utils::PropertyList properties = Utils::Property::Energy | Utils::Property::Gradients;
+      const Utils::PropertyList properties = Utils::Property::Energy | Utils::Property::Gradients;
 
       // Forward QM/MM settings to calculator
-      Utils::nodeToSettings(calculator.settings(), yamlNodeQmmmSettings, true);
-      calculator.settings().modifyInt(Utils::SettingsNames::spinMultiplicity, spinMultiplicity);
-      calculator.settings().modifyInt(Utils::SettingsNames::molecularCharge, molecularCharge);
-      calculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath,
-                                         settings_.getString(SwooseUtilities::SettingsNames::connectivityFilePath));
-      calculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath,
-                                         settings_.getString(SwooseUtilities::SettingsNames::parameterFilePath));
+      calculator->settings().modifyInt(Utils::SettingsNames::spinMultiplicity, spinMultiplicity);
+      calculator->settings().modifyInt(Utils::SettingsNames::molecularCharge, molecularCharge);
+      calculator->settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath,
+                                          settings_.getString(SwooseUtilities::SettingsNames::connectivityFilePath));
+      calculator->settings().modifyString(Utils::SettingsNames::parameterFilePath,
+                                          settings_.getString(Utils::SettingsNames::parameterFilePath));
 
       // Add qm_atoms setting
       std::vector<int> qmAtomIndices;
-      auto& qmAtomIndicesRef = i < numCandidateModels ? qmmmModelCandidates_.at(i).qmAtomIndices
-                                                      : qmmmReferenceModels_.at(i - numCandidateModels).qmAtomIndices;
-      for (int idx : qmAtomIndicesRef) {
+      const auto& qmAtomIndicesRef = i < numCandidateModels ? qmmmModelCandidates_.at(i).qmAtomIndices
+                                                            : qmmmReferenceModels_.at(i - numCandidateModels).qmAtomIndices;
+      for (const int idx : qmAtomIndicesRef) {
         if (idx >= 0) // Indices of -1 indicate a hydrogen link atom internally and are therefore ignored.
           qmAtomIndices.push_back(idx);
       }
-      calculator.settings().modifyIntList(SwooseUtilities::SettingsNames::qmAtomsList, qmAtomIndices);
-
-      calculator.setStructure(structure_);
-      calculator.setRequiredProperties(properties);
-      const Utils::Results& results = calculator.calculate("QM/MM calculation");
-      Utils::GradientCollection gradients = results.get<Utils::Property::Gradients>();
+      calculator->settings().modifyIntList(Utils::SettingsNames::qmAtomsList, qmAtomIndices);
+      calculator->setStructure(structure_);
+      calculator->setRequiredProperties(properties);
+      const Utils::Results& results = calculator->calculate("QM/MM calculation");
+      const Utils::GradientCollection gradients = results.get<Utils::Property::Gradients>();
       forces.at(i) = -gradients;
     }
     catch (const std::exception& e) {

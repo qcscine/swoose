@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -29,24 +29,31 @@ namespace Qmmm {
 QmmmDatabaseHelper::QmmmDatabaseHelper(const Utils::Settings& settings, Core::Log& log,
                                        const Utils::AtomCollection& structure, const Utils::BondOrderCollection& bondOrders,
                                        const std::vector<QmmmModel>& qmmmModelCandidates,
-                                       const std::vector<QmmmModel>& qmmmReferenceModels, const QmmmData& qmmmData)
-  : database_(std::make_unique<Database::Manager>()),
+                                       const std::vector<QmmmModel>& qmmmReferenceModels, const QmmmData& qmmmData,
+                                       const Utils::Settings& calculatorSettings)
+  : log_(log),
     settings_(settings),
-    log_(log),
-    structure_(structure),
+    database_(std::make_unique<Database::Manager>()),
     qmmmModelCandidates_(qmmmModelCandidates),
     qmmmReferenceModels_(qmmmReferenceModels),
+    structure_(structure),
     bondOrders_(bondOrders),
-    qmmmData_(qmmmData) {
+    qmmmData_(qmmmData),
+    calculatorSettings_(calculatorSettings) {
   sleepTime_ = settings.getInt(SwooseUtilities::SettingsNames::databaseSleepTime);
   auto databaseName = settings_.getString(SwooseUtilities::SettingsNames::databaseName);
   auto databasePort = settings_.getInt(SwooseUtilities::SettingsNames::databasePort);
   auto databaseHost = settings_.getString(SwooseUtilities::SettingsNames::databaseHost);
+  auto reuseDatabase = settings_.getBool(SwooseUtilities::SettingsNames::reuseDatabaseKey);
   Database::Credentials credentials(databaseHost, databasePort, databaseName);
   database_->setCredentials(credentials);
   try {
     log_.output << "Connecting to database..." << Core::Log::nl << Core::Log::endl;
     database_->connect();
+    if (!reuseDatabase) {
+      database_->wipe();
+    }
+    database_->init();
   }
   catch (const std::exception& e) {
     throw std::runtime_error("Connecting to the specified database failed!");
@@ -72,12 +79,12 @@ std::vector<ForcesCollection> QmmmDatabaseHelper::calculateForces() {
   auto bondOrdersID = bondOrdersProperty.create(model, "bond_orders", bondOrders_.getMatrix());
 
   // Add structure to database
-  auto numCandidateModels = qmmmModelCandidates_.size();
-  auto numModels = numCandidateModels + qmmmReferenceModels_.size();
+  int numCandidateModels = qmmmModelCandidates_.size();
+  long unsigned int numModels = numCandidateModels + qmmmReferenceModels_.size();
   std::vector<Database::ID> structureIDs(numModels);
-  for (int i = 0; i < numModels; ++i) {
+  for (long unsigned int i = 0; i < numModels; ++i) {
     int molecularCharge, spinMultiplicity;
-    if (i < numCandidateModels) {
+    if (int(i) < numCandidateModels) {
       molecularCharge = qmmmModelCandidates_.at(i).molecularCharge;
       spinMultiplicity = qmmmModelCandidates_.at(i).spinMultiplicity;
     }
@@ -99,10 +106,14 @@ std::vector<ForcesCollection> QmmmDatabaseHelper::calculateForces() {
   int modelCounter = 0;
   int holdCounter = 0;
   for (const auto& candidateModel : qmmmModelCandidates_) {
-    bool submitted = submitCalculation(candidateModel, structureIDs[modelCounter], modelCounter, collCalc,
-                                       qmmmData_.symmetryScores.at(modelCounter), maxAllowedSymmetryScore);
-    if (!submitted)
-      holdCounter++;
+    if (settings_.getIntList(SwooseUtilities::SettingsNames::qmRegionCenterAtoms).size() == 1) {
+      bool submitted = submitCalculation(candidateModel, structureIDs[modelCounter], modelCounter, collCalc,
+                                         qmmmData_.symmetryScores.at(modelCounter), maxAllowedSymmetryScore);
+      if (!submitted)
+        holdCounter++;
+    }
+    else
+      submitCalculation(candidateModel, structureIDs[modelCounter], modelCounter, collCalc);
     modelCounter++;
   }
   for (const auto& refModel : qmmmReferenceModels_) {
@@ -136,7 +147,7 @@ std::vector<ForcesCollection> QmmmDatabaseHelper::calculateForces() {
 }
 
 std::string QmmmDatabaseHelper::getParametersAsString() const {
-  auto parameterFilePath = settings_.getString(SwooseUtilities::SettingsNames::parameterFilePath);
+  auto parameterFilePath = settings_.getString(Utils::SettingsNames::parameterFilePath);
   std::ifstream file(parameterFilePath);
   if (!file.is_open())
     throw std::runtime_error("The parameter file " + parameterFilePath + " cannot be opened.");
@@ -158,20 +169,42 @@ bool QmmmDatabaseHelper::submitCalculation(const QmmmModel& qmmmModel, const Dat
   calc.link(calculations);
 
   Database::Calculation::Job job("swoose_qmmm_forces");
-  if (yamlNodeQmmmSettings["external_program_nprocs"])
-    job.cores = yamlNodeQmmmSettings["external_program_nprocs"].as<int>();
+  if (yamlNodeQmmmSettings[Utils::SettingsNames::externalProgramNProcs])
+    job.cores = yamlNodeQmmmSettings[Utils::SettingsNames::externalProgramNProcs].as<int>();
+  else if (calculatorSettings_.valueExists(Utils::SettingsNames::externalProgramNProcs))
+    job.cores = calculatorSettings_.getInt(Utils::SettingsNames::externalProgramNProcs);
   else
     job.cores = 1;
-  if (yamlNodeQmmmSettings["external_program_memory"])
-    job.memory = yamlNodeQmmmSettings["external_program_memory"].as<int>();
+  if (yamlNodeQmmmSettings[Utils::SettingsNames::externalProgramMemory])
+    job.memory = yamlNodeQmmmSettings[Utils::SettingsNames::externalProgramMemory].as<int>();
+  else if (calculatorSettings_.valueExists(Utils::SettingsNames::externalProgramMemory))
+    job.memory = calculatorSettings_.getInt(Utils::SettingsNames::externalProgramMemory);
   else
     job.memory = 2.0 + (job.cores / 2) + (qmmmModel.structure.size() / 50.0);
-  job.disk = 2.0 + (qmmmModel.structure.size() / 50.0);
+  job.disk = 1.0 + (qmmmModel.structure.size() / 1024.0);
 
-  Database::Model model("QM/MM", "any", "any");
-  model.program = "swoose";
-  calc.create(model, job, {structureID});
-  calc.setComment(std::to_string(qmmmModelIndex));
+  // handle model fields, not complete yet
+  // method family and program are still a workaround around the proper QM/MM search of Puffin
+  std::string method = calculatorSettings_.valueExists(Utils::SettingsNames::method)
+                           ? calculatorSettings_.getString(Utils::SettingsNames::method)
+                           : "any";
+  std::string basisSet;
+  // if we have not received calculator settings, we guess 'any'
+  // if we have received calculator settings, and they do not contain a basis set, we set it to an empty string
+  if (calculatorSettings_.empty()) {
+    basisSet = "any";
+  }
+  else {
+    basisSet = calculatorSettings_.valueExists(Utils::SettingsNames::basisSet)
+                   ? calculatorSettings_.getString(Utils::SettingsNames::basisSet)
+                   : "";
+  }
+  std::string actualProgram = settings_.valueExists(Utils::SettingsNames::program)
+                                  ? settings_.getString(Utils::SettingsNames::program)
+                                  : "Any/Swoose";
+  std::string actualMethodFamily = settings_.valueExists(Utils::SettingsNames::methodFamily)
+                                       ? settings_.getString(Utils::SettingsNames::methodFamily)
+                                       : "";
 
   // Remove QM region selection settings from yaml node and give remaining node to the selector
   std::vector<std::string> keysToRemove;
@@ -181,9 +214,44 @@ bool QmmmDatabaseHelper::submitCalculation(const QmmmModel& qmmmModel, const Dat
     if (qmRegionSelector.settings().valueExists(key)) {
       keysToRemove.push_back(key);
     }
+    else if (key == Utils::SettingsNames::method) {
+      method = it->second.as<std::string>();
+      keysToRemove.push_back(key);
+    }
+    else if (key == Utils::SettingsNames::basisSet) {
+      basisSet = it->second.as<std::string>();
+      keysToRemove.push_back(key);
+    }
+    else if (key == Utils::SettingsNames::methodFamily) {
+      actualMethodFamily = it->second.as<std::string>();
+    }
+    else if (key == Utils::SettingsNames::program) {
+      actualProgram = it->second.as<std::string>();
+    }
+  }
+  if (actualMethodFamily.empty() || actualMethodFamily.find('/') == std::string::npos) {
+    throw std::runtime_error("Require a method_family such as 'PM6/SFAM'");
+  }
+  if (actualProgram.find('/') == std::string::npos) {
+    throw std::runtime_error(
+        "If you specify a program, it must include the QM and MM program such as 'Sparrow/Swoose'");
   }
   for (const auto& key : keysToRemove)
     yamlNodeQmmmSettings.remove(key);
+
+  Database::Model model("QM/MM", method, basisSet);
+  model.program = "swoose"; // do not write actualProgram here due to lacking Puffin features
+  calc.create(model, job, {structureID});
+  calc.setComment(std::to_string(qmmmModelIndex));
+  for (const auto& [k, v] : calculatorSettings_.items()) {
+    calc.setSetting(k, v);
+  }
+  // relies on the fact that the Puffin Swoose job picks these up
+  // todo remove once Puffin is properly updated
+  calc.setSetting("qm_model", actualMethodFamily.substr(0, actualMethodFamily.find('/')));
+  calc.setSetting("qm_module", actualProgram.substr(0, actualProgram.find('/')));
+  calc.setSetting(Utils::SettingsNames::methodFamily, actualMethodFamily);
+  calc.setSetting(Utils::SettingsNames::program, actualProgram);
 
   if (yamlNodeQmmmSettings.IsMap()) {
     auto settingsAsValueCollection = Utils::deserializeValueCollection(yamlNodeQmmmSettings);
@@ -198,7 +266,7 @@ bool QmmmDatabaseHelper::submitCalculation(const QmmmModel& qmmmModel, const Dat
   validQmAtoms.reserve(qmmmModel.qmAtomIndices.size());
   std::copy_if(std::begin(qmmmModel.qmAtomIndices), std::end(qmmmModel.qmAtomIndices), std::back_inserter(validQmAtoms),
                [](int a) -> bool { return a >= 0; });
-  calc.setSetting(SwooseUtilities::SettingsNames::qmAtomsList, std::move(validQmAtoms));
+  calc.setSetting(Utils::SettingsNames::qmAtomsList, std::move(validQmAtoms));
 
   if (symmetryScore <= maxAllowedSymmetryScore)
     calc.setStatus(Database::Calculation::STATUS::NEW);

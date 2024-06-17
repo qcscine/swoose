@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -24,9 +24,9 @@ constexpr double OptimizationSetup::initialDihedralHalfBarrierHeight_;
 constexpr double OptimizationSetup::initialImproperDihedralForceConstantForNonPlanarGroups_;
 constexpr double OptimizationSetup::parameterValueInUninitializedState_;
 
-OptimizationSetup::OptimizationSetup(ParametrizationData& data, std::shared_ptr<Utils::Settings> settings)
-  : data_(data), settings_(settings) {
-  fragmentDataDistributor_ = std::make_unique<FragmentDataDistributor>(data);
+OptimizationSetup::OptimizationSetup(ParametrizationData& data, std::shared_ptr<Utils::Settings> settings, Core::Log& log)
+  : data_(data), settings_(settings), log_(log) {
+  fragmentDataDistributor_ = std::make_unique<FragmentDataDistributor>(data, log);
 }
 
 void OptimizationSetup::generateInitialParameters() {
@@ -143,7 +143,7 @@ void OptimizationSetup::setAtomicCharges() {
 
   // Fill the charges multimap with all atomic charges along with the corresponding atom types
   std::multimap<std::string, double> chargesMap;
-  for (int i = 0; i < data_.atomicCharges.size(); ++i) {
+  for (int i = 0; i < int(data_.atomicCharges.size()); ++i) {
     chargesMap.emplace(data_.atomTypes.getAtomType(i), data_.atomicCharges.at(i));
   }
 

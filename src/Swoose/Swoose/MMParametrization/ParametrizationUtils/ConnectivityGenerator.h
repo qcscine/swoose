@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -54,8 +54,6 @@ class ConnectivityGenerator {
   void refineListsOfNeighbors();
 
  private:
-  // Helper function to convert a lists of neighbors vector to a bond order matrix
-  Utils::BondOrderCollection generateBondOrderMatrixFromListsOfNeighbors(const std::vector<std::list<int>>& listsOfNeighbors) const;
   // The data used within all MM parametrization classes
   ParametrizationData& data_;
   // The settings

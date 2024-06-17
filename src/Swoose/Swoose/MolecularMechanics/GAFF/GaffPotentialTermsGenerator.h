@@ -1,12 +1,12 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
-#ifndef MOLECULARMECHANICS_SFAMPOTENTIALTERMSGENERATOR_H
-#define MOLECULARMECHANICS_SFAMPOTENTIALTERMSGENERATOR_H
+#ifndef MOLECULARMECHANICS_GAFFPOTENTIALTERMSGENERATOR_H
+#define MOLECULARMECHANICS_GAFFPOTENTIALTERMSGENERATOR_H
 
 #include "../Interactions/AngleTerm.h"
 #include "../Interactions/BondedTerm.h"
@@ -86,4 +86,4 @@ class GaffPotentialTermsGenerator {
 } // namespace MolecularMechanics
 } // namespace Scine
 
-#endif // MOLECULARMECHANICS_SFAMPOTENTIALTERMSGENERATOR_H
+#endif // MOLECULARMECHANICS_GAFFPOTENTIALTERMSGENERATOR_H

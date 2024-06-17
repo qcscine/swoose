@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -24,6 +24,7 @@ class Settings;
 
 namespace MMParametrization {
 struct ParametrizationData;
+struct TitrationResults;
 
 /**
  * @class CalculationManager CalculationManager.h
@@ -34,7 +35,8 @@ class CalculationManager {
   /**
    * @brief Constructor.
    */
-  CalculationManager(ParametrizationData& data, std::shared_ptr<Utils::Settings> settings, Core::Log& log);
+  CalculationManager(ParametrizationData& data, TitrationResults& results, std::shared_ptr<Utils::Settings> settings,
+                     Core::Log& log);
   /**
    * @brief This function calculates the reference data (Hessians and atomic charges for subsystems).
    */
@@ -43,6 +45,7 @@ class CalculationManager {
  private:
   // The data used within all MM parametrization classes
   ParametrizationData& data_;
+  TitrationResults& titrationResults_;
   // The settings
   std::shared_ptr<Utils::Settings> settings_;
   // The logger.
@@ -51,8 +54,6 @@ class CalculationManager {
   std::string baseWorkingDirectory_;
   // Mode of the reference data generation (direct, reading, writing, database), default: direct
   std::string mode_;
-  // Used Quantum Chemistry software, default: orca
-  std::string referenceProgram_;
   // The name of the directory where the calculation files are stored to or loaded from if desired
   std::string referenceDataDirectory_;
 };

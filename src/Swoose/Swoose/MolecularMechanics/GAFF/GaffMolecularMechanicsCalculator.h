@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -40,7 +40,7 @@ class ImproperDihedralType;
  *        which reads in the parameters and connectivity from the previously specified files.
  */
 class GaffMolecularMechanicsCalculator final
-  : public Utils::CloneInterface<GaffMolecularMechanicsCalculator, MolecularMechanicsCalculator> {
+  : public Utils::CloneInterface<GaffMolecularMechanicsCalculator, MolecularMechanicsCalculator, Core::Calculator> {
  public:
   static constexpr const char* model = "GAFF";
   /// @brief Constructor.

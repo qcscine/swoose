@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -60,7 +60,7 @@ class GaffInteractionTermEliminatorTest : public Test {
 TEST_F(SfamInteractionTermEliminatorTest, SfamInteractionTermsAreCompletelyDisabledForMelatonin) {
   Utils::AtomCollection testStructure = Utils::ChemicalFileHandler::read(melatonin_xyz_file).first;
 
-  calculator->settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  calculator->settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   calculator->settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
   calculator->settings().modifyDouble(SwooseUtilities::SettingsNames::nonCovalentCutoffRadius, 20.0); // basically no
                                                                                                       // cutoff radius
@@ -100,7 +100,7 @@ TEST_F(SfamInteractionTermEliminatorTest, SfamInteractionTermsAreCompletelyDisab
 TEST_F(SfamInteractionTermEliminatorTest, SfamInteractionTermsArePartiallyDisabledForMelatonin) {
   Utils::AtomCollection testStructure = Utils::ChemicalFileHandler::read(melatonin_xyz_file).first;
 
-  calculator->settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  calculator->settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   calculator->settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
   calculator->settings().modifyDouble(SwooseUtilities::SettingsNames::nonCovalentCutoffRadius, 20.0); // basically no
                                                                                                       // cutoff radius
@@ -128,11 +128,19 @@ TEST_F(SfamInteractionTermEliminatorTest, SfamInteractionTermsArePartiallyDisabl
 
 TEST_F(GaffInteractionTermEliminatorTest, GaffInteractionTermsAreCompletelyDisabledForAlanine) {
   Utils::AtomCollection testStructure = Utils::ChemicalFileHandler::read(alanine_xyz_file).first;
-
-  calculator->settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, gaff_parameter_file);
+  calculator->settings().modifyString(Utils::SettingsNames::parameterFilePath, gaff_parameter_file);
   calculator->settings().modifyBool(SwooseUtilities::SettingsNames::detectBondsWithCovalentRadii, true);
   calculator->settings().modifyDouble(SwooseUtilities::SettingsNames::nonCovalentCutoffRadius, 20.0); // basically no
                                                                                                       // cutoff radius
+  /*
+   * Add atomic charges of zero.
+   */
+  Eigen::VectorXd atomicCharges(13);
+  atomicCharges.setZero();
+  std::ofstream file(atomicChargesFile);
+  Utils::matrixToCsv(file, atomicCharges, ',');
+  file.close();
+  calculator->settings().modifyString(SwooseUtilities::SettingsNames::gaffAtomicChargesFile, atomicChargesFile);
 
   calculator->setStructure(testStructure);
 
@@ -169,7 +177,7 @@ TEST_F(GaffInteractionTermEliminatorTest, GaffInteractionTermsAreCompletelyDisab
 TEST_F(GaffInteractionTermEliminatorTest, GaffInteractionTermsArePartiallyDisabledForAlanine) {
   Utils::AtomCollection testStructure = Utils::ChemicalFileHandler::read(alanine_xyz_file).first;
 
-  calculator->settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, gaff_parameter_file);
+  calculator->settings().modifyString(Utils::SettingsNames::parameterFilePath, gaff_parameter_file);
   calculator->settings().modifyBool(SwooseUtilities::SettingsNames::detectBondsWithCovalentRadii, true);
   calculator->settings().modifyDouble(SwooseUtilities::SettingsNames::nonCovalentCutoffRadius, 20.0); // basically no
                                                                                                       // cutoff radius

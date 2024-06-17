@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -34,7 +34,7 @@ void ConstrainedAtomsIdentifier::updateInformationAboutConstrainedAtoms(const Ut
   auto indexMap = result.componentMap.invert();
 
   // First, gather all of the heavy atoms that are possible candidates for constraining them
-  for (int g = 0; g < result.graphs.size(); ++g) {
+  for (int g = 0; g < int(result.graphs.size()); ++g) {
     const auto& graph = result.graphs[g];
     // Get the heavy atoms that were involved in a cleft bond
     std::vector<int> heavyAtomTermini =

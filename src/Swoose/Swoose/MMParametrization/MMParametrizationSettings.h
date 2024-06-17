@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -27,7 +27,7 @@ class MMParametrizationSettings : public Scine::Utils::Settings {
     SettingsPopulator::addSfamAtomTypeLevel(_fields);
     SettingsPopulator::addBondOrderThreshold(_fields);
     SettingsPopulator::addConnectivityRefinementOption(_fields);
-    SettingsPopulator::addParameterAndConnectivityFile(_fields, false);
+    SettingsPopulator::addParameterAndConnectivityFile(_fields);
     SettingsPopulator::addExistingParameterFile(_fields);
     SettingsPopulator::addConstrainMMParametersOption(_fields);
     SettingsPopulator::addOptimizeImproperDihedralForceConstantsOption(_fields);
@@ -42,7 +42,11 @@ class MMParametrizationSettings : public Scine::Utils::Settings {
     SettingsPopulator::addTerminateAfterReferenceDataGenerationOption(_fields);
     SettingsPopulator::addUseCsvInputFormatOption(_fields);
     SettingsPopulator::addConvertToCm5Option(_fields);
+    SettingsPopulator::addTitration(_fields);
+    SettingsPopulator::addUseThermochemistryForTitration(_fields);
+    SettingsPopulator::addTrainingDataDirectory(_fields);
     SettingsPopulator::addYamlSettingsForDirectMode(_fields); // used only for internal use by app and python bindings
+    SettingsPopulator::addTitrationSiteFile(_fields);
 
     // For Gaussian, Orca and Turbomole calculations
     SettingsPopulator::addUseGaussianOption(_fields);

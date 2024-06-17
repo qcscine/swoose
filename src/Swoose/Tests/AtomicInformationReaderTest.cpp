@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -45,6 +45,15 @@ TEST_F(AtomicInformationFileReaderTest, WrongAtomicInformationFileReadingFails) 
   SwooseUtilities::AtomicInformationReader reader(silentLogger);
 
   EXPECT_THROW(reader.read(atomic_information_file, data.formalCharges, data.unpairedElectrons, 400), std::runtime_error);
+}
+
+TEST_F(AtomicInformationFileReaderTest, OverallChargeAndMultiplicityAreReadCorrectly) {
+  auto silentLogger = Core::Log::silent();
+  SwooseUtilities::AtomicInformationReader reader(silentLogger);
+  auto chargeAndUnpairedElec = reader.read(atomic_information_file, 450);
+
+  ASSERT_THAT(chargeAndUnpairedElec.first, Eq(9));
+  ASSERT_THAT(chargeAndUnpairedElec.second, Eq(11));
 }
 
 } // namespace Tests

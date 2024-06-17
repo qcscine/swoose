@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -35,6 +35,13 @@ class AtomicInformationReader {
    */
   void read(const std::string& filename, std::map<int, int>& formalCharges, std::map<int, int>& unpairedElectrons,
             int numberOfAtoms);
+  /**
+   * @brief Reads the atomic information file and evaluates the total formal charge and number of unpaired electrons
+   * @param filename Path to the file with the information.
+   * @param numberOfAtoms Number of atoms in the system.
+   * @return A pair of total charge and unpaired electrons.
+   */
+  std::pair<int, int> read(const std::string& filename, int numberOfAtoms);
 
  private:
   // The logger.

@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -36,7 +36,7 @@ TopologyUtils::generateListsOfNeighborsFromBondOrderMatrix(int nAtoms, const Uti
 Utils::BondOrderCollection
 TopologyUtils::generateBondOrderMatrixFromListsOfNeighbors(const std::vector<std::list<int>>& listsOfNeighbors) {
   Utils::BondOrderCollection bondOrderMatrix(listsOfNeighbors.size());
-  for (int i = 0; i < listsOfNeighbors.size(); ++i)
+  for (int i = 0; i < int(listsOfNeighbors.size()); ++i)
     for (const auto& j : listsOfNeighbors[i])
       bondOrderMatrix.setOrder(i, j, 1.0);
 
@@ -95,7 +95,7 @@ std::vector<int> TopologyUtils::divideStructureAtBond(int a1, int a2, const Util
 int TopologyUtils::countNeighborsOfElementType(int atomType, const std::vector<std::list<int>>& listsOfNeighbors,
                                                Utils::ElementType elementType,
                                                const Utils::ElementTypeCollection& elementTypeCollection) {
-  if (atomType >= listsOfNeighbors.size() || listsOfNeighbors.size() != elementTypeCollection.size())
+  if (atomType >= int(listsOfNeighbors.size()) || listsOfNeighbors.size() != elementTypeCollection.size())
     throw std::runtime_error("Incompatible function arguments for counting neighbors of given element type.");
   int nNeighborsOfType = 0;
   for (int n : listsOfNeighbors[atomType]) {
@@ -103,6 +103,14 @@ int TopologyUtils::countNeighborsOfElementType(int atomType, const std::vector<s
       nNeighborsOfType++;
   }
   return nNeighborsOfType;
+}
+
+void TopologyUtils::calculateNumberOfNeighbors(int nAtoms, std::vector<std::list<int>> listsOfNeighbors,
+                                               std::vector<int>& nNeighbors) {
+  nNeighbors.clear();
+  for (int i = 0; i < nAtoms; ++i) {
+    nNeighbors[i] = static_cast<int>(listsOfNeighbors[i].size());
+  }
 }
 
 } // namespace SwooseUtilities

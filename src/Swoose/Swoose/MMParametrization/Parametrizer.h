@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -87,8 +87,14 @@ class Parametrizer : public Core::MMParametrizer {
    * @brief Sets the default settings values for method and basis set depending on the selected program.
    */
   void setDefaultsForMethodAndBasisSetSettings();
+  /*
+   * @brief Sets the protonation state of all pH sensitive sites after evaluation of the pKa.
+   */
+  void determineProtonationStateOfTitrableSites();
   // This object holds all the data used in the MM parametrization algorithm.
   ParametrizationData data_;
+  // This object holds all the data used for titration.
+  TitrationResults titrationResults_;
   // The settings.
   std::shared_ptr<Utils::Settings> settings_;
   // The connectivity generator class.

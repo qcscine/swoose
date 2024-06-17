@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -87,6 +87,86 @@ TEST_F(AParametrizationOfSmallSystemsTest, ReferenceDataFilesAreCorrectlyGenerat
   boost::filesystem::remove_all(Utils::NativeFilenames::combinePathSegments(alanine_ref_calc_dir, "0", "molecule.xyz"));
 }
 
+TEST_F(AParametrizationOfSmallSystemsTest, AdditionalReferenceDataAreWrittenForTitrableSites) {
+  parametrizer.setLog(silentLogger);
+  // Glutamine is an acid, so the non-ref form is deprotonated
+  Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(glutamine_xyz_file).first;
+
+  parametrizer.settings().modifyInt(SwooseUtilities::SettingsNames::numberAtomsThreshold, 120);
+  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataDirectory, glutamine_ref_calc_dir);
+  parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::titrate, true);
+  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "write");
+
+  // first, parametrizer should throw an error when no titration site file is provided
+  ASSERT_THROW(parametrizer.parametrize(structure), std::runtime_error);
+
+  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::titrationSiteFile, glutamine_titration_site_file);
+  parametrizer.parametrize(structure);
+  // check that an additional directory was created for the non-ref state
+  auto refDir = Utils::NativeFilenames::combinePathSegments(glutamine_ref_calc_dir, "0");
+  auto nonRefDir = Utils::NativeFilenames::combinePathSegments(glutamine_ref_calc_dir, "0", "non_ref_state");
+  ASSERT_TRUE(boost::filesystem::exists(refDir));
+  ASSERT_TRUE(boost::filesystem::exists(nonRefDir));
+
+  ASSERT_TRUE(boost::filesystem::exists(Utils::NativeFilenames::combinePathSegments(refDir, "molecule.xyz")));
+  ASSERT_TRUE(boost::filesystem::exists(Utils::NativeFilenames::combinePathSegments(refDir, "info.dat")));
+
+  ASSERT_TRUE(boost::filesystem::exists(Utils::NativeFilenames::combinePathSegments(nonRefDir, "molecule.xyz")));
+  ASSERT_TRUE(boost::filesystem::exists(Utils::NativeFilenames::combinePathSegments(nonRefDir, "info.dat")));
+
+  // Check that the info file was correctly written.
+  std::string line;
+  std::ifstream infoFile;
+  infoFile.open(Utils::NativeFilenames::combinePathSegments(refDir, "info.dat"));
+  if (infoFile.is_open()) {
+    getline(infoFile, line);
+  }
+  infoFile.close();
+  ASSERT_THAT(line, Eq("0  1"));
+
+  // Check that the info file was correctly written for the non-ref structure.
+  std::ifstream infoFileNonRef;
+  infoFileNonRef.open(Utils::NativeFilenames::combinePathSegments(nonRefDir, "info.dat"));
+  if (infoFileNonRef.is_open()) {
+    getline(infoFileNonRef, line);
+  }
+  infoFileNonRef.close();
+  ASSERT_THAT(line, Eq("-1  1"));
+
+  // Check that the molecular structure was correctly written for the non-ref state
+  auto deprotStruct =
+      Utils::ChemicalFileHandler::read(Utils::NativeFilenames::combinePathSegments(nonRefDir, "molecule.xyz")).first;
+
+  // Check that the molecular structure was correctly written for the non-ref state
+  auto protStruct =
+      Utils::ChemicalFileHandler::read(Utils::NativeFilenames::combinePathSegments(refDir, "molecule.xyz")).first;
+
+  ASSERT_THAT(deprotStruct.size(), Eq(protStruct.size() - 1));
+
+  // Delete the generated files
+  boost::filesystem::remove_all(Utils::NativeFilenames::combinePathSegments(alanine_ref_calc_dir, "0", "info.dat"));
+  boost::filesystem::remove_all(Utils::NativeFilenames::combinePathSegments(alanine_ref_calc_dir, "0", "molecule.xyz"));
+}
+
+TEST_F(AParametrizationOfSmallSystemsTest, GlutamineIsCorrectlyParametrizedIncludingTitration) {
+  parametrizer.setLog(silentLogger);
+  Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(glutamine_xyz_file).first;
+
+  parametrizer.settings().modifyInt(SwooseUtilities::SettingsNames::numberAtomsThreshold, 120);
+  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataDirectory, glutamine_ref_calc_dir);
+  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, connFile);
+  parametrizer.settings().modifyString(Utils::SettingsNames::parameterFilePath, parFile);
+  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "direct");
+  parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useGaussianOptionKey, false);
+  parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useCsvInputFormat, false);
+  parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::titrate, true);
+  // parametrization including titration does not work in direct mode
+  ASSERT_THROW(parametrizer.parametrize(structure), std::runtime_error);
+
+  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "read");
+  // TODO
+}
+
 TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithGaussian) {
   parametrizer.setLog(silentLogger);
 
@@ -95,7 +175,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithGau
   parametrizer.settings().modifyInt(SwooseUtilities::SettingsNames::numberAtomsThreshold, 120);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataDirectory, alanine_ref_calc_dir);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, connFile);
-  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, parFile);
+  parametrizer.settings().modifyString(Utils::SettingsNames::parameterFilePath, parFile);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "read");
   parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useGaussianOptionKey, true);
   parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useCsvInputFormat, false);
@@ -106,6 +186,17 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithGau
   for (const auto& atom : listsOfNeighbors) {
     ASSERT_FALSE(atom.empty());
   }
+
+  // Check that the parameter file was correctly written.
+  std::string line;
+  std::ifstream paramFile;
+  paramFile.open(parFile);
+  if (paramFile.is_open()) {
+    getline(paramFile, line);
+  }
+  paramFile.close();
+  std::string infoString = "# MM parameters of SFAM generated by SCINE";
+  ASSERT_THAT(line, Eq(infoString));
 
   // Generate topology and atom types
   MolecularMechanics::IndexedStructuralTopologyCreator topologyCreator(listsOfNeighbors);
@@ -181,7 +272,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithGau
   reparametrizer.settings().modifyString(SwooseUtilities::SettingsNames::existingParameters, existingParFile);
   reparametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataDirectory, alanine_ref_calc_dir);
   reparametrizer.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, connFile);
-  reparametrizer.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, parFile);
+  reparametrizer.settings().modifyString(Utils::SettingsNames::parameterFilePath, parFile);
   reparametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "read");
   reparametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useGaussianOptionKey, false);
   reparametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useCsvInputFormat, false);
@@ -202,7 +293,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithout
   parametrizer.settings().modifyInt(SwooseUtilities::SettingsNames::numberAtomsThreshold, 120);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataDirectory, alanine_ref_calc_dir);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, connFile);
-  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, parFile);
+  parametrizer.settings().modifyString(Utils::SettingsNames::parameterFilePath, parFile);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "read");
   parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useGaussianOptionKey, false);
   parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useCsvInputFormat, false);
@@ -287,7 +378,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithout
   reparametrizer.settings().modifyString(SwooseUtilities::SettingsNames::existingParameters, existingParFile);
   reparametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataDirectory, alanine_ref_calc_dir);
   reparametrizer.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, connFile);
-  reparametrizer.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, parFile);
+  reparametrizer.settings().modifyString(Utils::SettingsNames::parameterFilePath, parFile);
   reparametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "read");
   reparametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useGaussianOptionKey, false);
   reparametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useCsvInputFormat, false);
@@ -308,7 +399,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedFromDat
   parametrizer.settings().modifyInt(SwooseUtilities::SettingsNames::numberAtomsThreshold, 120);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataDirectory, alanine_ref_calc_dir);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, connFile);
-  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, parFile);
+  parametrizer.settings().modifyString(Utils::SettingsNames::parameterFilePath, parFile);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "read");
   parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useGaussianOptionKey, false);
   parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useCsvInputFormat, true);
@@ -397,7 +488,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, EquilibriumValuesAreCorrectlyAssigned
   auto infoFile = Utils::NativeFilenames::combinePathSegments(guanidine_fragment_ref_calc_dir, "0", "atomic_info.dat");
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataDirectory, guanidine_fragment_ref_calc_dir);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, connFile);
-  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, parFile);
+  parametrizer.settings().modifyString(Utils::SettingsNames::parameterFilePath, parFile);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::atomicInformationFile, infoFile);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "read");
   parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useGaussianOptionKey, false);
@@ -430,7 +521,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, EquilibriumValuesAreCorrectlyAssigned
 #endif
 
 TEST_F(AParametrizationOfSmallSystemsTest, CustomConnectivityIsImportedCorrectly) {
-  parametrizer.setLog(silentLogger);
+  // parametrizer.setLog(silentLogger);
   Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(guanidine_fragment_xyz_file).first;
 
   // Write custom connectivity file
@@ -451,7 +542,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, CustomConnectivityIsImportedCorrectly
   auto infoFile = Utils::NativeFilenames::combinePathSegments(guanidine_fragment_ref_calc_dir, "0", "atomic_info.dat");
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataDirectory, guanidine_fragment_ref_calc_dir);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, connFile);
-  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, parFile);
+  parametrizer.settings().modifyString(Utils::SettingsNames::parameterFilePath, parFile);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::atomicInformationFile, infoFile);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "read");
   parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useGaussianOptionKey, false);
@@ -506,7 +597,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, ConnectivityFileWithSelfBondedAtomsCa
   auto infoFile = Utils::NativeFilenames::combinePathSegments(guanidine_fragment_ref_calc_dir, "0", "atomic_info.dat");
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataDirectory, guanidine_fragment_ref_calc_dir);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, connFile);
-  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, parFile);
+  parametrizer.settings().modifyString(Utils::SettingsNames::parameterFilePath, parFile);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::atomicInformationFile, infoFile);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "read");
   parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useGaussianOptionKey, false);

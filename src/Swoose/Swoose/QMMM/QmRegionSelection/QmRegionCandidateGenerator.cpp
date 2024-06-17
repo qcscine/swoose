@@ -1,18 +1,23 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
 #include "QmRegionCandidateGenerator.h"
+#include "../QmmmHelpers.h"
 #include "QmRegionSelector.h"
 #include "QmRegionSelectorSettings.h"
 #include <Swoose/Utilities/AtomicInformationReader.h>
 #include <Swoose/Utilities/FragmentAnalyzer.h>
+#include <Swoose/Utilities/FragmentationHelper.h>
 #include <Swoose/Utilities/SubsystemGenerator.h>
+#include <Swoose/Utilities/TopologyUtils.h>
 #include <Utils/Constants.h>
 #include <Utils/Geometry/AtomCollection.h>
+#include <Utils/IO/ChemicalFileFormats/ChemicalFileHandler.h>
+#include <Utils/IO/NativeFilenames.h>
 #include <limits>
 
 namespace Scine {
@@ -29,12 +34,14 @@ void QmRegionCandidateGenerator::generateQmRegionCandidates(std::vector<QmmmMode
   int numStructures = settings.getInt(numAttemptsPerRadius);
   double probability = settings.getDouble(cuttingProbability);
   double initialRadius = settings.getDouble(initialRadiusForQmRegionSelection);
-  int centerAtom = settings.getInt(qmRegionCenterAtom);
+  auto centerAtoms = settings.getIntList(qmRegionCenterAtoms);
   int minSize = settings.getInt(qmRegionCandidateMinSize);
   int maxSize = settings.getInt(qmRegionCandidateMaxSize);
   int maxSizeRef = settings.getInt(qmRegionRefMaxSize);
   int minSizeRef = static_cast<int>(0.95 * maxSizeRef); // TODO: Also setting?
   int randomSeed = settings.getInt(qmRegionSelectionRandomSeed);
+  auto listsOfNeighbors =
+      SwooseUtilities::TopologyUtils::generateListsOfNeighborsFromBondOrderMatrix(fullStructure.size(), bondOrders, 0.4);
 
   if (maxSize < minSize)
     throw std::runtime_error("The maximum QM region size is smaller than the minimum one.");
@@ -54,6 +61,12 @@ void QmRegionCandidateGenerator::generateQmRegionCandidates(std::vector<QmmmMode
     SwooseUtilities::AtomicInformationReader reader(log);
     reader.read(atomicInfoFilePath, formalCharges, unpairedElectrons, fullStructure.size());
   }
+  else {
+    log.output
+        << "No atomic info file provided. All QM region candidates will be assigned a charge of zero and a spin "
+           "multiplicity of one. If you have charged species in your structure, please provide an atomic info file."
+        << Core::Log::nl;
+  }
 
   SwooseUtilities::FragmentAnalyzer fragmentAnalyzer(formalCharges, unpairedElectrons);
   SwooseUtilities::SubsystemGenerator generator(fullStructure, bondOrders, fragmentAnalyzer, 0.5,
@@ -64,10 +77,11 @@ void QmRegionCandidateGenerator::generateQmRegionCandidates(std::vector<QmmmMode
                   "the provided initial radius setting.\nIf the resulting QM region is too large for your purposes, "
                   "re-try with a smaller value for the initial radius."
                << Core::Log::nl << Core::Log::endl;
-    generateSingleQmRegionNonRandomly(qmmmModelCandidates, generator, fragmentAnalyzer, initialRadius, centerAtom);
+    auto model = generateSingleQmRegionNonRandomly(generator, fragmentAnalyzer, initialRadius, centerAtoms,
+                                                   fullStructure, listsOfNeighbors);
+    qmmmModelCandidates.push_back(model);
     return;
   }
-
   std::vector<std::vector<int>> allQmAtomIndices;
   double r = initialRadius;
   int numExceededRefSizeLimit = 0;
@@ -75,9 +89,30 @@ void QmRegionCandidateGenerator::generateQmRegionCandidates(std::vector<QmmmMode
     numExceededRefSizeLimit = 0;
     for (int k = 0; k < numStructures; ++k) {
       std::vector<int> indices;
-      Utils::AtomCollection qmRegion =
-          generator.generateSubsystem(centerAtom, indices, r * Utils::Constants::bohr_per_angstrom);
+      Utils::AtomCollection qmRegion;
+      std::vector<int> mmBoundaryAtoms;
+      if (centerAtoms.size() > 1) {
+        std::vector<std::vector<int>> listOfMappings;
+        std::vector<Utils::AtomCollection> subRegions;
+        for (auto& centerAtom : centerAtoms) {
+          std::vector<int> tempIndices;
+          Utils::AtomCollection tempQmRegion =
+              generator.generateSubsystem(centerAtom, tempIndices, initialRadius * Utils::Constants::bohr_per_angstrom);
+          listOfMappings.push_back(tempIndices);
+          subRegions.push_back(tempQmRegion);
+        }
+        qmRegion = SwooseUtilities::FragmentationHelper::mergeSubsystems(indices, subRegions, listOfMappings);
+        QmmmHelpers::addAllLinkAtoms(qmRegion, fullStructure, listsOfNeighbors, indices, mmBoundaryAtoms);
+        indices.insert(indices.end(), mmBoundaryAtoms.size(), -1);
+      }
+      else
+        qmRegion = generator.generateSubsystem(centerAtoms[0], indices, r * Utils::Constants::bohr_per_angstrom);
+
       std::sort(indices.begin(), indices.end());
+      bool valid = fragmentAnalyzer.analyzeFragment(qmRegion, indices);
+      if (!valid)
+        throw std::runtime_error(
+            "The given system with its formal charges and numbers of unpaired electrons is not valid.");
 
       if (qmRegion.size() == fullStructure.size() || qmRegion.size() > maxSizeRef) // TODO: Add buffer, e.g., 20%?
         numExceededRefSizeLimit++;
@@ -110,16 +145,40 @@ void QmRegionCandidateGenerator::generateQmRegionCandidates(std::vector<QmmmMode
     qmmmReferenceModels.erase(qmmmReferenceModels.begin(), qmmmReferenceModels.begin() + numRefModelsToErase);
 }
 
-void QmRegionCandidateGenerator::generateSingleQmRegionNonRandomly(std::vector<QmmmModel>& qmmmModelCandidates,
-                                                                   SwooseUtilities::SubsystemGenerator& generator,
-                                                                   const SwooseUtilities::FragmentAnalyzer& fragmentAnalyzer,
-                                                                   const double& initialRadius, int centerAtom) {
+QmmmModel QmRegionCandidateGenerator::generateSingleQmRegionNonRandomly(SwooseUtilities::SubsystemGenerator& generator,
+                                                                        SwooseUtilities::FragmentAnalyzer& fragmentAnalyzer,
+                                                                        const double& initialRadius, std::vector<int> centerAtoms,
+                                                                        const Utils::AtomCollection fullStructure,
+                                                                        const std::vector<std::list<int>> listsOfNeighbors) {
   std::vector<int> indices;
-  Utils::AtomCollection qmRegion =
-      generator.generateSubsystem(centerAtom, indices, initialRadius * Utils::Constants::bohr_per_angstrom);
+  Utils::AtomCollection qmRegion;
+
+  if (centerAtoms.size() > 1) {
+    std::vector<std::vector<int>> listOfMappings;
+    std::vector<Utils::AtomCollection> subRegions;
+    std::vector<int> mmBoundaryAtoms;
+    for (auto& centerAtom : centerAtoms) {
+      std::vector<int> tempIndices;
+      Utils::AtomCollection subRegion =
+          generator.generateSubsystem(centerAtom, tempIndices, initialRadius * Utils::Constants::bohr_per_angstrom);
+      listOfMappings.push_back(tempIndices);
+      subRegions.push_back(subRegion);
+    }
+    qmRegion = SwooseUtilities::FragmentationHelper::mergeSubsystems(indices, subRegions, listOfMappings);
+    QmmmHelpers::addAllLinkAtoms(qmRegion, fullStructure, listsOfNeighbors, indices, mmBoundaryAtoms);
+    indices.insert(indices.end(), mmBoundaryAtoms.size(), -1);
+  }
+  else
+    qmRegion = generator.generateSubsystem(centerAtoms[0], indices, initialRadius * Utils::Constants::bohr_per_angstrom);
+
+  bool valid = fragmentAnalyzer.analyzeFragment(qmRegion, indices);
+  if (!valid)
+    throw std::runtime_error(
+        "The given system with its formal charges and numbers of unpaired electrons is not valid.");
+
   std::sort(indices.begin(), indices.end());
   QmmmModel model = {qmRegion, indices, fragmentAnalyzer.getMolecularCharge(), fragmentAnalyzer.getSpinMultiplicity()};
-  qmmmModelCandidates.push_back(model);
+  return model;
 }
 
 } // namespace Qmmm

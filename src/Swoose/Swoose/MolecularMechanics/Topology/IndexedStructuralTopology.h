@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -38,6 +38,7 @@ class IndexedStructuralTopology {
   void addScaledNonBonded(int a1, int a2);
   /** @brief Adds a scaled excluded non-bonded interaction. Performs no check whether it already exists. */
   void addHydrogenBond(int a1, int a2, int a3);
+  void clearHydrogenBonds();
 
   /** @name Members returning the arrays of structural elements
    * @{

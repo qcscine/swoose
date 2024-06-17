@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -80,6 +80,10 @@ const std::vector<IndexedStructuralScaledNonBonded>& IndexedStructuralTopology::
 
 const std::vector<IndexedStructuralHydrogenBond>& IndexedStructuralTopology::getHydrogenBondContainer() const {
   return hydrogenBonds_;
+}
+
+void IndexedStructuralTopology::clearHydrogenBonds() {
+  hydrogenBonds_.clear();
 }
 
 } // namespace MolecularMechanics

@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -35,7 +35,7 @@ void QmmmModelAnalyzer::analyzeData() {
 
   std::vector<double> errors;
   std::vector<int> numLinkAtoms;
-  for (int i = 0; i < candidates_.size(); ++i) {
+  for (int i = 0; i < int(candidates_.size()); ++i) {
     auto error = calculateMeanErrorForCandidateModel(i, relevantAtoms, referenceForces);
     errors.push_back(error);
     numLinkAtoms.push_back(data_.linkAtomNumbers.at(i));
@@ -43,21 +43,23 @@ void QmmmModelAnalyzer::analyzeData() {
   double minimumError = *std::min_element(errors.begin(), errors.end());
   if (minimumError > (std::numeric_limits<double>::max() * 1e-1))
     throw std::runtime_error("None of the calculations for the candidate models were completed successfully.");
-  double toleranceError = (tolErrorPercentage / 100.0) * minimumError;
+  double toleranceError = std::max((tolErrorPercentage / 100.0) * minimumError, 1e-4);
   int minimumNumLinkAtoms = *std::min_element(numLinkAtoms.begin(), numLinkAtoms.end());
 
   int currentOptimalModelIndex = -1;
   while (currentOptimalModelIndex == -1) {
-    for (int j = 0; j < errors.size(); ++j) {
-      if (numLinkAtoms.at(j) != minimumNumLinkAtoms)
+    for (int j = 0; j < int(errors.size()); ++j) {
+      if (numLinkAtoms.at(j) != minimumNumLinkAtoms) {
         continue;
-      if (errors.at(j) > (minimumError + toleranceError))
+      }
+      if (errors.at(j) > (minimumError + toleranceError)) {
         continue;
+      }
       if (currentOptimalModelIndex == -1) {
         currentOptimalModelIndex = j;
         continue;
       }
-      if (errors.at(j) < errors.at(currentOptimalModelIndex))
+      if (std::max(errors.at(j), toleranceError) < std::max(errors.at(currentOptimalModelIndex), toleranceError))
         currentOptimalModelIndex = j;
     }
     // If no models are within the error threshold with the minimum number of link atoms, increase this number:
@@ -67,13 +69,19 @@ void QmmmModelAnalyzer::analyzeData() {
 }
 
 std::vector<int> QmmmModelAnalyzer::getAtomIndicesCloseToCenterAtom() {
-  int centerAtom = settings_.getInt(SwooseUtilities::SettingsNames::qmRegionCenterAtom);
+  auto centerAtoms = settings_.getIntList(SwooseUtilities::SettingsNames::qmRegionCenterAtoms);
   std::vector<int> relevantAtoms;
+  std::vector<Eigen::RowVector3d> distVecs;
+  std::vector<int> checkedElements;
   for (int i = 0; i < structure_.size(); ++i) {
-    Eigen::RowVector3d distVec = structure_.getPosition(i) - structure_.getPosition(centerAtom);
-    if (distVec.norm() <= distanceThresholdForAnalysis_) {
-      if (Utils::ElementInfo::Z(structure_.getElement(i)) > 1) // TODO: Reconsider also including hydrogens here
-        relevantAtoms.push_back(i);
+    for (auto& centerAtom : centerAtoms) {
+      Eigen::RowVector3d distVec = structure_.getPosition(i) - structure_.getPosition(centerAtom);
+      // TODO: Reconsider also including hydrogens here
+      if (distVec.norm() <= distanceThresholdForAnalysis_ && (Utils::ElementInfo::Z(structure_.getElement(i)) > 1)) {
+        // Only add atom once
+        if (std::find(relevantAtoms.begin(), relevantAtoms.end(), i) == relevantAtoms.end())
+          relevantAtoms.push_back(i);
+      }
     }
   }
   return relevantAtoms;
@@ -90,7 +98,7 @@ std::vector<Eigen::RowVector3d> QmmmModelAnalyzer::calculateReferenceForces(cons
     force.setZero();
     int numFailures = 0;
     // Loop over reference systems
-    for (int i = refStartIndex; i < data_.forces.size(); ++i) {
+    for (int i = refStartIndex; i < int(data_.forces.size()); ++i) {
       if (data_.forces.at(i).rows() != structure_.size()) {
         numFailures++;
         continue;
@@ -116,7 +124,7 @@ double QmmmModelAnalyzer::calculateMeanErrorForCandidateModel(int modelIndex, co
   double totalError = 0.0;
 
   // Loop over all relevant atoms
-  for (int i = 0; i < relevantAtoms.size(); ++i) {
+  for (int i = 0; i < int(relevantAtoms.size()); ++i) {
     Eigen::RowVector3d diff = forcesForCandidate.row(relevantAtoms[i]) - referenceForces.at(i);
     double error = (std::abs(diff.x()) + std::abs(diff.y()) + std::abs(diff.z())) / 3;
     totalError += error;

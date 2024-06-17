@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -47,7 +47,7 @@ class QmmmHelperFunctionsTest : public Test {
 };
 
 TEST_F(QmmmHelperFunctionsTest, QmRegionIsCorrectlyCreated) {
-  calculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   calculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
   calculator.setStructure(testStructure);
 
@@ -107,7 +107,7 @@ TEST_F(QmmmHelperFunctionsTest, LinkAtomIsCorrectlyAdded) {
 }
 
 TEST_F(QmmmHelperFunctionsTest, PointChargesFileIsCorrectlyWritten) {
-  calculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   calculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
   calculator.setStructure(testStructure);
 
@@ -127,8 +127,9 @@ TEST_F(QmmmHelperFunctionsTest, PointChargesFileIsCorrectlyWritten) {
   redistributedChargesResult.positionsOfAuxiliaryCharges.row(1) = pos2;
   redistributedChargesResult.positionsOfAuxiliaryCharges.row(2) = pos3;
 
-  QmmmHelpers::writePointChargesFile(calculator.getPositions(), redistributedChargesResult, qmAtoms, pointChargesFile);
-
+  bool turbomoleFormat = false;
+  QmmmHelpers::writePointChargesFile(calculator.getPositions(), redistributedChargesResult, qmAtoms, pointChargesFile,
+                                     turbomoleFormat);
   ASSERT_TRUE(boost::filesystem::exists(pointChargesFile));
 
   std::string content1;
@@ -138,7 +139,9 @@ TEST_F(QmmmHelperFunctionsTest, PointChargesFileIsCorrectlyWritten) {
   check.open(pointChargesFile);
   if (check.is_open()) {
     check >> content1;
+    // <q>
     check >> content2;
+    // <x>
     check >> content3;
   }
   check.close();
@@ -153,6 +156,72 @@ TEST_F(QmmmHelperFunctionsTest, PointChargesFileIsCorrectlyWritten) {
   auto content3AsDouble = std::stod(content3);
   ASSERT_THAT(content2AsDouble, DoubleNear(calculator.atomicCharges().at(0), 1e-6));
   ASSERT_THAT(content3AsDouble * Utils::Constants::bohr_per_angstrom, DoubleNear(testStructure.getPosition(0).x(), 1e-6));
+
+  turbomoleFormat = true;
+  QmmmHelpers::writePointChargesFile(calculator.getPositions(), redistributedChargesResult, qmAtoms, pointChargesFile,
+                                     turbomoleFormat);
+  check.open(pointChargesFile);
+  if (check.is_open()) {
+    // <x>
+    check >> content2;
+    // <y>
+    check >> content2;
+    // <z>
+    check >> content2;
+    // <q>
+    check >> content3;
+  }
+  check.close();
+
+  content2AsDouble = std::stod(content2);
+  content3AsDouble = std::stod(content3);
+  ASSERT_THAT(content3AsDouble, DoubleNear(calculator.atomicCharges().at(0), 1e-6));
+  ASSERT_THAT(content2AsDouble, DoubleNear(testStructure.getPosition(0).z(), 1e-6));
+}
+
+TEST_F(QmmmHelperFunctionsTest, PointChargesAreCorrectInVector) {
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
+  calculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
+  calculator.setStructure(testStructure);
+
+  auto listsOfNeighbors = calculator.listsOfNeighbors();
+  std::vector<int> qmAtoms = {30, 31, 32, 23, 22, 29, 21, 28, 20, 26, 27, 19, 24, 25};
+
+  QmmmHelpers::ChargeRedistributionResult redistributedChargesResult;
+  redistributedChargesResult.atomicCharges = calculator.atomicCharges();
+  redistributedChargesResult.auxiliaryCharges.push_back(1.0);
+  redistributedChargesResult.auxiliaryCharges.push_back(2.0);
+  redistributedChargesResult.auxiliaryCharges.push_back(3.0);
+  redistributedChargesResult.positionsOfAuxiliaryCharges.resize(3, 3);
+  auto pos1 = Eigen::RowVector3d(0.0, 0.0, 5.0);
+  auto pos2 = Eigen::RowVector3d(0.0, 2.0, 3.0);
+  auto pos3 = Eigen::RowVector3d(1.0, 2.0, 3.0);
+  redistributedChargesResult.positionsOfAuxiliaryCharges.row(0) = pos1;
+  redistributedChargesResult.positionsOfAuxiliaryCharges.row(1) = pos2;
+  redistributedChargesResult.positionsOfAuxiliaryCharges.row(2) = pos3;
+
+  const auto result =
+      QmmmHelpers::writeChargesAndPositionsAsList(*calculator.getStructure(), redistributedChargesResult, qmAtoms);
+  ASSERT_FALSE(result.empty());
+  const auto charges = calculator.atomicCharges();
+  unsigned long index = 0;
+  for (unsigned long i = 0; i < charges.size(); ++i) {
+    if (std::find(qmAtoms.begin(), qmAtoms.end(), i) == qmAtoms.end()) {
+      ASSERT_DOUBLE_EQ(charges[i], result[index * 5]);
+      ASSERT_DOUBLE_EQ(static_cast<double>(Utils::ElementInfo::Z(testStructure.getElement(i))), result[index * 5 + 1]);
+      ASSERT_DOUBLE_EQ(testStructure.getPosition(i)[0], result[index * 5 + 2]);
+      ASSERT_DOUBLE_EQ(testStructure.getPosition(i)[1], result[index * 5 + 3]);
+      ASSERT_DOUBLE_EQ(testStructure.getPosition(i)[2], result[index * 5 + 4]);
+      index++;
+    }
+  }
+  for (unsigned long i = 0; i < redistributedChargesResult.auxiliaryCharges.size(); ++i) {
+    ASSERT_DOUBLE_EQ(redistributedChargesResult.auxiliaryCharges[i], result[5 * (index + i)]);
+    ASSERT_DOUBLE_EQ(0.0, result[5 * (index + i) + 1]);
+    ASSERT_DOUBLE_EQ(redistributedChargesResult.positionsOfAuxiliaryCharges(i, 0), result[5 * (index + i) + 2]);
+    ASSERT_DOUBLE_EQ(redistributedChargesResult.positionsOfAuxiliaryCharges(i, 1), result[5 * (index + i) + 3]);
+    ASSERT_DOUBLE_EQ(redistributedChargesResult.positionsOfAuxiliaryCharges(i, 2), result[5 * (index + i) + 4]);
+  }
 }
 
 TEST_F(QmmmHelperFunctionsTest, QmmmRegionValidityCheckWorks) {
@@ -173,7 +242,7 @@ TEST_F(QmmmHelperFunctionsTest, QmmmRegionValidityCheckWorks) {
 }
 
 TEST_F(QmmmHelperFunctionsTest, TotalGradientsAreCorrectlyAssembled) {
-  calculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   calculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
   // Basically no cutoff radius:
   calculator.settings().modifyDouble(SwooseUtilities::SettingsNames::nonCovalentCutoffRadius, 20.0);
@@ -234,7 +303,7 @@ TEST_F(QmmmHelperFunctionsTest, TotalGradientsAreCorrectlyAssembled) {
 }
 
 TEST_F(QmmmHelperFunctionsTest, ChargesAreCorrectlyRedistributed) {
-  calculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   calculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
   calculator.setStructure(testStructure);
 
@@ -250,7 +319,7 @@ TEST_F(QmmmHelperFunctionsTest, ChargesAreCorrectlyRedistributed) {
 
   ASSERT_THAT(newCharges.size(), Eq(calculator.atomicCharges().size()));
 
-  for (int i = 0; i < newCharges.size(); ++i) {
+  for (int i = 0; i < int(newCharges.size()); ++i) {
     if (i == 2) {
       ASSERT_THAT(newCharges.at(i), DoubleNear(0.0, 1e-6));
     }
@@ -287,7 +356,7 @@ TEST_F(QmmmHelperFunctionsTest, ChargesAreCorrectlyRedistributed) {
   ASSERT_THAT(auxCharges.size(), Eq(2));
   ASSERT_THAT(auxCharges.size(), Eq(auxPositions.rows()));
 
-  for (int i = 0; i < newChargesDipoleScheme.size(); ++i) {
+  for (int i = 0; i < int(newChargesDipoleScheme.size()); ++i) {
     if (i == 2) {
       ASSERT_THAT(newChargesDipoleScheme.at(i), DoubleNear(0.0, 1e-6));
     }

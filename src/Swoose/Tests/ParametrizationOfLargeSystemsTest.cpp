@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -107,7 +107,7 @@ TEST_F(AParametrizationOfLargeSystemsTest, FragmentOfDermcidinIsFragmentedCorrec
   }
 
   // Assert that the constrained atoms were correctly set
-  for (int k = 0; k < data.constrainedAtoms.size(); ++k) {
+  for (int k = 0; k < int(data.constrainedAtoms.size()); ++k) {
     auto constrainedAtoms = data.constrainedAtoms[k];
     ASSERT_TRUE(constrainedAtoms.empty() || constrainedAtoms.size() > 2);
 
@@ -313,7 +313,7 @@ TEST_F(AParametrizationOfLargeSystemsTest, AtomicChargesAssemblerWorksCorrectly)
     data.atomIndexMapping.push_back(mockIndexMap);
   }
 
-  AtomicChargesAssembler::assembleAtomicCharges(data);
+  AtomicChargesAssembler::assembleAtomicCharges(data, silentLogger);
   double sumOfAtomicCharges = std::accumulate(data.atomicCharges.begin(), data.atomicCharges.end(), 0.0);
   ASSERT_THAT(sumOfAtomicCharges, DoubleNear(-44.7, 1e-6));
   ASSERT_THAT(data.atomicCharges[2], DoubleNear(0.9, 1e-6));
@@ -334,13 +334,13 @@ TEST_F(AParametrizationOfLargeSystemsTest, AtomicChargesAssemblerWorksCorrectly)
 
   data.atomicChargesForEachFragment[500].clear();
   // This should throw since atom 500 will not be in the fragment corresponding to one of its covalent neighbors
-  EXPECT_THROW(AtomicChargesAssembler::assembleAtomicCharges(data), std::runtime_error);
+  EXPECT_THROW(AtomicChargesAssembler::assembleAtomicCharges(data, silentLogger), std::runtime_error);
 
   data.atomicChargesForEachFragment = copyOfAtomicChargesVector;
 
   data.atomicChargesForEachFragment[10].clear();
   // Should be compensated and no throw is expected
-  AtomicChargesAssembler::assembleAtomicCharges(data);
+  AtomicChargesAssembler::assembleAtomicCharges(data, silentLogger);
 
   for (const auto& neighbor : data.listsOfNeighbors[10]) {
     data.atomicChargesForEachFragment[neighbor].clear();
@@ -349,7 +349,7 @@ TEST_F(AParametrizationOfLargeSystemsTest, AtomicChargesAssemblerWorksCorrectly)
   }
 
   // This should throw again, since the absence of all those charge vectors cannot be compensated anymore
-  EXPECT_THROW(AtomicChargesAssembler::assembleAtomicCharges(data), std::runtime_error);
+  EXPECT_THROW(AtomicChargesAssembler::assembleAtomicCharges(data, silentLogger), std::runtime_error);
 }
 
 } // namespace Tests

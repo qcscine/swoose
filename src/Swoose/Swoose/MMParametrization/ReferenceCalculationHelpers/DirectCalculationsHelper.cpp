@@ -1,19 +1,22 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
 #include "DirectCalculationsHelper.h"
 #include "../MMParametrizationSettings.h"
 #include "../ParametrizationData.h"
-#include "BasicJobSubmissionHelper.h"
 #include <Core/ModuleManager.h>
+#include <Swoose/Utilities/BasicJobSubmissionHelper.h>
+#include <Swoose/Utilities/TopologyUtils.h>
+#include <Utils/Bonds/BondDetector.h>
 #include <Utils/ExternalQC/Gaussian/GaussianCalculator.h>
 #include <Utils/ExternalQC/Gaussian/GaussianCalculatorSettings.h>
 #include <Utils/ExternalQC/Orca/OrcaCalculator.h>
 #include <Utils/GeometryOptimization/GeometryOptimizer.h>
+#include <Utils/IO/ChemicalFileFormats/ChemicalFileHandler.h>
 #include <Utils/IO/ChemicalFileFormats/XyzStreamHandler.h>
 #include <Utils/IO/Yaml.h>
 #include <Utils/Properties/AtomicCharges/ChargeModel5.h>
@@ -26,16 +29,17 @@ namespace DirectCalculationsHelper {
 
 namespace {
 static constexpr const char* optimizationTrajectoryFile = "optimization_trajectory.xyz";
+static constexpr const char* optimizedStructureFile = "optimized_structure.xyz";
 } // namespace
 
 void performReferenceCalculations(ParametrizationData& data, std::shared_ptr<Utils::Settings> settings,
                                   std::string baseWorkingDir, Core::Log& log) {
   if (data.vectorOfStructures.size() != 1)
     throw std::runtime_error("Cannot perform direct calculations for fragments.");
-
+  if (settings->getBool(SwooseUtilities::SettingsNames::titrate))
+    throw std::runtime_error("Cannot perform calculation including titration in direct mode.");
   // Get a module manager
   auto& manager = Core::ModuleManager::getInstance();
-
   // Get the calculator settings:
   auto yamlSettingsPath = settings->getString(SwooseUtilities::SettingsNames::yamlSettingsFilePath);
   YAML::Node yamlSettings;
@@ -48,7 +52,7 @@ void performReferenceCalculations(ParametrizationData& data, std::shared_ptr<Uti
 
   auto referenceProgram = settings->getString(SwooseUtilities::SettingsNames::referenceProgram);
   // For the next line, referenceProgram will be all-lowercase
-  auto methodFamily = BasicJobSubmissionHelper::determineMethodFamily(referenceMethod, referenceProgram);
+  auto methodFamily = SwooseUtilities::BasicJobSubmissionHelper::determineMethodFamily(referenceMethod, referenceProgram);
 
   // Convert capitalization
   referenceProgram.at(0) = std::toupper(referenceProgram.at(0));
@@ -73,8 +77,11 @@ void performReferenceCalculations(ParametrizationData& data, std::shared_ptr<Uti
   calculator->setLog(warningLog);
 
   Utils::nodeToSettings(calculator->settings(), yamlSettings, true);
+
   calculator->settings().modifyInt(Utils::SettingsNames::molecularCharge, data.vectorOfChargesAndMultiplicities.at(0).first);
   calculator->settings().modifyInt(Utils::SettingsNames::spinMultiplicity, data.vectorOfChargesAndMultiplicities.at(0).second);
+  calculator->settings().modifyInt(Utils::SettingsNames::maxScfIterations, 1000);
+  calculator->setStructure(*data.vectorOfStructures.at(0));
   if (calculator->settings().valueExists(Utils::ExternalQC::SettingsNames::baseWorkingDirectory))
     calculator->settings().modifyString(Utils::ExternalQC::SettingsNames::baseWorkingDirectory, baseWorkingDir);
   if (calculator->settings().valueExists(Utils::SettingsNames::method))
@@ -84,7 +91,6 @@ void performReferenceCalculations(ParametrizationData& data, std::shared_ptr<Uti
 
   Utils::GeometryOptimizer<Utils::Bfgs> optimizer(*calculator);
   Utils::AtomCollection structure = *data.vectorOfStructures.at(0);
-
   // Trajectory for optimized structure
   std::ofstream trajectory(optimizationTrajectoryFile, std::ofstream::out);
   Utils::XyzStreamHandler writer;
@@ -94,9 +100,9 @@ void performReferenceCalculations(ParametrizationData& data, std::shared_ptr<Uti
   // Observer function
   auto obsFunc = [&](const int& cycle, const double& energy, const Eigen::VectorXd& /* params */) {
     if (cycle == 1) {
-      log.debug.printf("%7s %16s %16s\n", "Cycle", "Energy", "Energy Diff.");
+      log.output.printf("%7s %16s %16s\n", "Cycle", "Energy", "Energy Diff.");
     }
-    log.debug.printf("%7d %+16.9f %+16.9f\n", cycle, energy, energy - oldEnergy);
+    log.output.printf("%7d %+16.9f %+16.9f\n", cycle, energy, energy - oldEnergy);
     oldEnergy = energy;
     auto currStructure = calculator->getStructure();
     writer.write(trajectory, *currStructure);
@@ -107,6 +113,9 @@ void performReferenceCalculations(ParametrizationData& data, std::shared_ptr<Uti
 
   auto optimizerSettings = optimizer.getSettings();
   Utils::nodeToSettings(optimizerSettings, yamlSettings, true);
+  optimizerSettings.modifyInt("convergence_max_iterations", 5000);
+  // Always use cartesian coordinates, internals break down most of the time
+  optimizerSettings.modifyString("geoopt_coordinate_system", "cartesianWithoutRotTrans");
   optimizer.setSettings(optimizerSettings);
 
   log.output << "Optimizing structure...";
@@ -123,7 +132,7 @@ void performReferenceCalculations(ParametrizationData& data, std::shared_ptr<Uti
                              std::string(optimizationTrajectoryFile));
   }
 
-  if (cycles == optimizer.check.maxIter) {
+  if (cycles == int(optimizer.check.maxIter)) {
     trajectory.close();
     throw std::runtime_error("The structure optimization did not converge within the maximum number of cycles.\nThe "
                              "trajectory of the optimization can be found here: " +
@@ -132,9 +141,16 @@ void performReferenceCalculations(ParametrizationData& data, std::shared_ptr<Uti
 
   // Remove optimization trajectory file if no error occurred:
   boost::filesystem::remove_all(optimizationTrajectoryFile);
-
+  // write optimized structure to file if no error occured:
+  Utils::ChemicalFileHandler::write(optimizedStructureFile, structure);
   data.vectorOfOptimizedStructures.resize(1);
   data.vectorOfOptimizedStructures[0] = std::make_unique<Utils::AtomCollection>(structure);
+
+  // reevaluate connectivity, which can change during the structure optimization
+  data.bondOrders = Utils::BondDetector::detectBonds(structure);
+  data.listsOfNeighbors =
+      SwooseUtilities::TopologyUtils::generateListsOfNeighborsFromBondOrderMatrix(data.numberOfAtoms, data.bondOrders, 0.5);
+
   log.output << "Done." << Core::Log::nl;
   log.debug << Core::Log::nl;
 

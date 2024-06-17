@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -19,6 +19,9 @@
 #include <ostream>
 
 namespace Scine {
+namespace StructurePreparation {
+class StructureProcessor;
+} // namespace StructurePreparation
 
 namespace Utils {
 class MolecularDynamics;
@@ -27,6 +30,10 @@ class XyzStreamHandler;
 
 namespace Swoose {
 namespace Tasks {
+
+/// @brief Prepares the PDB file for a subsequent parametrization.
+void runPDBPreparationTask(StructurePreparation::StructureProcessor processor, const std::string& structureFile,
+                           const std::string& mode, Core::Log& log);
 
 /// @brief Performs a SFAM or GAFF molecular mechanics calculation.
 void runMMCalculationTask(Core::Calculator& calculator, const std::string& structureFile,

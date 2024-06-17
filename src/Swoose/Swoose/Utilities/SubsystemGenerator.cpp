@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -66,7 +66,8 @@ Utils::AtomCollection SubsystemGenerator::generateSubsystem(int centralAtomIndex
           << "The fragment around atom " + std::to_string(centralAtomIndex) + " could not be generated." << Core::Log::nl
           << Core::Log::nl << "For debugging, the generated structures of this fragment with the smallest and the largest initial radius can be found in \""
           << failedAttemptStructureSmallestRadiusFilename << "\" and \"" << failedAttemptStructureLargestRadiusFilename
-          << "\"." << Core::Log::nl << Core::Log::endl;
+          << "\"." << Core::Log::nl << Core::Log::nl << "Please check if you provided the correct atomic info file. "
+          << Core::Log::endl;
       throw std::runtime_error("Error while trying to generate fragment with index " + std::to_string(centralAtomIndex) + ".");
     }
     tryGeneratingSensibleSubsystem(subsystem, centralAtom, centralAtomIndex, atomIndexMapping, subsystemRadius,

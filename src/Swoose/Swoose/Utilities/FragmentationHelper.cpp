@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -13,6 +13,7 @@
 #include <Utils/Geometry/AtomCollection.h>
 #include <Utils/Geometry/ElementInfo.h>
 #include <Utils/Geometry/GeometryUtilities.h>
+#include <Utils/IO/ChemicalFileFormats/ChemicalFileHandler.h>
 
 namespace Scine {
 namespace SwooseUtilities {
@@ -181,6 +182,31 @@ std::vector<int> calculateSubgraphSizes(const Utils::AtomCollection& fullStructu
     subgraphSizes.push_back(subgraphSize);
   }
   return subgraphSizes;
+}
+
+Utils::AtomCollection mergeSubsystems(std::vector<int>& atomIndexMapping, std::vector<Utils::AtomCollection> subsystems,
+                                      std::vector<std::vector<int>> atomIndexMappings) {
+  Utils::AtomCollection mergedSubsystem;
+  // Check validity of input parameters
+  if (subsystems.size() != atomIndexMappings.size())
+    throw std::logic_error("Generated fragments cannot be merged. ");
+
+  for (int i = 0; i < int(subsystems.size()); i++) {
+    if (subsystems[i].size() != int(atomIndexMappings[i].size()))
+      throw std::logic_error("Generated fragments cannot be merged. ");
+  }
+  // iterate over all index maps
+  for (int m = 0; m < int(atomIndexMappings.size()); m++) {
+    for (int n = 0; n < int(atomIndexMappings[m].size()); n++) {
+      int index = atomIndexMappings[m].at(n);
+      // Remove all link atoms
+      if (index != -1 && std::find(atomIndexMapping.begin(), atomIndexMapping.end(), index) == atomIndexMapping.end()) {
+        mergedSubsystem.push_back(subsystems[m].at(n));
+        atomIndexMapping.push_back(index);
+      }
+    }
+  }
+  return mergedSubsystem;
 }
 
 } // namespace FragmentationHelper

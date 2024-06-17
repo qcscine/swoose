@@ -8,11 +8,28 @@ include(ImportMolassembler)
 include(ImportYamlCpp)
 include(AddEigen)
 
+set(SWOOSE_DEPENDENCIES "scine_utilities" "scine_molassembler")
 # Only include database and mongocxx if required
 if(SWOOSE_COMPILE_DATABASE)
   include(ImportDatabase)
   include(ImportMongoCxx)
+  list(APPEND SWOOSE_DEPENDENCIES "scine_database")
 endif()
+# Manually construct the string representation of the list
+# Initialize an empty string to hold the formatted list
+set(SWOOSE_DEPENDENCIES_STRING "[")
+
+# Iterate over the dependencies
+foreach(DEPENDENCY ${SWOOSE_DEPENDENCIES})
+    # Add the dependency to the string, with quotes around the entire list
+    set(SWOOSE_DEPENDENCIES_STRING "${SWOOSE_DEPENDENCIES_STRING}\"${DEPENDENCY}\",")
+endforeach()
+# Remove trailing comma
+string(LENGTH ${SWOOSE_DEPENDENCIES_STRING} strLength)
+math(EXPR lastIndex "${strLength} - 1")
+string(SUBSTRING ${SWOOSE_DEPENDENCIES_STRING} 0 ${lastIndex} SWOOSE_DEPENDENCIES_STRING)
+# Close the brackets
+set(SWOOSE_DEPENDENCIES_STRING "${SWOOSE_DEPENDENCIES_STRING}]")
 
 # Do not build tests of dependencies
 set(_build_tests ${SCINE_BUILD_TESTS})
@@ -174,10 +191,17 @@ if(SCINE_BUILD_PYTHON_BINDINGS)
   endif()"
   )
 
-  # Copy the setup file and README.md into the binary dir so you can install
+  # Copy the setup file and README.rst into the binary dir so you can install
   # using pip or make a distribution with the compiled binary
+  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/Python/pkginit.py
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/scine_swoose
+  )
+  file(RENAME
+    ${CMAKE_CURRENT_BINARY_DIR}/scine_swoose/pkginit.py
+    ${CMAKE_CURRENT_BINARY_DIR}/scine_swoose/__init__.py
+  )
   file(
-    COPY ${CMAKE_CURRENT_SOURCE_DIR}/Python/__init__.py
+    COPY ${PROJECT_SOURCE_DIR}/README.rst
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/scine_swoose
   )
   add_custom_command(
@@ -212,6 +236,19 @@ if(SCINE_BUILD_PYTHON_BINDINGS)
     message(STATUS "deduced library names: ${_core_name}")
     set(swoose_PY_DEPS ", \"${_core_name}\"")
   endif()
+
+  # Typing stubs
+  include(FindPythonModule)
+  find_python_module(pybind11_stubgen)
+  if(PY_PYBIND11_STUBGEN)
+    add_custom_command(TARGET scine_swoose POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -m pybind11_stubgen -o . --root-module-suffix \"\" --no-setup-py --bare-numpy-ndarray scine_swoose
+      COMMENT "Generating python package typechecking stubs with pybind11-stubgen"
+    )
+  else()
+    message(STATUS "Not generating typechecking stubs for python package as pybind11-stubgen was not found")
+  endif()
+
   # Add setuptools file
   configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/Python/setup.py
@@ -225,6 +262,7 @@ if(SCINE_BUILD_PYTHON_BINDINGS)
     ${PROJECT_SOURCE_DIR}/README.rst
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
   )
+
 endif() # endif python bindings
 
 # if (WIN32)

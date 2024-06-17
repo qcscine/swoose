@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -114,6 +114,22 @@ void runTask(std::string mode, bool quantum, std::string structureFile, pybind11
   Swoose::TaskManagement::manageTasks(manager, mode, quantum, hessianRequired, structureFile, yamlSettings,
                                       yamlFileHandler.yamlFilePath, log);
 }
+// TODO: this is not tested yet
+void runPrepareAnalyze(std::string structureFile, pybind11::kwargs kwargs) {
+  runTask("prepare-analyze", false, structureFile, kwargs);
+}
+
+void runPrepareProtonate(std::string structureFile, pybind11::kwargs kwargs) {
+  runTask("prepare-protonate", false, structureFile, kwargs);
+}
+
+void runPrepareFinalize(std::string structureFile, pybind11::kwargs kwargs) {
+  runTask("prepare-finalize", false, structureFile, kwargs);
+}
+
+void runPrepareAutomate(std::string structureFile, pybind11::kwargs kwargs) {
+  runTask("prepare-automate", false, structureFile, kwargs);
+}
 
 void runParametrization(std::string structureFile, pybind11::kwargs kwargs) {
   runTask("parametrize", false, structureFile, kwargs);
@@ -148,22 +164,28 @@ void runQmRegionSelection(std::string structureFile, pybind11::kwargs kwargs) {
 }
 
 void init_tasks(pybind11::module& m) {
-  m.def("parametrize", &runParametrization, pybind11::arg("structure file"),
+  m.def("prepare_analyze", &runPrepareAnalyze, pybind11::arg("structure_file"),
+        "Analyzes a given input structure. Settings can be set as keyword arguments.");
+  m.def("prepare_protonate", &runPrepareProtonate, pybind11::arg("structure_file"),
+        "Protonates protein and nonRegContainer separately. Settings can be set as keyword arguments.");
+  m.def("prepare_finalize", &runPrepareFinalize, pybind11::arg("structure_file"),
+        "Merges the substructures and generates Atomic Info File. Settings can be set as keyword arguments. ");
+  m.def("parametrize", &runParametrization, pybind11::arg("structure_file"),
         "Parametrizes the SFAM model. Settings can be set as keyword arguments.");
-  m.def("calculate_mm", &runMmCalculation, pybind11::arg("structure file"),
+  m.def("calculate_mm", &runMmCalculation, pybind11::arg("structure_file"),
         "Calculation with a molecular mechanics model. Settings can be set as keyword arguments.");
-  m.def("calculate_qmmm", &runQmmmCalculation, pybind11::arg("structure file"),
+  m.def("calculate_qmmm", &runQmmmCalculation, pybind11::arg("structure_file"),
         "Calculation with the QM/MM hybrid model. Settings can be set as keyword arguments.");
-  m.def("optimize_mm", &runMmOptimization, pybind11::arg("structure file"),
+  m.def("optimize_mm", &runMmOptimization, pybind11::arg("structure_file"),
         "Structure optimization with a molecular mechanics model. Settings can be set as keyword arguments.");
-  m.def("optimize_qmmm", &runQmmmOptimization, pybind11::arg("structure file"),
+  m.def("optimize_qmmm", &runQmmmOptimization, pybind11::arg("structure_file"),
         "Structure optimization with the QM/MM hybrid model. Settings can be set as keyword arguments.");
-  m.def("md_simulate_mm", &runMdSimulation, pybind11::arg("structure file"),
+  m.def("md_simulate_mm", &runMdSimulation, pybind11::arg("structure_file"),
         "Molecular dynamics simulation with a molecular mechanics model. Settings can be set as keyword "
         "arguments.");
-  m.def("md_simulate_qmmm", &runMdSimulationWithQmmm, pybind11::arg("structure file"),
+  m.def("md_simulate_qmmm", &runMdSimulationWithQmmm, pybind11::arg("structure_file"),
         "Molecular dynamics simulation with a QM/MM model. Settings can be set as keyword "
         "arguments.");
-  m.def("select_qm_region", &runQmRegionSelection, pybind11::arg("structure file"),
+  m.def("select_qm_region", &runQmRegionSelection, pybind11::arg("structure_file"),
         "Automated QM region selection. Settings can be set as keyword arguments.");
 }

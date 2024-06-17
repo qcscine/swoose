@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -17,12 +17,13 @@
 #include "ParametrizationUtils/ParameterFileWriter.h"
 #include "ParametrizationUtils/ReparametrizationHelper.h"
 #include "ParametrizationUtils/SuperfluousFragmentIdentifier.h"
+#include "ParametrizationUtils/TitrationHelper.h"
 #include <Core/Log.h>
 #include <Swoose/MolecularMechanics/SFAM/SfamAtomTypeIdentifier.h>
 #include <Swoose/MolecularMechanics/Topology/IndexedStructuralTopologyCreator.h>
 #include <Swoose/Utilities/AtomicInformationReader.h>
 #include <Swoose/Utilities/ConnectivityFileHandler.h>
-#include <Utils/Geometry/ElementInfo.h>
+#include <Swoose/Utilities/TitrationFileHandler.h>
 #include <chrono>
 
 namespace Scine {
@@ -59,6 +60,8 @@ void Parametrizer::parametrize(Utils::AtomCollection structure) {
                           << Core::Log::endl;
     return;
   }
+
+  determineProtonationStateOfTitrableSites();
 
   auto t2 =
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -129,6 +132,18 @@ void Parametrizer::performInitialSetup(Utils::AtomCollection structure) {
     reparametrizationHelper_->manipulateTopology();
   }
 
+  // prepare all relevant data for titration
+  if (settings_->getBool(SwooseUtilities::SettingsNames::titrate)) {
+    this->getLog().output << "Reading titrable sites from file: titrable sites.dat" << Core::Log::endl;
+    int numberOfFragments = (data_.numberOfAtoms > settings_->getInt(SwooseUtilities::SettingsNames::numberAtomsThreshold))
+                                ? data_.numberOfAtoms
+                                : 1;
+    data_.siteIspHSensitive.resize(numberOfFragments);
+    SwooseUtilities::TitrationFileHandler::readTitrationSitesFromFile(
+        titrationResults_, settings_->getString(SwooseUtilities::SettingsNames::titrationSiteFile), data_.numberOfAtoms,
+        numberOfFragments, data_.pHSensitiveSites, data_.siteIspHSensitive);
+  }
+
   if (data_.numberOfAtoms > settings_->getInt(SwooseUtilities::SettingsNames::numberAtomsThreshold))
     this->getLog().output << "Now dividing the system into its fragments..." << Core::Log::endl;
   // Partition system into subsystems
@@ -139,7 +154,7 @@ void Parametrizer::performInitialSetup(Utils::AtomCollection structure) {
 }
 
 void Parametrizer::generateReferenceData() {
-  CalculationManager calculationManager(data_, settings_, this->getLog());
+  CalculationManager calculationManager(data_, titrationResults_, settings_, this->getLog());
   calculationManager.calculateReferenceData();
 }
 
@@ -155,7 +170,7 @@ void Parametrizer::setupParameterOptimization() {
   }
 
   // Assemble the atomic charges for the whole system in the data object from the subsystem results.
-  AtomicChargesAssembler::assembleAtomicCharges(data_);
+  AtomicChargesAssembler::assembleAtomicCharges(data_, this->getLog());
   AtomicChargesAssembler::renormalizeAtomicCharges(data_);
   std::vector<std::vector<double>>().swap(data_.atomicChargesForEachFragment); // Free memory
 
@@ -167,7 +182,7 @@ void Parametrizer::setupParameterOptimization() {
   data_.vectorOfStructures.clear();
 
   // Generate initial parameters
-  OptimizationSetup optSetup(data_, settings_);
+  OptimizationSetup optSetup(data_, settings_, this->getLog());
   optSetup.generateInitialParameters();
 
   // Free more memory
@@ -181,10 +196,10 @@ void Parametrizer::optimizeParameters() {
 }
 
 void Parametrizer::writeParametersAndConnectivity() {
-  std::string parameterFilePath = settings_->getString(SwooseUtilities::SettingsNames::parameterFilePath);
+  std::string parameterFilePath = settings_->getString(Utils::SettingsNames::parameterFilePath);
   std::string connectivityFilePath = settings_->getString(SwooseUtilities::SettingsNames::connectivityFilePath);
   if (!parameterFilePath.empty())
-    ParameterFileWriter::writeSfamParametersToFile(parameterFilePath, data_.parameters);
+    ParameterFileWriter::writeSfamParametersToFile(parameterFilePath, data_.parameters, *settings_);
   if (!connectivityFilePath.empty())
     SwooseUtilities::ConnectivityFileHandler::writeListsOfNeighbors(connectivityFilePath, data_.listsOfNeighbors);
 }
@@ -202,6 +217,12 @@ void Parametrizer::generateAtomTypes() {
   MolecularMechanics::SfamAtomTypeLevel atl = MolecularMechanics::SfamAtomTypeIdentifier::generateSfamAtomTypeLevelFromString(
       settings_->getString(SwooseUtilities::SettingsNames::sfamAtomTypeLevel));
   data_.atomTypes = atomTypeIdentifier.getAtomTypes(atl);
+}
+
+void Parametrizer::determineProtonationStateOfTitrableSites() {
+  TitrationHelper helper(settings_);
+  helper.collectTrainingData(titrationResults_);
+  helper.calculateFreeEnergiesOfDeprotonation(titrationResults_);
 }
 
 void Parametrizer::performAdditionalSettingsChecks() {
@@ -241,7 +262,7 @@ void Parametrizer::performAdditionalSettingsChecks() {
 
 void Parametrizer::setDefaultsForMethodAndBasisSetSettings() {
   auto selectedProgram = settings_->getString(SwooseUtilities::SettingsNames::referenceProgram);
-  std::string defaultReferenceMethodString = "PBE D3BJ";   // ORCA option base case
+  std::string defaultReferenceMethodString = "PBE-D3BJ";   // ORCA option base case
   std::string defaultReferenceBasisSetString = "def2-SVP"; // ORCA option base case
   if (selectedProgram == SwooseUtilities::OptionNames::xtbOption) {
     defaultReferenceMethodString = "gfn2";
@@ -252,7 +273,7 @@ void Parametrizer::setDefaultsForMethodAndBasisSetSettings() {
     defaultReferenceBasisSetString = "";
   }
   else if (selectedProgram == SwooseUtilities::OptionNames::turbomoleOption) {
-    defaultReferenceMethodString = "pbe D3BJ"; // lower-case functional name
+    defaultReferenceMethodString = "pbe-D3BJ"; // lower-case functional name
     defaultReferenceBasisSetString = "def2-SVP";
   }
   settings_->modifyString(SwooseUtilities::SettingsNames::referenceMethod, defaultReferenceMethodString);

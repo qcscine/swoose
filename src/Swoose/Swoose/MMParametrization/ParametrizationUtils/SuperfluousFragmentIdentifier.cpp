@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -21,14 +21,18 @@ void identifySuperfluousFragments(ParametrizationData& data, Core::Log& log,
   if (data.vectorOfStructures.size() == 1)
     return;
 
-  for (int i = 0; i < data.vectorOfStructures.size(); ++i) {
+  for (int i = 0; i < int(data.vectorOfStructures.size()); ++i) {
     // It may be superfluous since we are in a process of local re-parametrization of the model:
     if (reparametrizationHelper != nullptr) { // Important! It is null if we are not in such a process.
-      if (!reparametrizationHelper->isRelevantFragment(i)) {
+      if (!reparametrizationHelper->isRelevantFragment(i) && !data.siteIspHSensitive.at(i)) {
         data.superfluousFragments.push_back(i);
         continue;
       }
     }
+
+    // if center atom is pH sensitive, this structure should not be superfluous
+    if (data.pHSensitiveSites.count(i) == 1)
+      continue;
 
     // Check for duplicate structures:
     Utils::AtomCollection structure = *data.vectorOfStructures.at(i);
@@ -85,7 +89,11 @@ void identifySuperfluousFragments(ParametrizationData& data, Core::Log& log,
     }
   }
 
-  log.debug << "Number of superfluous fragments: " << data.superfluousFragments.size() << Core::Log::endl;
+  log.output << "Number of superfluous fragments: " << data.superfluousFragments.size() << Core::Log::endl;
+  log.debug << "Superfluous fragments: ";
+  for (const auto& f : data.superfluousFragments)
+    log.debug << f << " ";
+  log.debug << Core::Log::endl;
 }
 
 } // namespace SuperfluousFragmentIdentifier

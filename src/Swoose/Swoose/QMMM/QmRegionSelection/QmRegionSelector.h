@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -9,6 +9,7 @@
 #define SWOOSE_QMMM_QMREGIONSELECTOR_H
 
 #include <Core/BaseClasses/ObjectWithLog.h>
+#include <Swoose/QMMM/QmmmCalculator.h>
 #include <Utils/Geometry/AtomCollection.h>
 #include <memory>
 #include <vector>
@@ -43,7 +44,12 @@ class QmRegionSelector : public Core::ObjectWithLog {
  public:
   /// @brief Constructor.
   QmRegionSelector();
-
+  /**
+   * @brief Sets the underlying calculators
+   *
+   * @param qmmmCalculator The QmmmCalculator.
+   */
+  void setUnderlyingCalculator(std::shared_ptr<Core::Calculator> qmmmCalculator);
   /**
    * @brief Generates the optimal QM region automatically.
    * @param fullSystem The molecular structure of the full system.
@@ -59,6 +65,11 @@ class QmRegionSelector : public Core::ObjectWithLog {
    * @brief Getter for the indices of the atoms in the generated QM region.
    */
   std::vector<int> getQmRegionIndices() const;
+  /**
+   * @brief Get the Qm Region Indices Without Link Atoms. This is required for
+   * interactive QM/MM.
+   */
+  std::vector<int> getQmRegionIndicesWithoutLinkAtoms() const;
 
   /**
    * @brief Getter for the molecular charge and multiplicity of the generated QM region.
@@ -77,6 +88,12 @@ class QmRegionSelector : public Core::ObjectWithLog {
    */
   const Utils::Settings& settings() const;
 
+  /**
+   * @brief Returns if the QM Region Selector in its current status allows the release of the Python GIL.
+   * @return bool
+   */
+  bool allowsPythonGILRelease() const;
+
  private:
   // Helper function that reads in the system connectivity from the connectivity file specified in the settings.
   Utils::BondOrderCollection getBondOrders(const Utils::AtomCollection& structure) const;
@@ -86,6 +103,7 @@ class QmRegionSelector : public Core::ObjectWithLog {
   std::vector<QmmmModel> qmmmModelCandidates_;
   // The QM/MM reference models.
   std::vector<QmmmModel> qmmmReferenceModels_;
+  std::shared_ptr<QmmmCalculator> qmmmCalculator_;
   // The selected QM region. Initialized as -1, which is the state that no selection has been made yet.
   int selectedQmRegionIndex_ = -1;
 };

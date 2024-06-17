@@ -1,19 +1,22 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
 #include "Files/tests_file_location.h"
 #include <Core/Log.h>
 #include <Core/ModuleManager.h>
+#include <Swoose/MolecularMechanics/SFAM/SfamMolecularMechanicsCalculator.h>
 #include <Swoose/QMMM/QmRegionSelection/QmRegionCandidateGenerator.h>
 #include <Swoose/QMMM/QmRegionSelection/QmRegionSelector.h>
 #include <Swoose/QMMM/QmRegionSelection/QmRegionSelectorSettings.h>
 #include <Swoose/QMMM/QmRegionSelection/QmmmModelAnalyzer.h>
 #include <Swoose/QMMM/QmRegionSelection/QmmmReferenceDataManager.h>
+#include <Swoose/Utilities/CalculatorOptions.h>
 #include <Swoose/Utilities/ConnectivityFileHandler.h>
+#include <Swoose/Utilities/FragmentationHelper.h>
 #include <Swoose/Utilities/TopologyUtils.h>
 #include <Utils/Bonds/BondOrderCollection.h>
 #include <Utils/IO/ChemicalFileFormats/ChemicalFileHandler.h>
@@ -44,7 +47,7 @@ class QmRegionSelectionTests : public Test {
 TEST_F(QmRegionSelectionTests, SingleQmRegionIsCorrectlyConstructed) {
   QmRegionSelector qmRegionSelector;
   qmRegionSelector.setLog(silentLogger);
-  qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCenterAtom, 302);
+  qmRegionSelector.settings().modifyIntList(SwooseUtilities::SettingsNames::qmRegionCenterAtoms, {302});
   qmRegionSelector.settings().modifyDouble(SwooseUtilities::SettingsNames::initialRadiusForQmRegionSelection, 5.0);
   qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCandidateMinSize, 60);
   qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCandidateMaxSize, 70);
@@ -105,7 +108,7 @@ TEST_F(QmRegionSelectionTests, SingleQmRegionIsCorrectlyConstructed) {
 TEST_F(QmRegionSelectionTests, MultipleQmRegionCandidatesAreConstructedCorrectly) {
   QmRegionSelector qmRegionSelector;
   qmRegionSelector.setLog(silentLogger);
-  qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCenterAtom, 302);
+  qmRegionSelector.settings().modifyIntList(SwooseUtilities::SettingsNames::qmRegionCenterAtoms, {302});
   qmRegionSelector.settings().modifyDouble(SwooseUtilities::SettingsNames::initialRadiusForQmRegionSelection, 5.0);
   qmRegionSelector.settings().modifyDouble(SwooseUtilities::SettingsNames::cuttingProbability, 0.9);
   qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCandidateMinSize, 60);
@@ -170,7 +173,7 @@ TEST_F(QmRegionSelectionTests, MultipleQmRegionCandidatesAreConstructedCorrectly
 TEST_F(QmRegionSelectionTests, ReferenceModelEqualsFullSystemIfPossible) {
   QmRegionSelector qmRegionSelector;
   qmRegionSelector.setLog(silentLogger);
-  qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCenterAtom, 302);
+  qmRegionSelector.settings().modifyIntList(SwooseUtilities::SettingsNames::qmRegionCenterAtoms, {302});
   qmRegionSelector.settings().modifyDouble(SwooseUtilities::SettingsNames::initialRadiusForQmRegionSelection, 5.0);
   qmRegionSelector.settings().modifyDouble(SwooseUtilities::SettingsNames::cuttingProbability, 0.9);
   qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCandidateMinSize, 70);
@@ -206,7 +209,7 @@ TEST_F(QmRegionSelectionTests, ReferenceModelEqualsFullSystemIfPossible) {
 TEST_F(QmRegionSelectionTests, QmmmModelAnalysisIsPerformedCorrectly) {
   QmRegionSelector qmRegionSelector;
   qmRegionSelector.setLog(silentLogger);
-  qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCenterAtom, 15);
+  qmRegionSelector.settings().modifyIntList(SwooseUtilities::SettingsNames::qmRegionCenterAtoms, {15});
   /*
    * Set large tolerance such that all the candidates will be considered
    * regardless of the error assigned to them.
@@ -260,7 +263,7 @@ TEST_F(QmRegionSelectionTests, QmmmModelAnalysisIsPerformedCorrectly) {
 TEST_F(QmRegionSelectionTests, QmmmModelAnalysisFailureTests) {
   QmRegionSelector qmRegionSelector;
   qmRegionSelector.setLog(silentLogger);
-  qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCenterAtom, 15);
+  qmRegionSelector.settings().modifyIntList(SwooseUtilities::SettingsNames::qmRegionCenterAtoms, {15});
   qmRegionSelector.settings().modifyDouble(SwooseUtilities::SettingsNames::tolerancePercentageError, 50.0);
   // Read in structure
   Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(melatonin_xyz_file).first;
@@ -327,6 +330,108 @@ TEST_F(QmRegionSelectionTests, QmmmModelAnalysisFailureTests) {
                "None of the calculations for the candidate models were completed successfully.");
 }
 
+TEST_F(QmRegionSelectionTests, TwoDisconnectedQmAtomsCanBeSet) {
+  QmRegionSelector qmRegionSelector;
+  qmRegionSelector.setLog(silentLogger);
+  // Two atoms that are far away from each other
+  qmRegionSelector.settings().modifyIntList(SwooseUtilities::SettingsNames::qmRegionCenterAtoms, {302, 87});
+  qmRegionSelector.settings().modifyDouble(SwooseUtilities::SettingsNames::initialRadiusForQmRegionSelection, 3.0);
+  qmRegionSelector.settings().modifyDouble(SwooseUtilities::SettingsNames::cuttingProbability, 1.0);
+  qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCandidateMinSize, 60);
+  qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCandidateMaxSize, 75);
+  qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionRefMaxSize, 120);
+  qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::numAttemptsPerRadius, 30);
+  qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::maxNumRefModels, 7);
+  qmRegionSelector.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, insulin_connectivity_file);
+
+  // Read in structure
+  Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(insulin_xyz_file).first;
+
+  qmRegionSelector.generateQmRegion(structure);
+
+  auto qmRegion = qmRegionSelector.getQmRegionStructure();
+  auto qmRegionIndices = qmRegionSelector.getQmRegionIndices();
+  auto qmRegionInfo = qmRegionSelector.getQmRegionChargeAndMultiplicity();
+
+  ASSERT_THAT(qmRegion.size(), Eq(45));
+  ASSERT_THAT(qmRegionIndices.size(), Eq(45));
+  ASSERT_THAT(qmRegionInfo.first, Eq(0));
+  ASSERT_THAT(qmRegionInfo.second, Eq(1));
+
+  // The same atom twice, check that there are no duplicates
+  qmRegionSelector.settings().modifyIntList(SwooseUtilities::SettingsNames::qmRegionCenterAtoms, {87, 87});
+  qmRegionSelector.generateQmRegion(structure);
+
+  auto qmRegionDupl = qmRegionSelector.getQmRegionStructure();
+  auto qmRegionIndicesDupl = qmRegionSelector.getQmRegionIndices();
+  auto qmRegionInfoDupl = qmRegionSelector.getQmRegionChargeAndMultiplicity();
+
+  ASSERT_THAT(qmRegionDupl.size(), Eq(23));
+  ASSERT_THAT(qmRegionIndicesDupl.size(), Eq(23));
+  ASSERT_THAT(qmRegionInfoDupl.first, Eq(0));
+  ASSERT_THAT(qmRegionInfoDupl.second, Eq(1));
+
+  //  Two atoms that are close
+  qmRegionSelector.settings().modifyIntList(SwooseUtilities::SettingsNames::qmRegionCenterAtoms, {87, 98});
+  qmRegionSelector.generateQmRegion(structure);
+
+  auto qmRegionOverlap = qmRegionSelector.getQmRegionStructure();
+  auto qmRegionIndicesOverlap = qmRegionSelector.getQmRegionIndices();
+  auto qmRegionInfoOverlap = qmRegionSelector.getQmRegionChargeAndMultiplicity();
+
+  ASSERT_THAT(qmRegionOverlap.size(), Eq(37));
+  ASSERT_THAT(qmRegionIndicesOverlap.size(), Eq(37));
+  ASSERT_THAT(qmRegionInfoOverlap.first, Eq(0));
+  ASSERT_THAT(qmRegionInfoOverlap.second, Eq(1));
+}
+
+TEST_F(QmRegionSelectionTests, TwoSubsystemsCanBeMergedToOneQmRegion) {
+  // Read in structure
+  Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(insulin_xyz_file).first;
+
+  // set subsystem 1 manually
+  std::vector<int> firstSubgroup;
+  for (int i = 0; i < 10; i++) {
+    firstSubgroup.push_back(i);
+  }
+  // set subsystem 2 manually
+  std::vector<int> secondSubgroup;
+  for (int j = 5; j < 15; j++) {
+    secondSubgroup.push_back(j);
+  }
+  auto subsystemGenerator = [&structure](std::vector<int> subsystemIndices) -> Utils::AtomCollection {
+    Utils::AtomCollection subsystem;
+    for (const auto& index : subsystemIndices) {
+      try {
+        subsystem.push_back(structure.at(index));
+      }
+      catch (...) {
+        throw std::runtime_error("Invalid subsystem index!");
+      }
+    }
+    return subsystem;
+  };
+
+  std::vector<Utils::AtomCollection> subRegions(2);
+  subRegions.at(0) = subsystemGenerator(firstSubgroup);
+  subRegions.at(1) = subsystemGenerator(secondSubgroup);
+
+  std::vector<std::vector<int>> listOfMappings(2);
+  listOfMappings.at(0) = firstSubgroup;
+  listOfMappings.at(1) = secondSubgroup;
+
+  std::vector<int> indices;
+
+  auto qmRegion = SwooseUtilities::FragmentationHelper::mergeSubsystems(indices, subRegions, listOfMappings);
+  ASSERT_THAT(qmRegion.size(), Eq(15));
+  for (int i = 0; i < 15; i++) {
+    // the QM region should contain atoms 0-14 from the main structure
+    ASSERT_THAT(indices.at(i), Eq(i));
+    ASSERT_EQ(qmRegion.at(i).getElementType(), structure.at(i).getElementType());
+    ASSERT_EQ(qmRegion.at(i).getPosition(), structure.at(i).getPosition());
+  }
+}
+
 // Run this test only in release builds
 #ifdef NDEBUG
 TEST_F(QmRegionSelectionTests, QmRegionSelectionWorksInDirectMode) {
@@ -336,22 +441,33 @@ TEST_F(QmRegionSelectionTests, QmRegionSelectionWorksInDirectMode) {
   }
 
   YAML::Node yamlNode = YAML::LoadFile(qm_region_selection_yaml_file);
-
-  QmRegionSelector qmRegionSelector;
-  qmRegionSelector.setLog(silentLogger);
-
-  Utils::nodeToSettings(qmRegionSelector.settings(), yamlNode, true);
-
-  // Add two more settings
-  qmRegionSelector.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, insulin_connectivity_file);
-  qmRegionSelector.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, insulin_parameter_file);
-  qmRegionSelector.settings().modifyString(SwooseUtilities::SettingsNames::yamlSettingsFilePath, qm_region_selection_yaml_file);
-
   // Read in structure
   Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(insulin_xyz_file).first;
+  QmRegionSelector qmRegionSelector;
+  auto calculator = std::make_shared<QmmmCalculator>();
+
+  auto mmCalculator = std::make_shared<MolecularMechanics::SfamMolecularMechanicsCalculator>();
+  auto mmCalculatorAsCalculator = std::dynamic_pointer_cast<Core::Calculator>(mmCalculator);
+  auto qmCalculator = manager.get<Core::Calculator>("MOCK-QM", "MockModule");
+  calculator->setUnderlyingCalculators({qmCalculator, mmCalculatorAsCalculator});
+  calculator->settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, insulin_connectivity_file);
+  calculator->settings().modifyString(Utils::SettingsNames::parameterFilePath, insulin_parameter_file);
+  calculator->settings().modifyBool(Utils::SettingsNames::electrostaticEmbedding, false);
+
+  calculator->setStructure(structure);
+
+  Utils::nodeToSettings(qmRegionSelector.settings(), yamlNode, true);
+  // Add three more settings
+  qmRegionSelector.settings().modifyString(SwooseUtilities::SettingsNames::yamlSettingsFilePath, qm_region_selection_yaml_file);
+  qmRegionSelector.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, insulin_connectivity_file);
+  qmRegionSelector.settings().modifyString(Utils::SettingsNames::parameterFilePath, insulin_parameter_file);
+
+  qmRegionSelector.setUnderlyingCalculator(calculator);
+  qmRegionSelector.setLog(silentLogger);
 
   // Generate QM region and gather results
   qmRegionSelector.generateQmRegion(structure);
+
   auto resultIndices = qmRegionSelector.getQmRegionIndices();
   auto resultStructure = qmRegionSelector.getQmRegionStructure();
   auto resultCharge = qmRegionSelector.getQmRegionChargeAndMultiplicity().first;
@@ -362,7 +478,7 @@ TEST_F(QmRegionSelectionTests, QmRegionSelectionWorksInDirectMode) {
    * which structure exactly was chosen in the end.
    */
   ASSERT_TRUE(resultIndices.size() > 63 && resultIndices.size() < 75);
-  ASSERT_TRUE(resultIndices.size() <= resultStructure.size());
+  ASSERT_TRUE(resultIndices.size() <= static_cast<unsigned long>(resultStructure.size()));
   ASSERT_EQ(resultCharge, 0);
   ASSERT_EQ(resultMultiplicity, 1);
 }

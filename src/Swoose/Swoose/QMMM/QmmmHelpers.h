@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -34,6 +34,10 @@ struct ChargeRedistributionResult {
   Utils::PositionCollection positionsOfAuxiliaryCharges;
 };
 
+std::vector<double> writeChargesAndPositionsAsList(const Utils::AtomCollection& structure,
+                                                   const ChargeRedistributionResult& chargeRedistributionResult,
+                                                   const std::vector<int>& listOfQmAtoms);
+
 /**
  * @brief Writes the point charges of the MM region to a file needed by ORCA.
  * @param positions The positions of all atoms.
@@ -44,7 +48,7 @@ struct ChargeRedistributionResult {
  */
 void writePointChargesFile(const Utils::PositionCollection& positions,
                            const ChargeRedistributionResult& chargeRedistributionResult,
-                           const std::vector<int>& listOfQmAtoms, const std::string& filename);
+                           const std::vector<int>& listOfQmAtoms, const std::string& filename, bool writeTurbomoleFormat);
 
 /**
  * @brief Creates the QM region from the whole structure.

@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -53,6 +53,10 @@ class GaffParameters : public MMParameters {
   void addLennardJones(std::string atomType, LennardJonesParameters lennardJonesParameters);
   void addDihedral(DihedralType dihedralType, DihedralParameters dihedralParameters);
   void addImproperDihedral(ImproperDihedralType improperDihedralType, DihedralParameters improperDihedralParameters);
+  /**
+   * @return Return True if there were no parameter set.
+   */
+  bool empty();
 
  private:
   std::multimap<DihedralType, DihedralParameters> dihedrals_;

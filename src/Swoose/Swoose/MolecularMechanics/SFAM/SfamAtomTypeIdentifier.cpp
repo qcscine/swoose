@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -59,7 +59,7 @@ AtomTypesHolder SfamAtomTypeIdentifier::getAtomTypes(SfamAtomTypeLevel atl) {
       }
     }
 
-    for (int j = 0; j < atomTypes_.size(); ++j) {
+    for (int j = 0; j < int(atomTypes_.size()); ++j) {
       if (atomTypes_[j] == "H") {
         std::string atomType = "H_";
         for (const auto& neighbor : listsOfNeighbors_[j]) {

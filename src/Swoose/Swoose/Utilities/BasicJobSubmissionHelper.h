@@ -1,12 +1,12 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
-#ifndef MMPARAMETRIZATION_BASICJOBSUBMISSIONHELPER_H
-#define MMPARAMETRIZATION_BASICJOBSUBMISSIONHELPER_H
+#ifndef SWOOSEUTILITIES_BASICJOBSUBMISSIONHELPER_H
+#define SWOOSEUTILITIES_BASICJOBSUBMISSIONHELPER_H
 
 #include <string>
 
@@ -16,7 +16,7 @@ namespace Utils {
 class Settings;
 } // namespace Utils
 
-namespace MMParametrization {
+namespace SwooseUtilities {
 namespace BasicJobSubmissionHelper {
 
 /**
@@ -30,7 +30,7 @@ std::string determineMethodFamily(std::string method, std::string referenceProgr
 std::string determineBasisSet(const Utils::Settings& settings);
 
 } // namespace BasicJobSubmissionHelper
-} // namespace MMParametrization
+} // namespace SwooseUtilities
 } // namespace Scine
 
-#endif // MMPARAMETRIZATION_BASICJOBSUBMISSIONHELPER_H
+#endif // SWOOSEUTILITIES_BASICJOBSUBMISSIONHELPER_H

@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -9,8 +9,10 @@
 #define SWOOSE_QMMM_QMMMCALCULATOR_H
 
 #include <Core/Interfaces/Calculator.h>
+#include <Core/Interfaces/EmbeddingCalculator.h>
 #include <Utils/CalculatorBasics.h>
 #include <Utils/Technical/CloneInterface.h>
+#include <algorithm>
 
 namespace Scine {
 
@@ -24,16 +26,8 @@ namespace Qmmm {
  * @class QmmmCalculator QmmmCalculator.h
  * @brief Calculator implementing the QM/MM method.
  *
- *        Developer info:
- *        This technically still derives from Core::Calculator, however, it already has a new vital function
- *        which sets the underlying calculators. It can therefore not be used correctly through a pointer to a
- *        Core::Calculator and will therefore not be exported by the module anymore. However, it stays a
- *        Core::Calculator in order to be still combinable with, e.g., the Molecular Dynamics in Scine::Utils,
- *        but it can only be constructed from inside this module or this module's app. Note that this calculator
- *        will be moved to a new embedding-related calculator interface in the not too distant future.
- *
  */
-class QmmmCalculator : public Utils::CloneInterface<QmmmCalculator, Core::Calculator> {
+class QmmmCalculator : public Utils::CloneInterface<QmmmCalculator, Core::EmbeddingCalculator, Core::Calculator> {
  public:
   static constexpr const char* model = "QM-SFAM";
   /// @brief Constructor.
@@ -45,7 +39,15 @@ class QmmmCalculator : public Utils::CloneInterface<QmmmCalculator, Core::Calcul
   /**
    * @brief Sets the underlying QM and MM calculators.
    */
-  void setUnderlyingCalculators(std::shared_ptr<Core::Calculator> qmCalculator, std::shared_ptr<Core::Calculator> mmCalculator);
+  void setUnderlyingCalculators(std::vector<std::shared_ptr<Core::Calculator>> underlyingCalculators) override;
+  /**
+   * @brief Sets the underlying QM and MM calculators.
+   */
+  void addUnderlyingSettings() override;
+  /**
+   * @brief Gets the underlying QM and MM calculators.
+   */
+  std::vector<std::shared_ptr<Core::Calculator>> getUnderlyingCalculators() const override;
   /**
    * @brief Changes the molecular structure to calculate.
    * @param structure A new Utils::AtomCollection to save.
@@ -129,8 +131,33 @@ class QmmmCalculator : public Utils::CloneInterface<QmmmCalculator, Core::Calcul
    * @param state The new state.
    */
   void loadState(std::shared_ptr<Core::State> /*state*/) final;
+  /**
+   * @brief Whether the calculator has no underlying Python code and can therefore
+   * release the global interpreter lock in Python bindings
+   */
+  bool allowsPythonGILRelease() const override {
+    const auto underlyingCalculators = getUnderlyingCalculators();
+    return std::all_of(underlyingCalculators.begin(), underlyingCalculators.end(),
+                       [](const auto& c) { return c->allowsPythonGILRelease(); });
+  };
+  /**
+   * @brief Getter for the MM calculator.
+   * @return The MM calculator.
+   */
+  std::shared_ptr<MolecularMechanics::MolecularMechanicsCalculator> getMolecularMechanicsCalculator();
+  /**
+   * @brief Getter for the QM calculator.
+   * @return The QM calculator.
+   */
+  std::shared_ptr<Core::Calculator> getQuantumMechanicsCalculator();
 
  private:
+  void setStructureImpl(const Utils::AtomCollection& structure);
+  void setUnderlyingCalculatorsImpl(std::vector<std::shared_ptr<Core::Calculator>> underlyingCalculators);
+  void addUnderlyingSettingsImpl();
+  void optimizeLinks();
+  void handleElectrostaticEmbedding();
+  void removeCalculatorSpecificSettings();
   /*
    * @brief Implementation of a calculation.
    */
@@ -174,6 +201,8 @@ class QmmmCalculator : public Utils::CloneInterface<QmmmCalculator, Core::Calcul
   std::vector<int> listOfQmAtoms_;
   // QM calculator
   std::shared_ptr<Core::Calculator> qmCalculator_;
+  // Flag for the case that the QM system spans the full system.
+  bool mmAtomsLeft_ = true;
   /*
    * Whether an additional MM calculation is performed to evaluate the QM/MM energy
    * without any covalent and non-covalent contributions solely within the environment
@@ -189,8 +218,13 @@ class QmmmCalculator : public Utils::CloneInterface<QmmmCalculator, Core::Calcul
   std::string qmRegionFile_;
   // The scheme for how to redistribute the charges close to the QM-MM boundary
   std::string chargeRedistributionScheme_;
-  // Name of the ORCA point charges file
+  // Name of the point charges file
   static constexpr const char* pointChargesFilename_ = "environment_pointcharges.pc";
+  /**
+   * The following boolean keeps track of whether Turbomole is chosen as the QM calculator. If so, the formatting
+   * of the point charges file requires a different file format.
+   */
+  bool turbomoleIsQmCalculator_ = false;
   /*
    * The following boolean keeps track of whether the SCF convergence setting for the QM calculator was already set,
    * because resetting it with every calculation (e.g., as part of an optimization) will result in a repeated
@@ -201,6 +235,7 @@ class QmmmCalculator : public Utils::CloneInterface<QmmmCalculator, Core::Calcul
    * so that the setting is passed on to the QM calculator.
    */
   bool scfConvCriterionIsSet_ = false;
+  bool optimizeLinks_ = false;
 };
 
 } // namespace Qmmm

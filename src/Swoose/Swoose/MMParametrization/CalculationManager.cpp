@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -20,33 +20,30 @@
 namespace Scine {
 namespace MMParametrization {
 
-CalculationManager::CalculationManager(ParametrizationData& data, std::shared_ptr<Utils::Settings> settings, Core::Log& log)
-  : data_(data), settings_(settings), log_(log) {
+CalculationManager::CalculationManager(ParametrizationData& data, TitrationResults& results,
+                                       std::shared_ptr<Utils::Settings> settings, Core::Log& log)
+  : data_(data), titrationResults_(results), settings_(settings), log_(log) {
   baseWorkingDirectory_ = settings_->getString(Utils::ExternalQC::SettingsNames::baseWorkingDirectory);
   referenceDataDirectory_ = settings->getString(SwooseUtilities::SettingsNames::referenceDataDirectory);
 
   // Get mode from settings
   mode_ = settings_->getString(SwooseUtilities::SettingsNames::referenceDataMode);
-
-  // Get reference program from settings
-  referenceProgram_ = settings_->getString(SwooseUtilities::SettingsNames::referenceProgram);
 }
 
 void CalculationManager::calculateReferenceData() {
   using namespace SwooseUtilities::OptionNames;
   auto numberOfStructures = data_.vectorOfStructures.size();
-
   // Resize the vector of Hessian matrices
   data_.vectorOfHessians.resize(numberOfStructures);
 
   if (mode_ == writeToFilesMode) {
     log_.output << "Writing data for all molecular structures to directory: " << referenceDataDirectory_ << Core::Log::endl;
-    ReferenceCalculationsIO::writeXyzFiles(data_, referenceDataDirectory_);
+    ReferenceCalculationsIO::writeXyzFiles(data_, referenceDataDirectory_, settings_);
     log_.output << "Done." << Core::Log::endl << Core::Log::endl;
   }
   else if (mode_ == readFromFilesMode) {
     log_.output << "Reading reference data from disk..." << Core::Log::endl;
-    ReferenceCalculationsIO::readReferenceDataFromFiles(data_, referenceDataDirectory_, settings_, log_);
+    ReferenceCalculationsIO::readReferenceDataFromFiles(data_, titrationResults_, referenceDataDirectory_, settings_, log_);
     log_.output << "Done." << Core::Log::endl << Core::Log::endl;
   }
   else if (mode_ == directMode) {

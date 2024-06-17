@@ -1,14 +1,13 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
 #include "IndexedStructuralTopologyCreator.h"
 #include "IndexedStructuralTopology.h"
 #include <Utils/Constants.h>
-#include <iostream>
 
 namespace Scine {
 namespace MolecularMechanics {
@@ -115,6 +114,8 @@ void IndexedStructuralTopologyCreator::addHydrogenBondsToIndexedStructuralTopolo
   const auto& excludedNB = topology.getExcludedNonBondedContainer();
   //  const auto& scaledNB = topology.getScaledNonBondedContainer(); // TODO: see todo below
 
+  // empty the hydrogen bonds
+  topology.clearHydrogenBonds();
   // Loop over all bonds
   for (const auto& bond : topology.getBondContainer()) {
     // Loop over possible donor elements
@@ -125,14 +126,14 @@ void IndexedStructuralTopologyCreator::addHydrogenBondsToIndexedStructuralTopolo
       if ((elementOne == Utils::ElementType::H && elementTwo == donorElement) ||
           (elementTwo == Utils::ElementType::H && elementOne == donorElement)) {
         // Check which atom is the hydrogen
-        int hydrogen = bond.atom2;
-        int donor = bond.atom1;
+        unsigned hydrogen = bond.atom2;
+        unsigned donor = bond.atom1;
         if (elementOne == Utils::ElementType::H) {
           hydrogen = bond.atom1;
           donor = bond.atom2;
         }
         // Loop over all elements
-        for (int acceptor = 0; acceptor < elementTypes.size(); ++acceptor) {
+        for (long unsigned int acceptor = 0; acceptor < elementTypes.size(); ++acceptor) {
           // First, check distance threshold
           if ((structure.getPosition(acceptor) - structure.getPosition(hydrogen)).norm() > distanceThreshold)
             continue;

@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -43,6 +43,8 @@ class SettingsPopulator {
   static void addElectrostaticEmbeddingOption(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addQmRegionXyzFileOption(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addIgnoreQmOption(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addOptimizeLinksOption(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addSilenceOption(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addChargeRedistributionOption(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addReducedQmMmEnergyOption(Utils::UniversalSettings::DescriptorCollection& settings);
 
@@ -61,7 +63,7 @@ class SettingsPopulator {
                                                 bool includeReadWriteMode = true);
   static void addDatabaseSettings(Utils::UniversalSettings::DescriptorCollection& settings, std::string defaultDatabaseName);
   static void addDatabaseSleepTime(Utils::UniversalSettings::DescriptorCollection& settings);
-  static void addAtomicInformationFile(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addAtomicInformationFile(Utils::UniversalSettings::DescriptorCollection& settings, bool setEmptyDefault = true);
   static void addUseGaussianOption(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addReferenceProgram(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addReferenceMethodAndBasisSet(Utils::UniversalSettings::DescriptorCollection& settings);
@@ -72,9 +74,13 @@ class SettingsPopulator {
   static void addUseCsvInputFormatOption(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addConvertToCm5Option(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addYamlSettingsForDirectMode(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addTitration(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addUseThermochemistryForTitration(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addTrainingDataDirectory(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addTitrationSiteFile(Utils::UniversalSettings::DescriptorCollection& settings);
 
   // These functions used for QM region selection
-  static void addQmRegionCenterAtom(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addQmRegionCenterAtoms(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addInitialRadius(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addCuttingProbability(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addQmRegionSizesSettings(Utils::UniversalSettings::DescriptorCollection& settings);
@@ -83,6 +89,16 @@ class SettingsPopulator {
   static void addTolerancesForQmRegionSelection(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addQmRegionSelectionRandomSeed(Utils::UniversalSettings::DescriptorCollection& settings);
 
+  // These functions used for QM region selection via a Database
+  static void addMethodFamily(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addProgram(Utils::UniversalSettings::DescriptorCollection& settings);
+
+  // These functions used for structure preparation
+  static void addPreparationDataDirectory(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addSolvation(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addPhValueOfSystem(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addNumberOfSolventShells(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addChargedCandNTermini(Utils::UniversalSettings::DescriptorCollection& settings);
   /**
    * @brief Deleted constructor.
    */
@@ -123,7 +139,7 @@ inline void SettingsPopulator::addParameterAndConnectivityFile(Utils::UniversalS
     parameterFilePath.setDefaultValue("");
   else
     parameterFilePath.setDefaultValue("Parameters.dat");
-  settings.push_back(SettingsNames::parameterFilePath, std::move(parameterFilePath));
+  settings.push_back(Utils::SettingsNames::parameterFilePath, std::move(parameterFilePath));
 
   Utils::UniversalSettings::StringDescriptor connectivityFilePath(
       "Path to the system connectivity file (for reading and writing).");
@@ -146,7 +162,7 @@ inline void SettingsPopulator::addNonCovalentCutoffRadius(Utils::UniversalSettin
   Utils::UniversalSettings::DoubleDescriptor cutoffRadius(
       "The cutoff radius for non covalent interactions in Angstrom.");
   cutoffRadius.setMinimum(0.0);
-  cutoffRadius.setDefaultValue(12.0);
+  cutoffRadius.setDefaultValue(1200.0);
   settings.push_back(SettingsNames::nonCovalentCutoffRadius, std::move(cutoffRadius));
 }
 
@@ -171,6 +187,12 @@ inline void SettingsPopulator::addGaffAtomicChargesFile(Utils::UniversalSettings
   settings.push_back(SettingsNames::gaffAtomicChargesFile, std::move(atomicChargeFilePath));
 }
 
+inline void SettingsPopulator::addTitrationSiteFile(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::StringDescriptor titrationSiteFile("Path to titation sites for MM parametrization.");
+  titrationSiteFile.setDefaultValue("titrable_sites.dat");
+  settings.push_back(SettingsNames::titrationSiteFile, std::move(titrationSiteFile));
+}
+
 inline void SettingsPopulator::addGaffAtomTypesFile(Utils::UniversalSettings::DescriptorCollection& settings) {
   Utils::UniversalSettings::StringDescriptor atomTypesFilePath("Path to atom types file for GAFF.");
   atomTypesFilePath.setDefaultValue("");
@@ -180,7 +202,7 @@ inline void SettingsPopulator::addGaffAtomTypesFile(Utils::UniversalSettings::De
 inline void SettingsPopulator::addQmAtomsOption(Utils::UniversalSettings::DescriptorCollection& settings) {
   Utils::UniversalSettings::IntListDescriptor qmAtoms("A list containing the indices of the atoms in the QM region.");
   qmAtoms.setDefaultValue({});
-  settings.push_back(SettingsNames::qmAtomsList, std::move(qmAtoms));
+  settings.push_back(Utils::SettingsNames::qmAtomsList, std::move(qmAtoms));
 }
 
 inline void SettingsPopulator::addChargeRedistributionOption(Utils::UniversalSettings::DescriptorCollection& settings) {
@@ -195,8 +217,8 @@ inline void SettingsPopulator::addChargeRedistributionOption(Utils::UniversalSet
 inline void SettingsPopulator::addElectrostaticEmbeddingOption(Utils::UniversalSettings::DescriptorCollection& settings) {
   Utils::UniversalSettings::BoolDescriptor electrostaticEmbeddingOption(
       "Sets whether electrostatic embedding is used in QM/MM. The alternative is applying mechanical embedding only.");
-  electrostaticEmbeddingOption.setDefaultValue(true);
-  settings.push_back(SettingsNames::electrostaticEmbedding, std::move(electrostaticEmbeddingOption));
+  electrostaticEmbeddingOption.setDefaultValue(false);
+  settings.push_back(Utils::SettingsNames::electrostaticEmbedding, std::move(electrostaticEmbeddingOption));
 }
 
 inline void SettingsPopulator::addQmRegionXyzFileOption(Utils::UniversalSettings::DescriptorCollection& settings) {
@@ -210,7 +232,20 @@ inline void SettingsPopulator::addIgnoreQmOption(Utils::UniversalSettings::Descr
   Utils::UniversalSettings::BoolDescriptor ignoreQm(
       "Whether to ignore all contributions from the QM calculation, and therefore, not performing it.");
   ignoreQm.setDefaultValue(false);
-  settings.push_back(SettingsNames::ignoreQmOption, std::move(ignoreQm));
+  settings.push_back(Utils::SettingsNames::ignoreQmOption, std::move(ignoreQm));
+}
+
+inline void SettingsPopulator::addOptimizeLinksOption(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::BoolDescriptor optLinks(
+      "Whether to optimize the position of the link nuclei before reporting an energy.");
+  optLinks.setDefaultValue(false);
+  settings.push_back(Utils::SettingsNames::optimizeLinks, std::move(optLinks));
+}
+
+inline void SettingsPopulator::addSilenceOption(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::BoolDescriptor silence("Whether to silence the standard output of the subcalculators.");
+  silence.setDefaultValue(false);
+  settings.push_back(SettingsNames::silenceUnderlyingCalculators, std::move(silence));
 }
 
 inline void SettingsPopulator::addReducedQmMmEnergyOption(Utils::UniversalSettings::DescriptorCollection& settings) {
@@ -364,10 +399,16 @@ inline void SettingsPopulator::addDatabaseSleepTime(Utils::UniversalSettings::De
   settings.push_back(SettingsNames::databaseSleepTime, std::move(databaseSleepTime));
 }
 
-inline void SettingsPopulator::addAtomicInformationFile(Utils::UniversalSettings::DescriptorCollection& settings) {
+inline void SettingsPopulator::addAtomicInformationFile(Utils::UniversalSettings::DescriptorCollection& settings,
+                                                        bool setEmptyDefault) {
   Utils::UniversalSettings::StringDescriptor atomicInfoFile(
       "Path to file containing the information about formal charges and unpaired electrons.");
-  atomicInfoFile.setDefaultValue("");
+  if (setEmptyDefault) {
+    atomicInfoFile.setDefaultValue("");
+  }
+  else {
+    atomicInfoFile.setDefaultValue("atomic_info.dat");
+  }
   settings.push_back(SettingsNames::atomicInformationFile, std::move(atomicInfoFile));
 }
 
@@ -380,7 +421,7 @@ inline void SettingsPopulator::addUseGaussianOption(Utils::UniversalSettings::De
 
 inline void SettingsPopulator::addReferenceProgram(Utils::UniversalSettings::DescriptorCollection& settings) {
   Utils::UniversalSettings::OptionListDescriptor referenceProgram(
-      "Set program for the reference calculations in SFAM parametrizations.");
+      "Set program for the reference calculations in SFAM parametrization.");
   referenceProgram.addOption(OptionNames::turbomoleOption);
   referenceProgram.addOption(OptionNames::orcaOption);
   referenceProgram.addOption(OptionNames::sparrowOption);
@@ -438,15 +479,16 @@ inline void SettingsPopulator::addYamlSettingsForDirectMode(Utils::UniversalSett
   settings.push_back(SettingsNames::yamlSettingsFilePath, std::move(yamlSettingsFilePath));
 }
 
-inline void SettingsPopulator::addQmRegionCenterAtom(Utils::UniversalSettings::DescriptorCollection& settings) {
-  Utils::UniversalSettings::IntDescriptor centerAtom("The center atom around which the QM Region will be constructed.");
-  centerAtom.setDefaultValue(0);
-  settings.push_back(SettingsNames::qmRegionCenterAtom, std::move(centerAtom));
+inline void SettingsPopulator::addQmRegionCenterAtoms(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::IntListDescriptor centerAtoms(
+      "The center atom(s) around which the QM Region will be constructed.");
+  centerAtoms.setDefaultValue({0});
+  settings.push_back(SettingsNames::qmRegionCenterAtoms, std::move(centerAtoms));
 }
 
 inline void SettingsPopulator::addInitialRadius(Utils::UniversalSettings::DescriptorCollection& settings) {
   Utils::UniversalSettings::DoubleDescriptor initialRadius("The initial radius for the QM region generation.");
-  initialRadius.setMinimum(5.0);
+  initialRadius.setMinimum(2.0);
   initialRadius.setMaximum(12.0);
   initialRadius.setDefaultValue(6.0);
   settings.push_back(SettingsNames::initialRadiusForQmRegionSelection, std::move(initialRadius));
@@ -511,6 +553,71 @@ inline void SettingsPopulator::addQmRegionSelectionRandomSeed(Utils::UniversalSe
   Utils::UniversalSettings::IntDescriptor randomSeed("Random seed for the QM region selection.");
   randomSeed.setDefaultValue(42);
   settings.push_back(SettingsNames::qmRegionSelectionRandomSeed, std::move(randomSeed));
+}
+
+inline void SettingsPopulator::addPreparationDataDirectory(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::StringDescriptor preparationDataDirectory("Base directory for the preparation.");
+  preparationDataDirectory.setDefaultValue("preparation_data");
+  settings.push_back(SettingsNames::preparationDataDirectory, std::move(preparationDataDirectory));
+}
+
+inline void SettingsPopulator::addSolvation(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::BoolDescriptor solvateStructure("Solvates the input structure.");
+  solvateStructure.setDefaultValue(false);
+  settings.push_back(SettingsNames::solvateStructure, std::move(solvateStructure));
+}
+
+inline void SettingsPopulator::addNumberOfSolventShells(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::IntDescriptor numberOfSolventShells("Defines the number of solvent shells");
+  numberOfSolventShells.setDefaultValue(1);
+  settings.push_back(SettingsNames::numberOfSolventShells, std::move(numberOfSolventShells));
+}
+
+inline void SettingsPopulator::addChargedCandNTermini(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::BoolDescriptor chargedCandNTermini(
+      "Whether to protonate C and N termini in their charged (NH3+, COO-) form");
+  chargedCandNTermini.setDefaultValue(true);
+  settings.push_back(SettingsNames::chargedCandNTermini, std::move(chargedCandNTermini));
+}
+
+inline void SettingsPopulator::addPhValueOfSystem(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::DoubleDescriptor phValueOfSystem("pH value for the protonation.");
+  phValueOfSystem.setDefaultValue(7.0);
+  settings.push_back(SettingsNames::phValueOfSystem, std::move(phValueOfSystem));
+}
+
+inline void SettingsPopulator::addTitration(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::BoolDescriptor titrate(
+      "Titrates the structure to protonate amino acids according to the pH value.");
+  titrate.setDefaultValue(false);
+  settings.push_back(SettingsNames::titrate, std::move(titrate));
+}
+
+inline void SettingsPopulator::addUseThermochemistryForTitration(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::BoolDescriptor useThermoChemistryForTitration(
+      "Sets whether thermochemical data (gibbs free energy) should be used for calculation of pka values and "
+      "protonation states.");
+  useThermoChemistryForTitration.setDefaultValue(false);
+  settings.push_back(SettingsNames::useThermoChemistryForTitration, std::move(useThermoChemistryForTitration));
+}
+
+inline void SettingsPopulator::addTrainingDataDirectory(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::StringDescriptor trainingDataDirectory(
+      "Sets the directory in which the reference calculation for the training data are stored.");
+  trainingDataDirectory.setDefaultValue("");
+  settings.push_back(SettingsNames::trainingDataDirectory, std::move(trainingDataDirectory));
+}
+
+inline void SettingsPopulator::addMethodFamily(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::StringDescriptor methodFamily("The method family such as 'DFT/SFAM'.");
+  methodFamily.setDefaultValue("PM6/SFAM");
+  settings.push_back(Utils::SettingsNames::methodFamily, std::move(methodFamily));
+}
+
+inline void SettingsPopulator::addProgram(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::StringDescriptor program("The underlying programs such as 'Turbomole/SFAM'.");
+  program.setDefaultValue("Any/Swoose");
+  settings.push_back(Utils::SettingsNames::program, std::move(program));
 }
 
 } // namespace SwooseUtilities

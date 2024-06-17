@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -311,7 +311,7 @@ bool SfamParameterParser::parseC6Parameters(std::istream& in, SfamParameters& pa
     if (*iter == "")
       iter++;
 
-    if (a >= parameters.getC6IndicesMap().size())
+    if (a >= int(parameters.getC6IndicesMap().size()))
       throw std::runtime_error("Error while parsing C6 coefficients from parameter file!");
     for (int b = 0; b <= a; ++b) {
       if (iter != endOfLine) {
@@ -331,7 +331,7 @@ bool SfamParameterParser::parseC6Parameters(std::istream& in, SfamParameters& pa
   // If there was not the correct number of rows parsed, reset the C6 matrix,
   // such that it can be detected from the outside (by the MM parameter sanity check)
   // that the parsing was not successful.
-  if (a != parameters.getC6IndicesMap().size())
+  if (a != int(parameters.getC6IndicesMap().size()))
     parameters.resetC6Matrix();
   return true;
 }

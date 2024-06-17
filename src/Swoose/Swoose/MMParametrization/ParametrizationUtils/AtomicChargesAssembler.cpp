@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -14,11 +14,11 @@ namespace Scine {
 namespace MMParametrization {
 namespace AtomicChargesAssembler {
 
-void assembleAtomicCharges(ParametrizationData& data) {
-  auto numberOfStructures = data.vectorOfStructures.size();
+void assembleAtomicCharges(ParametrizationData& data, Core::Log& log) {
+  int numberOfStructures = data.vectorOfStructures.size();
   data.atomicCharges.resize(data.numberOfAtoms);
 
-  if (data.atomicChargesForEachFragment.size() != numberOfStructures) {
+  if (int(data.atomicChargesForEachFragment.size()) != numberOfStructures) {
     std::runtime_error(
         "Failure while assembling the atomic charges vector for the whole system. The reference data is incomplete.");
   }
@@ -32,7 +32,7 @@ void assembleAtomicCharges(ParametrizationData& data) {
   }
 
   // Get candidate fragments from which to get the data from
-  FragmentDataDistributor fragmentDataDistributor(data);
+  FragmentDataDistributor fragmentDataDistributor(data, log);
   for (int i = 0; i < numberOfStructures; ++i) {
     // Generate a list of candidate fragments to obtain the atomic charge of atom i from.
     std::vector<int> listOfCandidates = fragmentDataDistributor.getCandidateFragments(i);
@@ -48,7 +48,7 @@ void assembleAtomicCharges(ParametrizationData& data) {
                           std::find(data.atomIndexMapping[candidate].begin(), data.atomIndexMapping[candidate].end(), i));
 
         // Throw exception in the very unlikely case of the atom not being present in the candidate fragment
-        if (atomIndexInSuccessfullyCalculatedFragment >= data.atomIndexMapping[candidate].size())
+        if (atomIndexInSuccessfullyCalculatedFragment >= int(data.atomIndexMapping[candidate].size()))
           throw std::runtime_error("Error while assembling the atomic charges: The atom of interest is not present "
                                    "in the candidate fragment.");
 

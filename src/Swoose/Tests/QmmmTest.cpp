@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -46,7 +46,7 @@ class QmmmTest : public Test {
     auto mmCalculator = std::make_shared<MolecularMechanics::SfamMolecularMechanicsCalculator>();
     auto mmCalculatorAsCalculator = std::dynamic_pointer_cast<Core::Calculator>(mmCalculator);
     auto qmCalculator = manager.get<Core::Calculator>("MOCK-QM", "MockModule");
-    calculator.setUnderlyingCalculators(qmCalculator, mmCalculatorAsCalculator);
+    calculator.setUnderlyingCalculators({qmCalculator, mmCalculatorAsCalculator});
   }
 
   ~QmmmTest() override {
@@ -56,26 +56,26 @@ class QmmmTest : public Test {
 
 TEST_F(QmmmTest, QmmmSettingsWorkCorrectly) {
   using namespace SwooseUtilities;
-  calculator.settings().modifyIntList(SettingsNames::qmAtomsList, std::vector<int>{{1, 2, 3}});
+  calculator.settings().modifyIntList(Utils::SettingsNames::qmAtomsList, std::vector<int>{{1, 2, 3}});
   calculator.settings().modifyString(SettingsNames::chargeRedistributionKey, OptionNames::redistributedChargeOption);
-  calculator.settings().modifyString(SettingsNames::parameterFilePath, "params.dat");
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, "params.dat");
   calculator.settings().modifyString(SettingsNames::connectivityFilePath, "conn.dat");
   calculator.settings().modifyString(SettingsNames::qmRegionXyzFile, qmRegionXyzFile);
   calculator.settings().modifyBool(SettingsNames::hydrogenBondCorrection, false);
-  calculator.settings().modifyBool(SettingsNames::electrostaticEmbedding, false);
+  calculator.settings().modifyBool(Utils::SettingsNames::electrostaticEmbedding, false);
   calculator.settings().modifyDouble(SettingsNames::nonCovalentCutoffRadius, 12.5);
   calculator.settings().modifyBool(SettingsNames::detectBondsWithCovalentRadii, false);
   calculator.settings().modifyBool(SettingsNames::printContributionsMolecularMechanics, true);
   calculator.settings().modifyBool(SettingsNames::onlyCalculateBondedContribution, false);
 
-  ASSERT_THAT(calculator.settings().getIntList(SettingsNames::qmAtomsList), Eq(std::vector<int>{{1, 2, 3}}));
+  ASSERT_THAT(calculator.settings().getIntList(Utils::SettingsNames::qmAtomsList), Eq(std::vector<int>{{1, 2, 3}}));
   ASSERT_THAT(calculator.settings().getString(SettingsNames::chargeRedistributionKey),
               Eq(OptionNames::redistributedChargeOption));
-  ASSERT_THAT(calculator.settings().getString(SettingsNames::parameterFilePath), Eq("params.dat"));
+  ASSERT_THAT(calculator.settings().getString(Utils::SettingsNames::parameterFilePath), Eq("params.dat"));
   ASSERT_THAT(calculator.settings().getString(SettingsNames::connectivityFilePath), Eq("conn.dat"));
   ASSERT_THAT(calculator.settings().getString(SettingsNames::qmRegionXyzFile), Eq(qmRegionXyzFile));
   ASSERT_FALSE(calculator.settings().getBool(SettingsNames::hydrogenBondCorrection));
-  ASSERT_FALSE(calculator.settings().getBool(SettingsNames::electrostaticEmbedding));
+  ASSERT_FALSE(calculator.settings().getBool(Utils::SettingsNames::electrostaticEmbedding));
   ASSERT_THAT(calculator.settings().getDouble(SettingsNames::nonCovalentCutoffRadius), DoubleNear(12.5, 1e-6));
   ASSERT_FALSE(calculator.settings().getBool(SettingsNames::detectBondsWithCovalentRadii));
   ASSERT_TRUE(calculator.settings().getBool(SettingsNames::printContributionsMolecularMechanics));
@@ -83,18 +83,15 @@ TEST_F(QmmmTest, QmmmSettingsWorkCorrectly) {
 }
 
 TEST_F(QmmmTest, QmmmCalculationWorksForMelatonin) {
-  calculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   calculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
-  calculator.settings().modifyBool(SwooseUtilities::SettingsNames::calculateReducedQmMmEnergy, true);
+  calculator.settings().modifyBool(SwooseUtilities::SettingsNames::calculateReducedQmMmEnergy, false);
   calculator.settings().modifyString(SwooseUtilities::SettingsNames::qmRegionXyzFile, qmRegionXyzFile);
-  calculator.settings().modifyIntList(SwooseUtilities::SettingsNames::qmAtomsList, qmAtoms);
+  calculator.settings().modifyIntList(Utils::SettingsNames::qmAtomsList, qmAtoms);
 
   auto log = Core::Log::silent();
   calculator.setLog(log);
 
-  EXPECT_THROW(calculator.setStructure(testStructure), std::runtime_error); // no support for electrostatic embedding
-
-  calculator.settings().modifyBool(SwooseUtilities::SettingsNames::electrostaticEmbedding, false);
   calculator.setStructure(testStructure);
   calculator.setStructure(testStructure); // a second setStructure() should not break anything
 
@@ -102,6 +99,9 @@ TEST_F(QmmmTest, QmmmCalculationWorksForMelatonin) {
   calculator.settings().modifyString(Swoose::SettingsNames::mockStringSettingKey, "updated string setting");
 
   calculator.setRequiredProperties(Utils::Property::Energy | Utils::Property::Gradients);
+  auto calculators = calculator.getUnderlyingCalculators();
+  // calculators are set correctly
+  ASSERT_TRUE(std::find(calculators.begin(), calculators.end(), nullptr) == calculators.end());
 
   auto results = calculator.calculate("test calculation");
   auto energy = results.get<Utils::Property::Energy>();
@@ -132,6 +132,26 @@ TEST_F(QmmmTest, QmmmCalculationWorksForMelatonin) {
   ASSERT_THAT(results.get<Utils::Property::Description>(), Eq("test calculation"));
   ASSERT_TRUE(boost::filesystem::exists(qmRegionXyzFile));
   ASSERT_FALSE(boost::filesystem::exists("environment_pointcharges.pc"));
+  // reduced QM/MM energy is correctly stored in the results
+  calculator.settings().modifyBool(SwooseUtilities::SettingsNames::calculateReducedQmMmEnergy, true);
+  results = calculator.calculate("test calculation");
+  auto reduced_energy = results.get<Utils::Property::Energy>();
+
+  ASSERT_THAT(reduced_energy, DoubleNear(200.0, 0.01));
+  ASSERT_TRUE(std::abs(200.0 - reduced_energy) > 0.001);
+
+  // calculate partial hessian
+  calculator.setRequiredProperties(Utils::Property::Energy | Utils::Property::PartialHessian);
+  auto results2 = calculator.calculate("test calculation");
+  Utils::PartialHessian partialHessian = results2.get<Utils::Property::PartialHessian>();
+  int hessianSize = qmAtoms.size() * 3;
+  ASSERT_THAT(partialHessian.getMatrix().rows(), Eq(hessianSize));
+  ASSERT_THAT(partialHessian.getMatrix().cols(), Eq(hessianSize));
+
+  auto partialHessianIndices = partialHessian.getIndices();
+  for (long unsigned int i = 0; i < partialHessianIndices.size(); i++) {
+    ASSERT_THAT(partialHessianIndices.at(i), Eq(qmAtoms.at(i)));
+  }
 }
 
 } // namespace Tests

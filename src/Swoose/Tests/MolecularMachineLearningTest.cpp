@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -56,7 +56,9 @@ TEST_F(AMolecularMachineLearningTest, ModelLearnsEnergiesAccurately) {
   std::vector<Swoose::ForcesCollection> emptyForces;
 
   MolecularMachineLearningModel model;
-  model.energyPredictor().setKernel(Utils::MachineLearning::Kernels::laplacianKernel, {50.0});
+  Eigen::VectorXd sigma(1);
+  sigma[0] = 50.0;
+  model.energyPredictor().setKernel(Utils::MachineLearning::Kernels::laplacianKernel, sigma);
 
   model.setReferenceData(smallTrajectory, emptyForces);
 
@@ -97,7 +99,9 @@ TEST_F(AMolecularMachineLearningTest, ModelLearnsEnergiesAccurately) {
   ASSERT_THAT(predictedEnergy, DoubleNear(10.3784, 0.5)); // This structure's energy should be predicted rather well.
 
   // With different kernel (5th degree polynomial)
-  model.energyPredictor().setKernel(Utils::MachineLearning::Kernels::polynomialKernel, {5.0, 0.1, 1.0});
+  Eigen::VectorXd hyperparams(3);
+  hyperparams << 5.0, 0.1, 1.0;
+  model.energyPredictor().setKernel(Utils::MachineLearning::Kernels::polynomialKernel, hyperparams);
   model.trainEnergyModel();
   predictedEnergy = model.predictEnergy(newStructure);
   ASSERT_THAT(predictedEnergy, DoubleNear(10.3784, 1.0)); // Does not predict this structure as accurately.
@@ -146,8 +150,10 @@ TEST_F(AMolecularMachineLearningTest, ModelLearnsForcesAccurately) {
   else
     model.setReferenceData(trajectory, allRefForces);
 
+  Eigen::VectorXd hyperparams(3);
+  hyperparams << 5.0, 0.1, 1.0;
   for (int i = 0; i < trajectory.molecularSize(); ++i) {
-    model.forcePredictor(i).setKernel(Utils::MachineLearning::Kernels::polynomialKernel, {5.0, 0.1, 1.0});
+    model.forcePredictor(i).setKernel(Utils::MachineLearning::Kernels::polynomialKernel, hyperparams);
   }
 
   // 5-fold cross validation with pooled variance

@@ -1,30 +1,32 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
 #include "FragmentDataDistributor.h"
 #include "../ParametrizationData.h"
+#include <Core/Log.h>
 
 namespace Scine {
 namespace MMParametrization {
 
-FragmentDataDistributor::FragmentDataDistributor(ParametrizationData& data) : data_(data) {
+FragmentDataDistributor::FragmentDataDistributor(ParametrizationData& data, Core::Log& log) : data_(data), log_(log) {
 }
 
-bool FragmentDataDistributor::referenceDataIsSufficient(bool refineConnectivity, std::vector<int> failedCalculations) const {
+bool FragmentDataDistributor::referenceDataIsSufficient(bool refineConnectivity, std::vector<int> failedCalculations,
+                                                        std::vector<std::vector<std::string>> failedCalculationIds) const {
   // First, handle the case of no fragmentation
   if (data_.vectorOfStructures.size() == 1) {
     std::vector<int> candidates = {0};
-    return fragmentIsCoveredByData(candidates, refineConnectivity, failedCalculations);
+    return fragmentIsCoveredByData(0, candidates, refineConnectivity, failedCalculations, failedCalculationIds);
   }
 
   // This is for the case when fragmentation took place
   bool uncoveredFragmentFound = false;
 
-  for (int i = 0; i < data_.vectorOfStructures.size(); ++i) {
+  for (int i = 0; i < int(data_.vectorOfStructures.size()); ++i) {
     // Ignore, if superfluous.
     if (std::find(data_.superfluousFragments.begin(), data_.superfluousFragments.end(), i) != data_.superfluousFragments.end())
       continue;
@@ -32,14 +34,15 @@ bool FragmentDataDistributor::referenceDataIsSufficient(bool refineConnectivity,
     std::vector<int> candidates = getCandidateFragments(i);
     if (candidates.size() < 4) // important for terminal atoms
       updateCandidateFragmentsWithThirdShellNeighbors(i, candidates);
-    if (!fragmentIsCoveredByData(candidates, refineConnectivity, failedCalculations))
+    if (!fragmentIsCoveredByData(i, candidates, refineConnectivity, failedCalculations, failedCalculationIds))
       uncoveredFragmentFound = true;
   }
   return !uncoveredFragmentFound;
 }
 
-bool FragmentDataDistributor::fragmentIsCoveredByData(const std::vector<int>& candidates, bool refineConnectivity,
-                                                      const std::vector<int>& failedCalculations) const {
+bool FragmentDataDistributor::fragmentIsCoveredByData(int fragmentIndex, const std::vector<int>& candidates,
+                                                      bool refineConnectivity, const std::vector<int>& failedCalculations,
+                                                      std::vector<std::vector<std::string>> failedCalculationIds) const {
   // Check whether the candidate is covered already by the available reference data
   for (const auto& candidate : candidates) {
     if (data_.vectorOfHessians.at(candidate) == nullptr) // If Hessian worked, then the structure opt. also worked.
@@ -52,9 +55,15 @@ bool FragmentDataDistributor::fragmentIsCoveredByData(const std::vector<int>& ca
   }
 
   // Check whether this fragment is hopeless. If it is, throw exception.
-  if (fragmentIsHopeless(candidates, failedCalculations))
-    throw std::runtime_error("Too many calculations failed. Parametrization cannot be successful anymore.");
+  if (fragmentIsHopeless(candidates, failedCalculations)) {
+    log_.debug << "For fragment " << fragmentIndex
+               << " all reference calculations failed. Please check the following calculations :" << Core::Log::endl;
+    auto candidateCalculations = failedCalculationIds.at(fragmentIndex);
+    for (auto candidate : candidateCalculations)
+      log_.debug << candidate << Core::Log::endl;
 
+    throw std::runtime_error("Too many calculations failed. Parametrization cannot be successful anymore.");
+  }
   return false;
 }
 
@@ -75,7 +84,7 @@ bool FragmentDataDistributor::fragmentIsHopeless(const std::vector<int>& candida
   }
 
   for (int i = 0; i < 3; ++i) {
-    if (failsForEach[i] == candidates.size())
+    if (failsForEach[i] == int(candidates.size()))
       return true;
   }
   return false;

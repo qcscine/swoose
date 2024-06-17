@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -40,7 +40,8 @@ SfamMolecularMechanicsCalculator::SfamMolecularMechanicsCalculator()
   applySettings();
 }
 
-SfamMolecularMechanicsCalculator::SfamMolecularMechanicsCalculator(const SfamMolecularMechanicsCalculator& rhs) {
+SfamMolecularMechanicsCalculator::SfamMolecularMechanicsCalculator(const SfamMolecularMechanicsCalculator& rhs)
+  : CloneInterface(rhs), parameterFilePath_(rhs.parameterFilePath_), hessianMode_(rhs.hessianMode_) {
   this->bondsEvaluator_ = std::make_unique<BondsEvaluator>(structure_.getPositions());
   this->anglesEvaluator_ = std::make_unique<AnglesEvaluator>(structure_.getPositions());
   this->dihedralsEvaluator_ = std::make_unique<DihedralsEvaluator>(structure_.getPositions());
@@ -50,35 +51,37 @@ SfamMolecularMechanicsCalculator::SfamMolecularMechanicsCalculator(const SfamMol
   this->electrostaticEvaluator_ = std::make_unique<ElectrostaticEvaluator>(structure_.getPositions(), atomicCharges_);
   this->hydrogenBondEvaluator_ = std::make_unique<HydrogenBondEvaluator>(structure_, atomicCharges_);
 
-  this->parameterFilePath_ = rhs.parameterFilePath_;
-  this->hessianMode_ = rhs.hessianMode_;
   this->requiredProperties_ = rhs.requiredProperties_;
   this->setLog(rhs.getLog());
   auto valueCollection = dynamic_cast<const Utils::UniversalSettings::ValueCollection&>(rhs.settings());
   this->settings_ =
       std::make_unique<Utils::Settings>(Utils::Settings(valueCollection, rhs.settings().getDescriptorCollection()));
   applySettings();
-  this->results() = rhs.results();
+  results_ = rhs.results_;
   this->setListsOfNeighbors(rhs.listsOfNeighbors_); // has to be set before "setStructure"
   this->setParameters(rhs.parameters_);             // has to be set before "setStructure"
-  this->setStructure(rhs.structure_);               // has to be set last
+  structure_ = rhs.structure_;                      // has to be set last
+  applySettings();
+  if (structure_.size() != 0) {
+    initialize();
+  }
 }
 
 void SfamMolecularMechanicsCalculator::applySettings() {
   using namespace SwooseUtilities::SettingsNames;
   settings_->normalizeStringCases(); // convert all option names to lower case letters
   if (settings_->valid()) {
-    applyCutoffDuringInitialization_ = settings().getBool(applyCutoffDuringInitialization);
-    includeHydrogenBonds_ = settings().getBool(hydrogenBondCorrection);
-    nonCovalentCutoffRadius_ = settings().getDouble(nonCovalentCutoffRadius) * Utils::Constants::bohr_per_angstrom;
-    detectBondsWithCovalentRadii_ = settings().getBool(detectBondsWithCovalentRadii);
-    connectivityFilePath_ = settings().getString(connectivityFilePath);
-    onlyCalculateBondedContribution_ = settings().getBool(onlyCalculateBondedContribution);
-    printContributionsMolecularMechanics_ = settings().getBool(printContributionsMolecularMechanics);
-    std::string sfamAtomTypeLevelString = settings().getString(sfamAtomTypeLevel);
+    applyCutoffDuringInitialization_ = settings_->getBool(applyCutoffDuringInitialization);
+    includeHydrogenBonds_ = settings_->getBool(hydrogenBondCorrection);
+    nonCovalentCutoffRadius_ = settings_->getDouble(nonCovalentCutoffRadius) * Utils::Constants::bohr_per_angstrom;
+    detectBondsWithCovalentRadii_ = settings_->getBool(detectBondsWithCovalentRadii);
+    connectivityFilePath_ = settings_->getString(connectivityFilePath);
+    onlyCalculateBondedContribution_ = settings_->getBool(onlyCalculateBondedContribution);
+    printContributionsMolecularMechanics_ = settings_->getBool(printContributionsMolecularMechanics);
+    std::string sfamAtomTypeLevelString = settings_->getString(sfamAtomTypeLevel);
     sfamAtomTypeLevel_ = SfamAtomTypeIdentifier::generateSfamAtomTypeLevelFromString(sfamAtomTypeLevelString);
 
-    std::string parameterFilePathFromSettings = settings().getString(parameterFilePath);
+    std::string parameterFilePathFromSettings = settings_->getString(Utils::SettingsNames::parameterFilePath);
     if (parameterFilePath_ != parameterFilePathFromSettings) {
       parameterFilePath_ = parameterFilePathFromSettings;
       parameterFilePathHasBeenChanged_ = true;
@@ -93,6 +96,17 @@ void SfamMolecularMechanicsCalculator::setStructure(const Utils::AtomCollection&
   structure_ = structure;
   applySettings();
   initialize();
+}
+
+void SfamMolecularMechanicsCalculator::modifyPositions(Utils::PositionCollection newPositions) {
+  structure_.setPositions(newPositions);
+  IndexedStructuralTopologyCreator topologyCreator(listsOfNeighbors_);
+  if (includeHydrogenBonds_) {
+    topologyCreator.addHydrogenBondsToIndexedStructuralTopology(topology_, structure_);
+    SfamPotentialTermsGenerator generator(structure_.size(), atomTypes_, topology_, parameters_,
+                                          structure_.getPositions(), nonCovalentCutoffRadius_, this->getLog());
+    hydrogenBondEvaluator_->setHydrogenBondTerms(generator.getHydrogenBondTerms());
+  }
 }
 
 const Utils::Results& SfamMolecularMechanicsCalculator::calculate(std::string description) {
@@ -155,22 +169,22 @@ const Utils::Results& SfamMolecularMechanicsCalculator::calculateImpl(std::strin
   energy += energyElectro;
 
   if (printContributionsMolecularMechanics_ && !hessianMode_) {
-    this->getLog().debug << Core::Log::nl << "Detailed output (unit: kcal/mol):" << Core::Log::endl;
-    this->getLog().debug << "-----------------------------------" << Core::Log::endl;
-    this->getLog().debug << "Bond energy: " << energyBonds * Utils::Constants::kCalPerMol_per_hartree << Core::Log::endl;
-    this->getLog().debug << "Angle energy: " << energyAngles * Utils::Constants::kCalPerMol_per_hartree << Core::Log::endl;
-    this->getLog().debug << "Dihedral energy: " << energyDihedrals * Utils::Constants::kCalPerMol_per_hartree
-                         << Core::Log::endl;
-    this->getLog().debug << "Improper dihedral energy: " << energyImproperDihedrals * Utils::Constants::kCalPerMol_per_hartree
-                         << Core::Log::endl;
-    this->getLog().debug << "Hydrogen Bond energy: " << energyHydrogenBonds * Utils::Constants::kCalPerMol_per_hartree
-                         << Core::Log::endl;
-    this->getLog().debug << "Dispersion energy: " << energyDispersion * Utils::Constants::kCalPerMol_per_hartree
-                         << Core::Log::endl;
-    this->getLog().debug << "Repulsion energy: " << energyRepulsion * Utils::Constants::kCalPerMol_per_hartree
-                         << Core::Log::endl;
-    this->getLog().debug << "Electrostatic energy: " << energyElectro * Utils::Constants::kCalPerMol_per_hartree
-                         << Core::Log::nl << Core::Log::endl;
+    this->getLog().output << Core::Log::nl << "Detailed output (unit: kcal/mol):" << Core::Log::endl;
+    this->getLog().output << "-----------------------------------" << Core::Log::endl;
+    this->getLog().output << "Bond energy: " << energyBonds * Utils::Constants::kCalPerMol_per_hartree << Core::Log::endl;
+    this->getLog().output << "Angle energy: " << energyAngles * Utils::Constants::kCalPerMol_per_hartree << Core::Log::endl;
+    this->getLog().output << "Dihedral energy: " << energyDihedrals * Utils::Constants::kCalPerMol_per_hartree
+                          << Core::Log::endl;
+    this->getLog().output << "Improper dihedral energy: " << energyImproperDihedrals * Utils::Constants::kCalPerMol_per_hartree
+                          << Core::Log::endl;
+    this->getLog().output << "Hydrogen Bond energy: " << energyHydrogenBonds * Utils::Constants::kCalPerMol_per_hartree
+                          << Core::Log::endl;
+    this->getLog().output << "Dispersion energy: " << energyDispersion * Utils::Constants::kCalPerMol_per_hartree
+                          << Core::Log::endl;
+    this->getLog().output << "Repulsion energy: " << energyRepulsion * Utils::Constants::kCalPerMol_per_hartree
+                          << Core::Log::endl;
+    this->getLog().output << "Electrostatic energy: " << energyElectro * Utils::Constants::kCalPerMol_per_hartree
+                          << Core::Log::nl << Core::Log::endl;
   }
 
   // Assemble results
@@ -213,6 +227,22 @@ const Utils::Results& SfamMolecularMechanicsCalculator::calculateImpl(std::strin
   if (requiredProperties_.containsSubSet(Utils::Property::AtomicCharges)) {
     results_.set<Utils::Property::AtomicCharges>(electrostaticEvaluator_->getAtomicCharges());
   }
+  if (requiredProperties_.containsSubSet(Utils::Property::BondOrderMatrix)) {
+    results_.set<Utils::Property::BondOrderMatrix>(
+        SwooseUtilities::TopologyUtils::generateBondOrderMatrixFromListsOfNeighbors(listsOfNeighbors_));
+  }
+  if (requiredProperties_.containsSubSet(Utils::Property::PartialEnergies)) {
+    std::unordered_map<std::string, double> partialEnergies;
+    partialEnergies.insert(std::make_pair("bonds", energyBonds));
+    partialEnergies.insert(std::make_pair("angles", energyAngles));
+    partialEnergies.insert(std::make_pair("dihedral", energyDihedrals));
+    partialEnergies.insert(std::make_pair("improper_dihedral", energyImproperDihedrals));
+    partialEnergies.insert(std::make_pair("h_bonds", energyHydrogenBonds));
+    partialEnergies.insert(std::make_pair("dispersion", energyDispersion));
+    partialEnergies.insert(std::make_pair("repulsion", energyRepulsion));
+    partialEnergies.insert(std::make_pair("electrostatic", energyElectro));
+    results_.set<Utils::Property::PartialEnergies>(partialEnergies);
+  }
   results_.set<Utils::Property::SuccessfulCalculation>(true);
 
   return results_;
@@ -220,32 +250,32 @@ const Utils::Results& SfamMolecularMechanicsCalculator::calculateImpl(std::strin
 
 void SfamMolecularMechanicsCalculator::generatePotentialTerms(const std::string& parameterPath) {
   IndexedStructuralTopologyCreator topologyCreator(listsOfNeighbors_);
-  auto topology = topologyCreator.calculateIndexedStructuralTopology();
+  topology_ = topologyCreator.calculateIndexedStructuralTopology();
   if (includeHydrogenBonds_)
-    topologyCreator.addHydrogenBondsToIndexedStructuralTopology(topology, structure_);
+    topologyCreator.addHydrogenBondsToIndexedStructuralTopology(topology_, structure_);
 
   // Find out atom types
   SfamAtomTypeIdentifier atomTypeGenerator(structure_.getElements().size(), structure_.getElements(), listsOfNeighbors_);
-  auto atomTypes = atomTypeGenerator.getAtomTypes(sfamAtomTypeLevel_);
+  atomTypes_ = atomTypeGenerator.getAtomTypes(sfamAtomTypeLevel_);
 
   if (!parametersHaveBeenSetInternally_ || parameterFilePathHasBeenChanged_) {
     if (parameterPath.empty())
       throw std::runtime_error("No parameter file was specified.");
 
-    SfamParameterParser parser(parameterPath, atomTypes);
+    SfamParameterParser parser(parameterPath, atomTypes_);
     this->getLog().output << "Parsing the parameter file..." << Core::Log::endl;
     parameters_ = *parser.parseParameters();
     parametersHaveBeenSetInternally_ = true;
     parameterFilePathHasBeenChanged_ = false;
     this->getLog().output << "Done." << Core::Log::nl << Core::Log::endl;
     // Sanity check
-    if (!parameters_.sanityCheck()) {
+    if (!parameters_.sanityCheck(atomTypes_)) {
       // Try assigning new C6 coefficients and check again:
-      DispersionC6Parameters::fillC6MatrixForCurrentStructure(parameters_, structure_, atomTypes);
-      if (!parameters_.sanityCheck())
+      DispersionC6Parameters::fillC6MatrixForCurrentStructure(parameters_, structure_, atomTypes_);
+      if (!parameters_.sanityCheck(atomTypes_))
         throw std::runtime_error("The parameters, which were read from a file, are not valid!");
 
-      // If check successful, then overwrite parameters file
+      // If check successful, then update parameters file with C6 parameters
       MMParametrization::ParameterFileWriter::writeSfamParametersToFile(parameterPath, parameters_);
       this->getLog().output << "As no C6 coefficients were provided, they were calculated on the fly and the "
                                "parameter file was updated accordingly.\n"
@@ -253,7 +283,7 @@ void SfamMolecularMechanicsCalculator::generatePotentialTerms(const std::string&
     }
   }
 
-  generatePotentialTerms(parameters_, topology, atomTypes);
+  generatePotentialTerms(parameters_, topology_, atomTypes_);
 }
 
 void SfamMolecularMechanicsCalculator::generatePotentialTerms(const SfamParameters& parameters,
@@ -295,7 +325,7 @@ void SfamMolecularMechanicsCalculator::initialize() {
     if (!detectBondsWithCovalentRadii_) {
       if (!connectivityFilePath_.empty()) {
         listsOfNeighbors_ = SwooseUtilities::ConnectivityFileHandler::readListsOfNeighbors(connectivityFilePath_);
-        if (listsOfNeighbors_.size() != structure_.size())
+        if (int(listsOfNeighbors_.size()) != structure_.size())
           throw std::runtime_error("The number of atoms in the provided connectivity file does not match the one of "
                                    "the molecular structure.");
       }

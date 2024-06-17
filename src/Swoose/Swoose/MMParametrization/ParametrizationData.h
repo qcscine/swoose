@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -11,6 +11,7 @@
 #include <Swoose/MolecularMechanics/AtomTypesHolder.h>
 #include <Swoose/MolecularMechanics/SFAM/SfamParameters.h>
 #include <Swoose/MolecularMechanics/Topology/IndexedStructuralTopology.h>
+#include <Swoose/StructurePreparation/Protonation/TitrationData.h>
 #include <Utils/Bonds/BondOrderCollection.h>
 #include <Utils/Geometry/AtomCollection.h>
 #include <Utils/Typenames.h>
@@ -110,6 +111,15 @@ struct ParametrizationData {
    */
   std::map<int, int> unpairedElectrons;
   /**
+   * @brief A map containing the indices of atoms of which the protonation state can be changed and
+   * the corresponding type of amino acid.
+   */
+  std::map<int, std::string> pHSensitiveSites;
+  /**
+   * @brief A vector that indicates whether a fragment is pH sensitive.
+   */
+  std::vector<bool> siteIspHSensitive;
+  /**
    * @brief Vector of all fragments containing a vector of indices that correspond to the indices
    *        of the atoms inside the fragment in the full system.
    */
@@ -124,6 +134,31 @@ struct ParametrizationData {
    *        does not need to be calculated.
    */
   std::vector<int> superfluousFragments;
+};
+
+struct TrainingData {
+  std::string groupType;
+  std::vector<double> eneryOfDeprotonation;
+  std::vector<double> pKas;
+};
+
+// This struct holds all results from titration calculations
+struct TitrationResults {
+  std::vector<std::string> requiredFunctionalGroups;
+  /**
+   * @brief Vector of unique pointers to molecular structures
+   *        that represent the optimized subsystems of the pH sensitive fragments in their non-reference state.
+   */
+  std::map<int, std::unique_ptr<Utils::AtomCollection>> vectorOfOptimizedNonRefStructures;
+  std::map<int, std::unique_ptr<Utils::HessianMatrix>> vectorOfHessiansForNonRefStates;
+  /**
+   * @brief This map stores a pair of electronic energies (reference state and (charged) non-reference state)
+   * corresponding to a fragment index of a pH-sensitive site.
+   */
+  std::vector<StructurePreparation::TitrableSite> sites;
+  std::map<int, std::pair<double, double>> electronicEnergies;
+
+  std::vector<TrainingData> trainingData;
 };
 
 } // namespace MMParametrization

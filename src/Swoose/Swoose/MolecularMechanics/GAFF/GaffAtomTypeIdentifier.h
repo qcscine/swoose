@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -49,7 +49,7 @@ class GaffAtomTypeIdentifier {
  private:
   bool atomTypeSet(int atomIndex) const;
   void setArraysForElementTypes();
-  void verifyNeighborNumber(int atomIndex, int imposedNumberOfNeighbors);
+  void verifyNeighborNumber(int atomIndex, int imposedNumberOfNeighbors, bool upper_limit = false);
   void handleHalogens();
   void handleOxygenFunctionalGroups();
   void handleSulfurFunctionalGroups();
@@ -58,7 +58,6 @@ class GaffAtomTypeIdentifier {
   void handleCarbons();
   void handleRemainingN();
   void handleHydrogens();
-  void calculateNumberOfNeighbors();
   void lookForCycles();
   void lookForCycle(int atomIndex);
   void handleCycles();

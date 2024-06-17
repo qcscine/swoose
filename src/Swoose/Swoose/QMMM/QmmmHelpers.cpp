@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -18,30 +18,80 @@ namespace Scine {
 namespace Qmmm {
 namespace QmmmHelpers {
 
+std::vector<double> writeChargesAndPositionsAsList(const Utils::AtomCollection& structure,
+                                                   const ChargeRedistributionResult& chargeRedistributionResult,
+                                                   const std::vector<int>& listOfQmAtoms) {
+  if (!chargeRedistributionResult.atomicCharges.size() && !chargeRedistributionResult.auxiliaryCharges.size()) {
+    return {};
+  }
+  std::vector<double> chargesAndPositions;
+  const Utils::ElementTypeCollection& elements = structure.getElements();
+  const Utils::PositionCollection& positions = structure.getPositions();
+  for (int i = 0; i < positions.rows(); ++i) {
+    if (std::find(listOfQmAtoms.begin(), listOfQmAtoms.end(), i) == listOfQmAtoms.end()) {
+      const Utils::Position& pos = positions.row(i);
+      const double charge = chargeRedistributionResult.atomicCharges[i];
+      const auto atomicNumber = static_cast<double>(Utils::ElementInfo::Z(elements[i]));
+      chargesAndPositions.push_back(charge);
+      chargesAndPositions.push_back(atomicNumber);
+      for (int j = 0; j < 3; ++j) {
+        chargesAndPositions.push_back(pos[j]);
+      }
+    }
+  }
+  for (int i = 0; i < static_cast<int>(chargeRedistributionResult.auxiliaryCharges.size()); ++i) {
+    const Utils::Position& pos = chargeRedistributionResult.positionsOfAuxiliaryCharges.row(i);
+    const double charge = chargeRedistributionResult.auxiliaryCharges[i];
+    chargesAndPositions.push_back(charge);
+    chargesAndPositions.push_back(0.0); // 0.0 as atomic number for auxiliary charges
+    for (int j = 0; j < 3; ++j) {
+      chargesAndPositions.push_back(pos[j]);
+    }
+  }
+  return chargesAndPositions;
+}
+
 void writePointChargesFile(const Utils::PositionCollection& positions,
                            const ChargeRedistributionResult& chargeRedistributionResult,
-                           const std::vector<int>& listOfQmAtoms, const std::string& filename) {
+                           const std::vector<int>& listOfQmAtoms, const std::string& filename, bool writeTurbomoleFormat) {
+  if (!chargeRedistributionResult.atomicCharges.size() && !chargeRedistributionResult.auxiliaryCharges.size()) {
+    return;
+  }
   std::ofstream pcFile(filename);
   assert(chargeRedistributionResult.atomicCharges.size() == positions.rows());
   assert(chargeRedistributionResult.auxiliaryCharges.size() == chargeRedistributionResult.positionsOfAuxiliaryCharges.rows());
 
-  pcFile << chargeRedistributionResult.atomicCharges.size() - listOfQmAtoms.size() +
-                chargeRedistributionResult.auxiliaryCharges.size()
-         << "\n";
+  if (!writeTurbomoleFormat) {
+    pcFile << chargeRedistributionResult.atomicCharges.size() - listOfQmAtoms.size() +
+                  chargeRedistributionResult.auxiliaryCharges.size()
+           << "\n";
+  }
 
   // First write the atomic charges
   for (int i = 0; i < positions.rows(); ++i) {
     // Write charge if this atom is NOT a QM atom.
     if (std::find(listOfQmAtoms.begin(), listOfQmAtoms.end(), i) == listOfQmAtoms.end()) {
-      pcFile << chargeRedistributionResult.atomicCharges.at(i) << " ";
-      pcFile << positions.row(i) * Utils::Constants::angstrom_per_bohr << "\n";
+      if (writeTurbomoleFormat) {
+        pcFile << positions.row(i) << " ";
+        pcFile << chargeRedistributionResult.atomicCharges.at(i) << "\n";
+      }
+      else {
+        pcFile << chargeRedistributionResult.atomicCharges.at(i) << " ";
+        pcFile << positions.row(i) * Utils::Constants::angstrom_per_bohr << "\n";
+      }
     }
   }
 
   // Then write the additional auxiliary charges if there are any
-  for (int j = 0; j < chargeRedistributionResult.auxiliaryCharges.size(); ++j) {
-    pcFile << chargeRedistributionResult.auxiliaryCharges.at(j) << " ";
-    pcFile << chargeRedistributionResult.positionsOfAuxiliaryCharges.row(j) * Utils::Constants::angstrom_per_bohr << "\n";
+  for (int j = 0; j < int(chargeRedistributionResult.auxiliaryCharges.size()); ++j) {
+    if (writeTurbomoleFormat) {
+      pcFile << chargeRedistributionResult.positionsOfAuxiliaryCharges.row(j) * Utils::Constants::angstrom_per_bohr << " ";
+      pcFile << chargeRedistributionResult.auxiliaryCharges.at(j) << "\n";
+    }
+    else {
+      pcFile << chargeRedistributionResult.auxiliaryCharges.at(j) << " ";
+      pcFile << chargeRedistributionResult.positionsOfAuxiliaryCharges.row(j) * Utils::Constants::angstrom_per_bohr << "\n";
+    }
   }
 }
 
@@ -49,7 +99,6 @@ Utils::AtomCollection createQmRegion(const std::vector<int>& listOfQmAtoms, cons
                                      const std::vector<std::list<int>>& listsOfNeighbors,
                                      const std::string& xyzFilename, std::vector<int>& mmBoundaryAtoms) {
   Utils::AtomCollection qmRegion;
-
   for (const auto& qmAtomIndex : listOfQmAtoms) {
     qmRegion.push_back(structure.at(qmAtomIndex));
   }
@@ -71,7 +120,7 @@ void checkValidityOfQmRegion(const std::vector<int>& listOfQmAtoms, const Utils:
           "The selected QM region is not valid, because at least one given atom index was negative or too large.");
   }
 
-  std::set<int> s(listOfQmAtoms.begin(), listOfQmAtoms.end());
+  const std::set<int> s(listOfQmAtoms.begin(), listOfQmAtoms.end());
   if (s.size() != listOfQmAtoms.size())
     throw std::runtime_error("The list of QM atoms contains duplicates!");
 
@@ -81,10 +130,10 @@ void checkValidityOfQmRegion(const std::vector<int>& listOfQmAtoms, const Utils:
 void addAllLinkAtoms(Utils::AtomCollection& qmRegion, const Utils::AtomCollection& fullStructure,
                      const std::vector<std::list<int>>& listsOfNeighbors, const std::vector<int>& listOfQmAtoms,
                      std::vector<int>& mmBoundaryAtoms) {
-  int numQmAtomsWithoutLinkAtoms = qmRegion.size();
+  const int numQmAtomsWithoutLinkAtoms = qmRegion.size();
   // Iterate over all QM atoms
   for (int i = 0; i < numQmAtomsWithoutLinkAtoms; ++i) {
-    int qmAtomIndex = listOfQmAtoms.at(i);
+    const int qmAtomIndex = listOfQmAtoms.at(i);
     auto neighbors = listsOfNeighbors.at(qmAtomIndex);
     // Iterate over all atoms bonded to the QM atom
     for (const auto& neighbor : neighbors) {
@@ -98,16 +147,16 @@ void addAllLinkAtoms(Utils::AtomCollection& qmRegion, const Utils::AtomCollectio
 }
 
 void addOneLinkAtom(Utils::AtomCollection& qmRegion, const Utils::Atom& qmAtom, const Utils::Atom& mmAtom) {
-  Utils::ElementType linkAtomElement = Utils::ElementType::H;
+  const Utils::ElementType linkAtomElement = Utils::ElementType::H;
 
   auto covalentRadiusQm = Utils::ElementInfo::covalentRadius(qmAtom.getElementType());
   auto covalentRadiusLink = Utils::ElementInfo::covalentRadius(linkAtomElement);
 
-  Eigen::RowVector3d bondVector = mmAtom.getPosition() - qmAtom.getPosition();
-  Eigen::RowVector3d scaledBondVector = ((covalentRadiusQm + covalentRadiusLink) / bondVector.norm()) * bondVector;
-  Eigen::RowVector3d linkAtomPosition = qmAtom.getPosition() + scaledBondVector;
+  const Eigen::RowVector3d bondVector = mmAtom.getPosition() - qmAtom.getPosition();
+  const Eigen::RowVector3d scaledBondVector = ((covalentRadiusQm + covalentRadiusLink) / bondVector.norm()) * bondVector;
+  const Eigen::RowVector3d linkAtomPosition = qmAtom.getPosition() + scaledBondVector;
 
-  Utils::Atom linkAtom(linkAtomElement, linkAtomPosition);
+  const Utils::Atom linkAtom(linkAtomElement, linkAtomPosition);
   qmRegion.push_back(linkAtom);
 }
 
@@ -116,7 +165,6 @@ ChargeRedistributionResult getRedistributedCharges(std::vector<double> charges, 
                                                    const std::vector<std::list<int>>& listsOfNeighbors,
                                                    const std::vector<int>& listOfQmAtoms, const std::string& scheme) {
   ChargeRedistributionResult result;
-
   // Iterate over all MM boundary atoms
   for (const auto& atomIndex : mmBoundaryAtoms) {
     std::vector<int> nonQmNeighbors;
@@ -141,7 +189,7 @@ ChargeRedistributionResult getRedistributedCharges(std::vector<double> charges, 
         charges.at(nonQmNeighbor) -= charges.at(atomIndex) / nonQmNeighbors.size();
         // Add 2q/n to the center of the corresponding bond vector
         result.auxiliaryCharges.push_back(2 * charges.at(atomIndex) / nonQmNeighbors.size());
-        Eigen::RowVector3d pos = 0.5 * (positions.row(atomIndex) + positions.row(nonQmNeighbor));
+        const Eigen::RowVector3d pos = 0.5 * (positions.row(atomIndex) + positions.row(nonQmNeighbor));
         result.positionsOfAuxiliaryCharges.conservativeResize(result.positionsOfAuxiliaryCharges.rows() + 1, 3);
         result.positionsOfAuxiliaryCharges.row(result.positionsOfAuxiliaryCharges.rows() - 1) = pos;
       }

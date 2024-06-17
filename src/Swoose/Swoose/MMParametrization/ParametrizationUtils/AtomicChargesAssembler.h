@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -11,6 +11,9 @@
 #include <vector>
 
 namespace Scine {
+namespace Core {
+struct Log;
+}
 
 namespace MMParametrization {
 struct ParametrizationData;
@@ -20,8 +23,9 @@ namespace AtomicChargesAssembler {
 /**
  * @brief Assemble atomic charges of the full nanoscale system from the fragment calculations.
  * @param data The ParametrizationData object given as a reference.
+ * @param log The logger.
  */
-void assembleAtomicCharges(ParametrizationData& data);
+void assembleAtomicCharges(ParametrizationData& data, Core::Log& log);
 
 /**
  * @brief Renormalizes the atomic charges in the given data object,

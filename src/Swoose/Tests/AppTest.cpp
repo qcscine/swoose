@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -16,8 +16,12 @@
 #include <Swoose/MolecularMechanics/SFAM/SfamMolecularMechanicsCalculator.h>
 #include <Swoose/QMMM/QmmmCalculator.h>
 #include <Swoose/QMMM/QmmmCalculatorSettings.h>
+#include <Swoose/StructurePreparation/StructurePreparationData.h>
+#include <Swoose/StructurePreparation/StructurePreparationSettings.h>
+#include <Swoose/StructurePreparation/StructureProcessor.h>
 #include <Utils/GeometryOptimization/QmmmGeometryOptimizer.h>
 #include <Utils/IO/ChemicalFileFormats/ChemicalFileHandler.h>
+#include <Utils/IO/ChemicalFileFormats/OpenBabelStreamHandler.h>
 #include <Utils/IO/NativeFilenames.h>
 #include <Utils/MolecularDynamics/MolecularDynamics.h>
 #include <Utils/MolecularDynamics/MolecularDynamicsSettings.h>
@@ -42,7 +46,7 @@ class AppTest : public Test {
 
 TEST_F(AppTest, TaskForSFAMCalculationWorks) {
   MolecularMechanics::SfamMolecularMechanicsCalculator mmCalculator;
-  mmCalculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  mmCalculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   mmCalculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
   mmCalculator.setLog(log);
 
@@ -56,7 +60,7 @@ TEST_F(AppTest, TaskForSFAMParametrizationWorksWithOrca) {
   auto parFile = Utils::NativeFilenames::combinePathSegments(alanine_ref_calc_dir, "Parameters.dat");
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataDirectory, alanine_ref_calc_dir);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, connFile);
-  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, parFile);
+  parametrizer.settings().modifyString(Utils::SettingsNames::parameterFilePath, parFile);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "read");
   parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useCsvInputFormat, false);
   parametrizer.setLog(log);
@@ -83,7 +87,7 @@ TEST_F(AppTest, TaskForSFAMParametrizationWorksWithTurbomole) {
   auto parFile = Utils::NativeFilenames::combinePathSegments(alanine_ref_calc_dir, "Parameters.dat");
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataDirectory, alanine_ref_calc_dir);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, connFile);
-  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, parFile);
+  parametrizer.settings().modifyString(Utils::SettingsNames::parameterFilePath, parFile);
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "read");
   parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useCsvInputFormat, false);
   parametrizer.setLog(log);
@@ -103,7 +107,7 @@ TEST_F(AppTest, TaskForSFAMParametrizationWorksWithTurbomole) {
 TEST_F(AppTest, TaskForClassicalMolecularDynamicsWorks) {
   MolecularMechanics::SfamMolecularMechanicsCalculator mmCalculator;
   mmCalculator.setLog(log);
-  mmCalculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  mmCalculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   mmCalculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
 
   Utils::MolecularDynamics molecularDynamics(mmCalculator);
@@ -143,13 +147,13 @@ TEST_F(AppTest, TaskForHybridMolecularDynamicsWorks) {
   auto mmCalculatorAsCalculator = std::dynamic_pointer_cast<Core::Calculator>(mmCalculator);
   auto qmCalculator = manager.get<Core::Calculator>("MOCK-QM", "MockModule");
   Qmmm::QmmmCalculator qmmmCalculator;
-  qmmmCalculator.setUnderlyingCalculators(qmCalculator, mmCalculatorAsCalculator);
+  qmmmCalculator.setUnderlyingCalculators({qmCalculator, mmCalculatorAsCalculator});
   qmmmCalculator.setLog(log);
-  qmmmCalculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  qmmmCalculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   qmmmCalculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
-  qmmmCalculator.settings().modifyBool(SwooseUtilities::SettingsNames::electrostaticEmbedding, false);
+  qmmmCalculator.settings().modifyBool(Utils::SettingsNames::electrostaticEmbedding, false);
   const std::vector<int> qmAtomsList{{30, 31, 32, 23, 22, 29, 21, 28, 20, 26, 27, 19, 24, 25}};
-  qmmmCalculator.settings().modifyIntList(SwooseUtilities::SettingsNames::qmAtomsList, qmAtomsList);
+  qmmmCalculator.settings().modifyIntList(Utils::SettingsNames::qmAtomsList, qmAtomsList);
 
   Utils::MolecularDynamics molecularDynamics(qmmmCalculator);
   molecularDynamics.settings().modifyInt(Utils::SettingsNames::numberOfMDSteps, 7);
@@ -188,11 +192,11 @@ TEST_F(AppTest, TaskForQmmmWorks) {
   auto mmCalculatorAsCalculator = std::dynamic_pointer_cast<Core::Calculator>(mmCalculator);
   auto qmCalculator = manager.get<Core::Calculator>("MOCK-QM", "MockModule");
   Qmmm::QmmmCalculator qmmmCalculator;
-  qmmmCalculator.setUnderlyingCalculators(qmCalculator, mmCalculatorAsCalculator);
+  qmmmCalculator.setUnderlyingCalculators({qmCalculator, mmCalculatorAsCalculator});
   qmmmCalculator.setLog(log);
-  qmmmCalculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  qmmmCalculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   qmmmCalculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
-  qmmmCalculator.settings().modifyBool(SwooseUtilities::SettingsNames::electrostaticEmbedding, false);
+  qmmmCalculator.settings().modifyBool(Utils::SettingsNames::electrostaticEmbedding, false);
 
   Utils::AtomCollection testStructure = Utils::ChemicalFileHandler::read(melatonin_xyz_file).first;
   qmmmCalculator.setStructure(testStructure);
@@ -207,7 +211,7 @@ TEST_F(AppTest, TaskForQmmmWorks) {
 TEST_F(AppTest, TaskForSFAMOptimizationWorks) {
   MolecularMechanics::SfamMolecularMechanicsCalculator mmCalculator;
   mmCalculator.setLog(log);
-  mmCalculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, water_param_file);
+  mmCalculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, water_param_file);
   mmCalculator.settings().modifyBool(SwooseUtilities::SettingsNames::detectBondsWithCovalentRadii, true);
 
   YAML::Node yamlNode;
@@ -233,11 +237,11 @@ TEST_F(AppTest, TaskForQmmmOptimizationWorks) {
   auto mmCalculatorAsCalculator = std::dynamic_pointer_cast<Core::Calculator>(mmCalculator);
   auto qmCalculator = manager.get<Core::Calculator>("MOCK-QM", "MockModule");
   Qmmm::QmmmCalculator qmmmCalculator;
-  qmmmCalculator.setUnderlyingCalculators(qmCalculator, mmCalculatorAsCalculator);
+  qmmmCalculator.setUnderlyingCalculators({qmCalculator, mmCalculatorAsCalculator});
   qmmmCalculator.setLog(log);
-  qmmmCalculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, melatonin_param_file);
+  qmmmCalculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
   qmmmCalculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
-  qmmmCalculator.settings().modifyBool(SwooseUtilities::SettingsNames::electrostaticEmbedding, false);
+  qmmmCalculator.settings().modifyBool(Utils::SettingsNames::electrostaticEmbedding, false);
 
   const std::vector<int> qmAtoms{{30, 31, 32, 23, 22, 29, 21, 28, 20, 26, 27, 19, 24, 25}};
   YAML::Node yamlNode;
@@ -267,6 +271,51 @@ TEST_F(AppTest, TaskForQmmmOptimizationWorks) {
   ASSERT_TRUE(boost::filesystem::exists(pathToOptResults));
   boost::filesystem::remove_all(pathToOptResults);
   ASSERT_FALSE(boost::filesystem::exists(pathToOptResults));
+}
+
+TEST_F(AppTest, TaskForStructurePreparationWorks) {
+  StructurePreparation::StructureProcessor processor;
+  processor.setLog(log);
+
+  std::string systemName = "plastocyanin";
+  std::string mode = "prepare-analyze";
+  // Create new directory temporarily
+  processor.settings().modifyString(SwooseUtilities::SettingsNames::preparationDataDirectory, "preparation");
+  auto refDataDir = processor.settings().getString(SwooseUtilities::SettingsNames::preparationDataDirectory);
+  // run the task
+  Swoose::Tasks::runPDBPreparationTask(processor, plastocyanin_pdb_file, mode, log);
+  StructurePreparation::StructurePreparationFiles files;
+  // this should be the correct workdir
+  files.workingDirectory = Utils::NativeFilenames::combinePathSegments(refDataDir, systemName);
+  files.initialize();
+
+  ASSERT_TRUE(boost::filesystem::exists(refDataDir));
+  ASSERT_TRUE(boost::filesystem::exists(files.proteinFile));
+  ASSERT_TRUE(boost::filesystem::exists(files.nonRegContainerFile));
+
+  if (Utils::OpenBabelStreamHandler::checkForBinary()) {
+    mode = "prepare-protonate";
+    Swoose::Tasks::runPDBPreparationTask(processor, plastocyanin_pdb_file, mode, log);
+    ASSERT_TRUE(boost::filesystem::exists(files.protonatedProteinFile));
+    ASSERT_TRUE(boost::filesystem::exists(files.protonatedNonRegContainerFile));
+
+    mode = "prepare-finalize";
+    Swoose::Tasks::runPDBPreparationTask(processor, plastocyanin_pdb_file, mode, log);
+
+    ASSERT_TRUE(boost::filesystem::exists(files.systemFile));
+    ASSERT_TRUE(boost::filesystem::exists(files.nonRegContainerInfoFile));
+    ASSERT_TRUE(boost::filesystem::exists(files.titrationSitesFile));
+    auto connFile = Utils::NativeFilenames::combinePathSegments(files.workingDirectory, "Connectivity.dat");
+    ASSERT_TRUE(boost::filesystem::exists(connFile));
+
+    boost::filesystem::remove_all(refDataDir);
+    mode = "prepare-automate";
+    Swoose::Tasks::runPDBPreparationTask(processor, plastocyanin_pdb_file, mode, log);
+    ASSERT_TRUE(boost::filesystem::exists(files.systemFile));
+    ASSERT_TRUE(boost::filesystem::exists(files.titrationSitesFile));
+    ASSERT_TRUE(boost::filesystem::exists(connFile));
+  }
+  boost::filesystem::remove_all(refDataDir);
 }
 
 } // namespace Tests

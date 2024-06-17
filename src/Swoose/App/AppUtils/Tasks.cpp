@@ -1,13 +1,16 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
 #include "Tasks.h"
 #include <Core/Log.h>
+#include <Core/ModuleManager.h>
 #include <Swoose/QMMM/QmRegionSelection/QmRegionSelector.h>
+#include <Swoose/StructurePreparation/StructureProcessor.h>
+#include <Swoose/Utilities/CalculatorOptions.h>
 #include <Swoose/Utilities/SettingsNames.h>
 #include <Utils/GeometryOptimization/QmmmGeometryOptimizer.h>
 #include <Utils/IO/ChemicalFileFormats/ChemicalFileHandler.h>
@@ -20,6 +23,7 @@
 #include <Utils/Optimizer/GradientBased/Bfgs.h>
 #include <Utils/Optimizer/GradientBased/GradientBasedCheck.h>
 #include <boost/filesystem.hpp>
+#include <ctime>
 
 namespace Scine {
 namespace Swoose {
@@ -32,6 +36,13 @@ constexpr const char* optimizationStructureFile = "opt_structure.xyz";
 constexpr const char* optimizationTrajectoryFile = "opt_trajectory.xyz";
 constexpr const char* hessianCsvFilename = "hessian.csv";
 } // namespace
+
+void runPDBPreparationTask(StructurePreparation::StructureProcessor processor, const std::string& structureFile,
+                           const std::string& mode, Core::Log& log) {
+  log.output << Core::Log::nl << "Starting PDB preparation for the molecule: " << structureFile << Core::Log::endl;
+  processor.prepare(structureFile, mode);
+  log.output << "Preparation done. " << Core::Log::endl;
+}
 
 void runMMCalculationTask(Core::Calculator& calculator, const std::string& structureFile,
                           Utils::PropertyList properties, Core::Log& log) {
@@ -68,7 +79,8 @@ void runQmmmCalculationTask(Core::Calculator& calculator, const std::string& str
   Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(structureFile).first;
 
   // Set settings
-  Utils::nodeToSettings(calculator.settings(), yamlNode, false);
+  // allow additional keys in YAML due to method_family / program specification
+  Utils::nodeToSettings(calculator.settings(), yamlNode, true);
   // Set structure
   calculator.setStructure(structure);
   // Set required properties
@@ -87,6 +99,10 @@ void runQmmmCalculationTask(Core::Calculator& calculator, const std::string& str
 }
 
 void runSFAMParametrizationTask(Core::MMParametrizer& parametrizer, const std::string& structureFile, Core::Log& log) {
+  log.output << "Starting the parametrization for the molecule: " << structureFile << Core::Log::endl;
+  time_t now = time(0);
+  char* dt = ctime(&now);
+  log.output << "Time: " << dt << Core::Log::endl;
   Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(structureFile).first;
   parametrizer.parametrize(structure);
   log.output << Core::Log::nl << "Parametrization done." << Core::Log::endl;
@@ -162,11 +178,11 @@ void runMMOptimizationTask(Core::Calculator& calculator, Utils::GeometryOptimize
   Utils::ChemicalFileHandler::write(Utils::NativeFilenames::combinePathSegments(resultsDir, optimizationStructureFile),
                                     structure);
 
-  auto maxAllowedCycles = optimizer.getSettings().getInt(Utils::GradientBasedCheck::gconvMaxIterKey);
+  auto maxAllowedCycles = optimizer.getSettings().getInt(Utils::SettingsNames::Optimizations::Convergence::maxIter);
   if (cycles == maxAllowedCycles)
     throw std::runtime_error("The structure optimization did not converge within the maximum number of cycles. This "
                              "number can be increased with the setting: " +
-                             std::string(Utils::GradientBasedCheck::gconvMaxIterKey));
+                             std::string(Utils::SettingsNames::Optimizations::Convergence::maxIter));
 
   log.output << "MM structure optimization done. Results are written to directory: " << resultsDir << Core::Log::endl;
 }
@@ -228,17 +244,30 @@ void runQmRegionSelectionTask(const std::string& structureFile, Core::Log& log, 
                               std::string yamlSettingsPath) {
   log.output << "Starting automated selection of QM region..." << Core::Log::nl << Core::Log::endl;
   Qmmm::QmRegionSelector qmRegionSelector;
+  std::shared_ptr<Qmmm::QmmmCalculator> calculator;
+
+  SwooseUtilities::fillQmmmCalculatorWithUnderlyingCalculators(calculator, yamlNode);
+  calculator->setLog(log);
+  // Forward QM/MM settings to calculator
+  Utils::nodeToSettings(calculator->settings(), yamlNode, true);
+
   Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(structureFile).first;
+  calculator->setStructure(structure);
   qmRegionSelector.setLog(log);
+
+  qmRegionSelector.setUnderlyingCalculator(calculator);
+
   Utils::nodeToSettings(qmRegionSelector.settings(), yamlNode, true);
   qmRegionSelector.settings().modifyString(SwooseUtilities::SettingsNames::yamlSettingsFilePath, yamlSettingsPath);
+
+  qmRegionSelector.setUnderlyingCalculator(calculator);
 
   // Generate QM region
   qmRegionSelector.generateQmRegion(structure);
   auto result = qmRegionSelector.getQmRegionIndices();
   log.output << "Indices of QM atoms: " << Core::Log::endl;
   log.output << "[";
-  for (int i = 0; i < result.size(); ++i) {
+  for (long unsigned int i = 0; i < result.size(); ++i) {
     if (result[i] >= 0) {
       log.output << result[i];
       if (i != result.size() - 1)

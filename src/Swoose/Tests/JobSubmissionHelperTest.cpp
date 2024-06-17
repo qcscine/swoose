@@ -1,19 +1,19 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
 #include <Swoose/MMParametrization/MMParametrizationSettings.h>
 #include <Swoose/MMParametrization/Parametrizer.h>
 #include <gmock/gmock.h>
-#include <Swoose/MMParametrization/ReferenceCalculationHelpers/BasicJobSubmissionHelper.cpp>
+#include <Swoose/Utilities/BasicJobSubmissionHelper.cpp>
 
 using namespace testing;
 namespace Scine {
 using namespace MMParametrization;
-using namespace BasicJobSubmissionHelper;
+using namespace SwooseUtilities::BasicJobSubmissionHelper;
 namespace Tests {
 
 /**
@@ -24,7 +24,7 @@ namespace Tests {
 class JobSubmissionHelperTest : public Test {};
 
 TEST_F(JobSubmissionHelperTest, MethodFamilyIsCorrectlyDeterminedFromMethodAndReferenceProgram) {
-  auto result = determineMethodFamily("pbe d3bj", "orca");
+  auto result = determineMethodFamily("pbe-d3bj", "orca");
   ASSERT_STREQ(result.c_str(), "dft");
   result = determineMethodFamily("pm3", "orca");
   ASSERT_STREQ(result.c_str(), "dft");

@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -12,6 +12,7 @@
 #include "SymmetryScores.h"
 #include <Core/Log.h>
 #include <Utils/Bonds/BondOrderCollection.h>
+#include <utility>
 
 #ifdef SWOOSE_COMPILE_DATABASE
 #  include "QmmmDatabaseHelper.h"
@@ -20,7 +21,8 @@
 namespace Scine {
 namespace Qmmm {
 
-QmmmReferenceDataManager::QmmmReferenceDataManager(const Utils::Settings& settings, Core::Log& log,
+QmmmReferenceDataManager::QmmmReferenceDataManager(std::shared_ptr<QmmmCalculator> qmmmCalculator,
+                                                   const Utils::Settings& settings, Core::Log& log,
                                                    const Utils::AtomCollection& structure,
                                                    const Utils::BondOrderCollection& bondOrders,
                                                    const std::vector<QmmmModel>& qmmmModelCandidates,
@@ -30,7 +32,8 @@ QmmmReferenceDataManager::QmmmReferenceDataManager(const Utils::Settings& settin
     structure_(structure),
     qmmmModelCandidates_(qmmmModelCandidates),
     qmmmReferenceModels_(qmmmReferenceModels),
-    bondOrders_(bondOrders) {
+    bondOrders_(bondOrders),
+    qmmmCalculator_(std::move(qmmmCalculator)) {
 }
 
 QmmmData QmmmReferenceDataManager::calculateData() {
@@ -54,12 +57,14 @@ void QmmmReferenceDataManager::calculateLinkAtomNumbers(QmmmData& data) const {
 void QmmmReferenceDataManager::calculateSymmetryScores(QmmmData& data) const {
   data.symmetryScores.clear();
   data.symmetryScores.reserve(qmmmModelCandidates_.size() + qmmmReferenceModels_.size());
-  int centerAtom = settings_.getInt(SwooseUtilities::SettingsNames::qmRegionCenterAtom);
+  auto centerAtoms = settings_.getIntList(SwooseUtilities::SettingsNames::qmRegionCenterAtoms);
 
   // Pre-calculate the distances of each atom to the center atom only once:
+  // Note: symmetry scores will only be evaluated if one QM center atom is given. Otherwise, all candidates will be
+  // considered.
   std::vector<double> distances(structure_.size());
   for (int i = 0; i < structure_.size(); ++i) {
-    Eigen::RowVector3d distVec = structure_.getPosition(i) - structure_.getPosition(centerAtom);
+    const Eigen::RowVector3d distVec = structure_.getPosition(i) - structure_.getPosition(centerAtoms[0]);
     distances[i] = distVec.norm();
   }
 
@@ -81,16 +86,17 @@ void QmmmReferenceDataManager::handleReferenceCalculations(QmmmData& data) {
 
   if (mode == SwooseUtilities::OptionNames::databaseMode) {
 #ifdef SWOOSE_COMPILE_DATABASE
+    auto calcSettings = (qmmmCalculator_) ? qmmmCalculator_->settings() : Utils::Settings("none");
     QmmmDatabaseHelper databaseHelper(settings_, log_, structure_, bondOrders_, qmmmModelCandidates_,
-                                      qmmmReferenceModels_, data);
+                                      qmmmReferenceModels_, data, calcSettings);
     data.forces = databaseHelper.calculateForces();
 #else
     throw std::runtime_error("Swoose was not compiled with database support.");
 #endif
   }
   else if (mode == SwooseUtilities::OptionNames::directMode) {
-    QmmmDirectCalculationsHelper directCalculationsHelper(settings_, log_, structure_, qmmmModelCandidates_,
-                                                          qmmmReferenceModels_, data);
+    QmmmDirectCalculationsHelper directCalculationsHelper(qmmmCalculator_, settings_, log_, structure_,
+                                                          qmmmModelCandidates_, qmmmReferenceModels_, data);
     data.forces = directCalculationsHelper.calculateForces();
   }
   else {

@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -50,10 +50,9 @@ void QmRegionSelector::generateQmRegion(const Utils::AtomCollection& fullSystem)
 
   // Reference data generation if there is more than one candidate
   this->getLog().output << "Starting reference calculations..." << Core::Log::nl << Core::Log::endl;
-  QmmmReferenceDataManager referenceDataManager(this->settings(), this->getLog(), fullSystem, bondOrders,
-                                                qmmmModelCandidates_, qmmmReferenceModels_);
+  QmmmReferenceDataManager referenceDataManager(qmmmCalculator_, this->settings(), this->getLog(), fullSystem,
+                                                bondOrders, qmmmModelCandidates_, qmmmReferenceModels_);
   auto data = referenceDataManager.calculateData();
-
   // Analysis
   this->getLog().output << "Analyzing the data to select the optimal QM region..." << Core::Log::nl << Core::Log::endl;
   QmmmModelAnalyzer analyzer(this->settings(), this->getLog(), data, fullSystem, qmmmModelCandidates_);
@@ -64,6 +63,20 @@ std::vector<int> QmRegionSelector::getQmRegionIndices() const {
   if (selectedQmRegionIndex_ == -1)
     throw QmRegionHasNotBeenSelectedException();
   return qmmmModelCandidates_.at(selectedQmRegionIndex_).qmAtomIndices;
+}
+
+std::vector<int> QmRegionSelector::getQmRegionIndicesWithoutLinkAtoms() const {
+  if (selectedQmRegionIndex_ == -1)
+    throw QmRegionHasNotBeenSelectedException();
+  std::vector<int> qmAtomIndices;
+  auto indices = qmmmModelCandidates_.at(selectedQmRegionIndex_).qmAtomIndices;
+  for (int i = 0; i < int(indices.size()); ++i) {
+    if (indices[i] >= 0) {
+      qmAtomIndices.push_back(indices[i]);
+    }
+  }
+
+  return qmAtomIndices;
 }
 
 Utils::AtomCollection QmRegionSelector::getQmRegionStructure() const {
@@ -87,13 +100,22 @@ const Utils::Settings& QmRegionSelector::settings() const {
   return *settings_;
 }
 
+bool QmRegionSelector::allowsPythonGILRelease() const {
+  auto mode = settings().getString(SwooseUtilities::SettingsNames::referenceDataMode);
+  return mode != SwooseUtilities::OptionNames::directMode || !qmmmCalculator_ || qmmmCalculator_->allowsPythonGILRelease();
+}
+
 Utils::BondOrderCollection QmRegionSelector::getBondOrders(const Utils::AtomCollection& structure) const {
   auto connFile = settings_->getString(SwooseUtilities::SettingsNames::connectivityFilePath);
   auto listsOfNeighbors = SwooseUtilities::ConnectivityFileHandler::readListsOfNeighbors(connFile);
-  if (listsOfNeighbors.size() != structure.size())
+  if (int(listsOfNeighbors.size()) != structure.size())
     throw std::runtime_error(
         "The number of atoms in the provided connectivity file does not match the one of the molecular structure.");
   return SwooseUtilities::TopologyUtils::generateBondOrderMatrixFromListsOfNeighbors(listsOfNeighbors);
+}
+
+void QmRegionSelector::setUnderlyingCalculator(std::shared_ptr<Core::Calculator> qmmmCalculator) {
+  qmmmCalculator_ = std::dynamic_pointer_cast<QmmmCalculator>(qmmmCalculator);
 }
 
 } // namespace Qmmm

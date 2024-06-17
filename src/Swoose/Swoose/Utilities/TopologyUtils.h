@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -47,6 +47,14 @@ class TopologyUtils {
   static int countNeighborsOfElementType(int atomType, const std::vector<std::list<int>>& listsOfNeighbors,
                                          Utils::ElementType elementType,
                                          const Utils::ElementTypeCollection& elementTypeCollection);
+  /**
+   * @brief
+   *
+   * @param nAtoms
+   * @param listsOfNeighbors
+   * @param nNeighbors
+   */
+  static void calculateNumberOfNeighbors(int nAtoms, std::vector<std::list<int>> listsOfNeighbors, std::vector<int>& nNeighbors);
 };
 
 } // namespace SwooseUtilities

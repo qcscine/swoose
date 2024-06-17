@@ -1,7 +1,7 @@
 /**
  * @file
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -155,7 +155,7 @@ TEST_F(AGaffMolecularMechanicsTest, GaffCalculationOfDistortedEthaneMolecule) {
                        "H 2.024414 4.727295 -1.251800\n");
 
   Utils::AtomCollection structure = Utils::XyzStreamHandler::read(ss);
-  calculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, gaff_parameter_file);
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, gaff_parameter_file);
   calculator.settings().modifyBool(SwooseUtilities::SettingsNames::detectBondsWithCovalentRadii, true);
   calculator.settings().modifyDouble(SwooseUtilities::SettingsNames::nonCovalentCutoffRadius, 20.0); // basically no
                                                                                                      // cutoff radius
@@ -169,11 +169,12 @@ TEST_F(AGaffMolecularMechanicsTest, GaffCalculationOfDistortedEthaneMolecule) {
   std::ofstream file(atomicChargesFile);
   Utils::matrixToCsv(file, atomicCharges, ',');
   file.close();
-  calculator.settings().modifyString(SwooseUtilities::SettingsNames::gaffAtomicChargesFile, atomicChargesFile);
 
   calculator.setRequiredProperties(Utils::Property::Energy | Utils::Property::Gradients | Utils::Property::Hessian);
+  ASSERT_THROW(calculator.setStructure(structure), std::runtime_error);
+  // now set the atomic charges file
+  calculator.settings().modifyString(SwooseUtilities::SettingsNames::gaffAtomicChargesFile, atomicChargesFile);
   calculator.setStructure(structure);
-
   // Clone calculator to test clone interface as well
   auto clonedCalculator = calculator.clone();
 
@@ -248,7 +249,7 @@ TEST_F(AGaffMolecularMechanicsTest, GaffCalculationOfDistortedEthaneMolecule) {
 
 TEST_F(AGaffMolecularMechanicsTest, GaffCalculationOfAlanineWithReadParameters) {
   Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(alanine_xyz_file).first;
-  calculator.settings().modifyString(SwooseUtilities::SettingsNames::parameterFilePath, gaff_parameter_file);
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, gaff_parameter_file);
   calculator.settings().modifyBool(SwooseUtilities::SettingsNames::detectBondsWithCovalentRadii, true);
   calculator.settings().modifyDouble(SwooseUtilities::SettingsNames::nonCovalentCutoffRadius, 50.0); // basically no
                                                                                                      // cutoff radius

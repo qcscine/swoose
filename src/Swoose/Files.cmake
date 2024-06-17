@@ -144,24 +144,28 @@ set(SWOOSE_MODULE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ReferenceCalculationHelpers/ReferenceCalculationsIO.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ReferenceCalculationHelpers/DirectCalculationsHelper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ReferenceCalculationHelpers/DirectCalculationsHelper.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ReferenceCalculationHelpers/BasicJobSubmissionHelper.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ReferenceCalculationHelpers/BasicJobSubmissionHelper.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/FragmentDataDistributor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/FragmentDataDistributor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/AtomicChargesAssembler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/AtomicChargesAssembler.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/TitrationHelper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/TitrationHelper.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/FragmentAnalyzer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/FragmentAnalyzer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/AtomicInformationReader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/AtomicInformationReader.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/FragmentationHelper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/FragmentationHelper.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/BasicJobSubmissionHelper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/BasicJobSubmissionHelper.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/ConstrainedAtomsIdentifier.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/ConstrainedAtomsIdentifier.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/SubsystemGenerator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/SubsystemGenerator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/ConnectivityFileHandler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/ConnectivityFileHandler.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/TitrationFileHandler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/TitrationFileHandler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MachineLearning/MolecularMachineLearningModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MachineLearning/MolecularMachineLearningModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/QMMM/QmmmCalculator.cpp
@@ -173,6 +177,8 @@ set(SWOOSE_MODULE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/QMMM/InteractionTermEliminator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/QMMM/QmmmGradientsEvaluator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/QMMM/QmmmGradientsEvaluator.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/QMMM/QmmmHessianEvaluator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/QMMM/QmmmHessianEvaluator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/QMMM/QmRegionSelection/QmRegionSelector.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/QMMM/QmRegionSelection/QmRegionSelector.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/QMMM/QmRegionSelection/QmRegionSelectorSettings.h
@@ -186,6 +192,24 @@ set(SWOOSE_MODULE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/QMMM/QmRegionSelection/QmmmDirectCalculationsHelper.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/QMMM/QmRegionSelection/SymmetryScores.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/QMMM/QmRegionSelection/SymmetryScores.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/AminoAcidGraphRepresentations.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/AminoAcidGraphRepresentations.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/StructurePreparationData.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/StructurePreparationHelper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/StructurePreparationHelper.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/StructurePreparationSettings.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/StructureProcessor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/StructureProcessor.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/StructurePreparationIO.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/StructurePreparationIO.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/ProteinStructures.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/Protonation/ProtonationHelper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/Protonation/ProtonationHelper.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/Protonation/ProtonationHandler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/Protonation/ProtonationHandler.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/Protonation/TitrationData.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/SpecialCaseHandler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/StructurePreparation/SpecialCaseHandler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/SettingsNames.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/OptionNames.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/Utilities/SettingsPopulator.h
@@ -216,6 +240,7 @@ set(SWOOSE_TEST_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/BondOrderRefinementTest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/MolecularMachineLearningTest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/TestUtilities/ReferenceDataForTests.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/TestUtilities/AminoAcidDataForTests.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/InteractionTermEliminatorTest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/QmmmHelperFunctionsTest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/QmmmTest.cpp
@@ -226,10 +251,15 @@ set(SWOOSE_TEST_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AppTest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/QmRegionSelectionTests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/JobSubmissionHelperTest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/StructurePreparationTest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/TitrationTest.cpp
     $<$<BOOL:${SWOOSE_COMPILE_DATABASE}>:${CMAKE_CURRENT_SOURCE_DIR}/Tests/DatabaseModeTest.cpp>
     )
 
 set(SWOOSE_PYTHON_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Python/PythonModule.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Python/TaskHandlerPython.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Python/ParametrizerPython.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Python/QmRegionSelectorPython.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Python/SwooseUtilitiesPython.cpp
     )
