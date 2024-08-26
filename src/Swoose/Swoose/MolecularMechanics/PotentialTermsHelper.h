@@ -10,7 +10,6 @@
 
 #include "Interactions/AngleTerm.h"
 #include "Interactions/BondedTerm.h"
-#include "Interactions/ElectrostaticTerm.h"
 #include <Eigen/Dense>
 #include <vector>
 
@@ -51,22 +50,6 @@ std::vector<BondedTerm> getBondedTerms(const IndexedStructuralTopology& topology
  */
 std::vector<AngleTerm> getAngleTerms(const IndexedStructuralTopology& topology, const MMParameters& parameters,
                                      const AtomTypesHolder& atomTypesHolder);
-
-/**
- * @brief Getter for the vector of electrostatic terms. This is the same for GAFF and SFAM.
- * @param applyCutoff Whether to apply a distance cutoff.
- * @param cutoffRadius The distance cutoff in bohr.
- * @param scalingFactorForOneFourTerms The factor by which the interaction of a
- *                                     1,4-bonded pair of atoms should be scaled.
- * @param exclusionTypeMatrix Exclusion-type matrix, that encodes for each atom pair how its
- *                            non-covalent contribution is handled.
- * @param positions The positions of the structure.
- * @return Vector of electrostatic terms.
- */
-std::vector<ElectrostaticTerm>
-getElectrostaticTerms(bool applyCutoff, std::shared_ptr<double> cutoffRadius, double scalingFactorForOneFourTerms,
-                      const Eigen::MatrixXi& exclusionTypeMatrix, const Utils::PositionCollection& positions);
-
 } // namespace PotentialTermsHelper
 } // namespace MolecularMechanics
 } // namespace Scine

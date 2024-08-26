@@ -34,10 +34,10 @@ class InteractionTermEliminator;
 namespace MolecularMechanics {
 class SfamParameters;
 class AtomTypesHolder;
-class BondType;
-class AngleType;
-class DihedralType;
-class ImproperDihedralType;
+struct BondType;
+struct AngleType;
+struct DihedralType;
+struct ImproperDihedralType;
 /**
  * @class SfamMolecularMechanicsCalculator SfamMolecularMechanicsCalculator.h
  * @brief Calculator for the SFAM Molecular Mechanics method.

@@ -18,8 +18,8 @@
 
 %%
 % Book metadata
-\title[SCINE Swoose manual]{User Manual \vskip 0.5em {\setlength{\parindent}{0pt} \Huge SCINE Swoose 2.0.0}}
-\author[The SCINE Swoose Developers]{\noindent Christoph Brunken, Katja-Sophia Csizi, Miguel Steiner, Thomas Weymuth, and Markus Reiher}
+\title[SCINE Swoose manual]{User Manual \vskip 0.5em {\setlength{\parindent}{0pt} \Huge SCINE Swoose 2.1.0}}
+\author[The SCINE Swoose Developers]{\noindent Moritz Bensberg, Christoph Brunken, Katja-Sophia Csizi, Miguel Steiner, Thomas Weymuth, and Markus Reiher}
 \publisher{ETH Z\"urich}
 
 %%
@@ -276,7 +276,7 @@ The base command to install \textsc{Swoose} is:
 
 \begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
 \begin{verbatim}
-conan install scine_swoose/2.0.0@
+conan install scine_swoose/2.1.0@
 \end{verbatim}
 \end{mdframed}
 
@@ -286,7 +286,7 @@ For instance, if you want Python bindings, your install command will be:
 
 \begin{mdframed}[backgroundcolor=LightSteelBlue!25, userdefinedwidth=12cm, linewidth=0pt]
 \begin{verbatim}
-conan install -o scine_swoose:python=True scine_swoose/2.0.0@
+conan install -o scine_swoose:python=True scine_swoose/2.1.0@
 \end{verbatim}
 \end{mdframed}
 
@@ -302,7 +302,7 @@ In order to automatically add the required libraries to the \hl{\:\texttt{LD\_LI
 
 \begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
 \begin{verbatim}
-conan install scine_swoose/2.0.0@ -g virtualrunenv
+conan install scine_swoose/2.1.0@ -g virtualrunenv
 \end{verbatim}
 \end{mdframed}
 
@@ -321,7 +321,7 @@ If you also want to install the modules \textsc{Sparrow} and \textsc{xTB} via Co
 \begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
 \begin{verbatim}
 [requires]
-scine_swoose/[>=2.0.0]@
+scine_swoose/[>=2.1.0]@
 scine_sparrow/[>=5.0.0]@
 scine_xtb_wrapper/[>=3.0.0]@
 

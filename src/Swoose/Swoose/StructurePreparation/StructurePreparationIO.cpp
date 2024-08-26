@@ -25,7 +25,7 @@ namespace StructurePreparationIO {
 void xyzToPdb(const std::string& xyzFile, const std::string& pdbFile) {
   Utils::AtomCollection at;
   at = Utils::ChemicalFileHandler::read(xyzFile).first;
-  Utils::ChemicalFileHandler::write(pdbFile, at, "Dummy comment");
+  Utils::ChemicalFileHandler::write(pdbFile, at);
 }
 
 void writeAtomicInfoFileForProtein(const StructurePreparationData& data, const std::string& atomicInfoFile) {
@@ -79,6 +79,7 @@ std::string getSuffix(const bfs::path& filepath) {
   return suffix.substr(1);
 }
 
+// TODO: This is already supported through the utils and could be removed in the future.
 void writePdbFileWithResidueSpecifier(const StructurePreparationData& data, const std::string& proteinFile, Core::Log& log) {
   std::ofstream pdbFile;
   if (!data.protein.empty()) {

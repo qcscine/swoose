@@ -9,6 +9,7 @@
 #define MOLECULARMECHANICS_ELECTROSTATIC_H
 
 #include <Utils/Math/AutomaticDifferentiation/Second1D.h>
+#include <Utils/Typenames.h>
 
 namespace Scine {
 namespace MolecularMechanics {

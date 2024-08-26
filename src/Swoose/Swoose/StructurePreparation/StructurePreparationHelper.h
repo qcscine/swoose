@@ -56,7 +56,7 @@ void reevaluateConnectivityForAminoAcids(StructurePreparationData& data);
  * @brief After combination of (modified) substructures, the covalent bonds at the subsystem boundaries must be fixed
  * (superfluous hydrogens must be removed).
  */
-void handleBoundariesBetweenProteinAndNonRegContainer(StructurePreparationData& data, StructurePreparationFiles& files);
+void handleBoundariesBetweenProteinAndNonRegContainer(StructurePreparationData& data);
 /**
  * @brief Solvates the structure with a number of solvent shells that can be set as a setting.
  */

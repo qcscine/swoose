@@ -77,37 +77,6 @@ std::vector<AngleTerm> getAngleTerms(const IndexedStructuralTopology& topology, 
   return angleList;
 }
 
-std::vector<ElectrostaticTerm>
-getElectrostaticTerms(bool applyCutoff, std::shared_ptr<double> cutoffRadius, double scalingFactorForOneFourTerms,
-                      const Eigen::MatrixXi& exclusionTypeMatrix, const Utils::PositionCollection& positions) {
-  std::vector<ElectrostaticTerm> electrostaticList;
-  assert(positions.rows() == exclusionTypeMatrix.rows());
-  assert(positions.rows() == exclusionTypeMatrix.cols());
-
-  for (int a = 0; a < positions.rows(); ++a) {
-    for (int b = 0; b < a; ++b) {
-      if (applyCutoff) {
-        const auto& R = (positions.row(b) - positions.row(a)).norm();
-        if (R > *cutoffRadius)
-          continue;
-      }
-
-      auto type = exclusionTypeMatrix(a, b);
-      if (type == 0)
-        continue;
-
-      double factor = 1;
-      if (type == -1)
-        factor = scalingFactorForOneFourTerms;
-      Electrostatic m(factor);
-      ElectrostaticTerm term(a, b, m, cutoffRadius);
-      electrostaticList.push_back(term);
-    }
-  }
-
-  return electrostaticList;
-}
-
 } // namespace PotentialTermsHelper
 } // namespace MolecularMechanics
 } // namespace Scine

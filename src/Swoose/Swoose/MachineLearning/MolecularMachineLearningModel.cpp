@@ -191,9 +191,9 @@ Eigen::MatrixXd MolecularMachineLearningModel::getSingleForceFeatures(int atomIn
 }
 
 Eigen::MatrixXd MolecularMachineLearningModel::getSingleForceTargets(int atomIndex) {
-  int nDataPoints = forcesFeatures_.size();
+  const size_t nDataPoints = forcesFeatures_.size();
   Eigen::MatrixXd targets(nDataPoints, 3);
-  for (long unsigned int j = 0; j < nDataPoints; ++j) {
+  for (size_t j = 0; j < nDataPoints; ++j) {
     targets.row(j) = refForces_[j].row(atomIndex);
   }
   return targets;

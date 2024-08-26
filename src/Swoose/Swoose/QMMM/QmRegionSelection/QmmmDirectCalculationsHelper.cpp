@@ -41,8 +41,8 @@ QmmmDirectCalculationsHelper::QmmmDirectCalculationsHelper(std::shared_ptr<QmmmC
 
 std::vector<ForcesCollection> QmmmDirectCalculationsHelper::calculateForces() {
   // Initialize some variables
-  int numCandidateModels = qmmmModelCandidates_.size();
-  int numModels = numCandidateModels + qmmmReferenceModels_.size();
+  size_t numCandidateModels = qmmmModelCandidates_.size();
+  size_t numModels = numCandidateModels + qmmmReferenceModels_.size();
   std::vector<ForcesCollection> forces(numModels);
 
   // Get max allowed symmetry score
@@ -57,8 +57,9 @@ std::vector<ForcesCollection> QmmmDirectCalculationsHelper::calculateForces() {
   }
 
 #pragma omp parallel for
-  for (long unsigned int i = 0; i < numModels; ++i) {
-    int molecularCharge, spinMultiplicity;
+  for (size_t i = 0; i < numModels; ++i) {
+    int molecularCharge = 0;
+    int spinMultiplicity = 1;
     if (i < numCandidateModels) {
       molecularCharge = qmmmModelCandidates_.at(i).molecularCharge;
       spinMultiplicity = qmmmModelCandidates_.at(i).spinMultiplicity;

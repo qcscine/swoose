@@ -20,7 +20,7 @@ class InteractionTermEliminator;
 
 namespace MolecularMechanics {
 
-class DihedralType;
+struct DihedralType;
 
 /**
  * @class DihedralsEvaluator DihedralsEvaluator.h

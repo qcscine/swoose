@@ -71,11 +71,13 @@ void StructureProcessor::analyzeStructure(const std::string& structureFile) {
   log_.output << "Analyzing the input structure ..." << Core::Log::nl;
   StructurePreparationHelper::performInitialCheck(files_, 1, settings_);
   auto structure = getAtomCollectionFromInput(structureFile, false);
+  structure.removeAtomsByResidueLabel({"HOH"});
   StructurePreparationHelper::updatePdbPreparationData(data_, structure);
   StructurePreparationHelper::performGraphAnalysisOnStructure(data_, data_.fullStructure);
   StructurePreparationHelper::updateNonRegContainerVector(data_);
   StructurePreparationHelper::reevaluateConnectivityForAminoAcids(data_);
-  if ((data_.vectorOfNonRegContainerIndices.size() + data_.vectorOfProteinIndices.size()) != data_.fullStructure.size()) {
+  if (size_t(data_.vectorOfNonRegContainerIndices.size() + data_.vectorOfProteinIndices.size()) !=
+      size_t(data_.fullStructure.size())) {
     log_.output << "Structure analysis failed!" << Core::Log::nl;
   }
   StructurePreparationIO::writePdbFileWithResidueSpecifier(data_, files_.proteinFile, log_);
@@ -107,7 +109,7 @@ void StructureProcessor::finalize() {
   // merge substructures
   StructurePreparationHelper::mergeProteinAndNonRegContainer(data_, files_);
   // handle the boundaries
-  StructurePreparationHelper::handleBoundariesBetweenProteinAndNonRegContainer(data_, files_);
+  StructurePreparationHelper::handleBoundariesBetweenProteinAndNonRegContainer(data_);
   // write the atomic info file for the protein first
   StructurePreparationIO::writeAtomicInfoFileForProtein(data_, files_.atomicInfoFile);
   StructurePreparationIO::addAtomicInformationForNonRegContainer(files_, data_.subsystemMapping);
@@ -164,7 +166,6 @@ Utils::AtomCollection StructureProcessor::getAtomCollectionFromInput(const std::
     Utils::PdbStreamHandler handler;
     handler.setReadH(includeH);
     // first read in all solvent molecules
-    handler.parseOnlySolvent(false);
     std::ifstream input;
     input.open(structureFile);
     auto structures = handler.read(input);
@@ -174,8 +175,10 @@ Utils::AtomCollection StructureProcessor::getAtomCollectionFromInput(const std::
 
     std::vector<Utils::AtomCollection> solvents;
     try {
-      handler.parseOnlySolvent(true);
       solvents = handler.read(input);
+      for (auto& solvent : solvents) {
+        solvent.keepAtomsByResidueLabel({"HOH"});
+      }
     }
     catch (...) {
       solvents.resize(0);

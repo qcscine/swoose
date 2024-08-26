@@ -12,7 +12,6 @@
 #include "../Interactions/BondedTerm.h"
 #include "../Interactions/DihedralTerm.h"
 #include "../Interactions/DispersionTerm.h"
-#include "../Interactions/ElectrostaticTerm.h"
 #include "../Interactions/HydrogenBondTerm.h"
 #include "../Interactions/ImproperDihedralTerm.h"
 #include "../Interactions/RepulsionTerm.h"
@@ -21,7 +20,7 @@
 namespace Scine {
 
 namespace Core {
-class Log;
+struct Log;
 } // namespace Core
 
 namespace MolecularMechanics {
@@ -63,8 +62,6 @@ class SfamPotentialTermsGenerator {
   std::vector<DispersionTerm> getDispersionTerms(bool applyCutoff);
   /** @brief Getter for Pauli repulsion terms with decision whether to use a cutoff radius. */
   std::vector<RepulsionTerm> getRepulsionTerms(bool applyCutoff);
-  /** @brief Getter for electrostatic terms with decision whether to use a cutoff radius. */
-  std::vector<ElectrostaticTerm> getElectrostaticTerms(bool applyCutoff);
   /** @brief Getter for hydrogen bond terms */
   std::vector<HydrogenBondTerm> getHydrogenBondTerms();
 

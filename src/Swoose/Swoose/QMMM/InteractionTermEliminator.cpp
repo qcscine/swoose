@@ -36,7 +36,7 @@ void InteractionTermEliminator::eliminateInteractionTerms(bool electrostaticEmbe
       throw std::runtime_error("GAFF Calculator could not be casted to derived class.");
     eliminateSharedInteractionTerms(electrostaticEmbedding, *calc);
     eliminateDihedralTerms(calc->improperDihedralsEvaluator_->dihedrals_, true);
-    eliminateLennardJonesTerms(calc->lennardJonesEvaluator_->ljTerms_);
+    eliminateLennardJonesTerms(*calc->lennardJonesEvaluator_);
   }
   else {
     throw std::runtime_error("The given MM model is not supported by the interaction term eliminator.");
@@ -48,22 +48,27 @@ void InteractionTermEliminator::eliminateSharedInteractionTerms(bool electrostat
   eliminateBondedTerms(calculator.bondsEvaluator_->bonds_);
   eliminateAngleTerms(calculator.anglesEvaluator_->angles_);
   eliminateDihedralTerms(calculator.dihedralsEvaluator_->dihedrals_);
-  eliminateElectrostaticTerms(calculator.electrostaticEvaluator_->electrostaticTerms_, electrostaticEmbedding);
+  eliminateElectrostaticTerms(*calculator.electrostaticEvaluator_, electrostaticEmbedding);
 }
 
 void InteractionTermEliminator::eliminateTerm(MolecularMechanics::InteractionTermBase& term,
                                               const std::vector<int>& atomsInTerm, int allowedInQmRegion) {
+  if (termToEliminate(atomsInTerm, allowedInQmRegion)) {
+    term.disable();
+  }
+}
+
+bool InteractionTermEliminator::termToEliminate(const std::vector<int>& atomsInTerm, int allowedInQmRegion) {
   int inQmRegion = 0;
   for (const auto& atom : atomsInTerm) {
     if (isQmAtom(atom))
       inQmRegion++;
   }
   if (inQmRegion > allowedInQmRegion)
-    term.disable();
-  if (eliminateEnvironmentOnlyTerms_) {
-    if (inQmRegion == 0)
-      term.disable();
-  }
+    return true;
+  if (eliminateEnvironmentOnlyTerms_ && inQmRegion == 0)
+    return true;
+  return false;
 }
 
 bool InteractionTermEliminator::isQmAtom(int index) {
@@ -128,11 +133,43 @@ void InteractionTermEliminator::eliminateRepulsionTerms(std::vector<MolecularMec
   }
 }
 
-void InteractionTermEliminator::eliminateLennardJonesTerms(std::vector<MolecularMechanics::LennardJonesTerm>& ljTerms) {
-  for (auto& ljTerm : ljTerms) {
-    std::vector<int> atoms = {ljTerm.getFirstAtom(), ljTerm.getSecondAtom()};
-    eliminateTerm(ljTerm, atoms, 1);
+void InteractionTermEliminator::eliminateLennardJonesTerms(MolecularMechanics::LennardJonesEvaluator& lennardJonesEvaluator) {
+  const unsigned int nAtoms = calculator_->getStructure()->size();
+  originalLJExclusions_ = lennardJonesEvaluator.getExclusions();
+  std::vector<Eigen::Triplet<bool>> triplets;
+  for (unsigned int iAtom = 0; iAtom < nAtoms; ++iAtom) {
+    for (unsigned int jAtom = 0; jAtom < iAtom; ++jAtom) {
+      if (termToEliminate({int(iAtom), int(jAtom)}, 1)) {
+        triplets.emplace_back(iAtom, jAtom, true);
+        triplets.emplace_back(jAtom, iAtom, true);
+      }
+    }
   }
+  Eigen::SparseMatrix<bool> exclusions(nAtoms, nAtoms);
+  exclusions.setFromTriplets(triplets.begin(), triplets.end());
+  lennardJonesEvaluator.addExclusions(exclusions);
+}
+
+void InteractionTermEliminator::eliminateElectrostaticTerms(MolecularMechanics::ElectrostaticEvaluator& electrostaticEvaluator,
+                                                            bool electrostaticEmbedding) {
+  const unsigned int nAtoms = calculator_->getStructure()->size();
+  originalElectrostaticExclusions_ = electrostaticEvaluator.getExclusions();
+  std::vector<Eigen::Triplet<bool>> triplets;
+  // If electrostatic embedding is switched on:
+  // Eliminate if at least one atom is in the QM region,
+  // because QM-MM electrostatic interaction is covered by the electrostatic embedding
+  const int nQMAtomsAllowed = (electrostaticEmbedding) ? 0 : 1;
+  for (unsigned int iAtom = 0; iAtom < nAtoms; ++iAtom) {
+    for (unsigned int jAtom = 0; jAtom < iAtom; ++jAtom) {
+      if (termToEliminate({int(iAtom), int(jAtom)}, nQMAtomsAllowed)) {
+        triplets.emplace_back(iAtom, jAtom, true);
+        triplets.emplace_back(jAtom, iAtom, true);
+      }
+    }
+  }
+  Eigen::SparseMatrix<bool> exclusions(nAtoms, nAtoms);
+  exclusions.setFromTriplets(triplets.begin(), triplets.end());
+  electrostaticEvaluator.addExclusions(exclusions);
 }
 
 void InteractionTermEliminator::eliminateHydrogenBondTerms(std::vector<MolecularMechanics::HydrogenBondTerm>& hydrogenBondTerms) {
@@ -143,20 +180,6 @@ void InteractionTermEliminator::eliminateHydrogenBondTerms(std::vector<Molecular
       hydrogenBondTerm.disable();
     else
       eliminateTerm(hydrogenBondTerm, atoms, 2); // Eliminate only if all three atoms are inside the QM region
-  }
-}
-
-void InteractionTermEliminator::eliminateElectrostaticTerms(std::vector<MolecularMechanics::ElectrostaticTerm>& electrostaticTerms,
-                                                            bool electrostaticEmbedding) {
-  for (auto& electrostaticTerm : electrostaticTerms) {
-    std::vector<int> atoms = {electrostaticTerm.getFirstAtom(), electrostaticTerm.getSecondAtom()};
-    // If electrostatic embedding is switched on:
-    // Eliminate if at least one atom is in the QM region,
-    // because QM-MM electrostatic interaction is covered by the electrostatic embedding
-    if (electrostaticEmbedding)
-      eliminateTerm(electrostaticTerm, atoms, 0);
-    else // For mechanical embedding: If one atom is in the QM region -> don't eliminate this term
-      eliminateTerm(electrostaticTerm, atoms, 1);
   }
 }
 
@@ -178,7 +201,12 @@ void InteractionTermEliminator::reset() {
       throw std::runtime_error("GAFF Calculator could not be casted to derived class.");
     enableSharedInteractionTerms(*calc);
     enableTerms(calc->improperDihedralsEvaluator_->dihedrals_);
-    enableTerms(calc->lennardJonesEvaluator_->ljTerms_);
+    // The exclusion reset is only possible if we know the original exclusion state.
+    // If it is unknown at this state, this class never changed any exclusions.
+    // We do not need to do anything.
+    if (originalLJExclusions_.cols() != 0) {
+      calc->lennardJonesEvaluator_->setExclusions(originalLJExclusions_);
+    }
   }
   else {
     throw std::runtime_error("The given MM model is not supported by the interaction term eliminator.");
@@ -197,7 +225,12 @@ void InteractionTermEliminator::enableSharedInteractionTerms(CalculatorType& cal
   enableTerms(calculator.bondsEvaluator_->bonds_);
   enableTerms(calculator.anglesEvaluator_->angles_);
   enableTerms(calculator.dihedralsEvaluator_->dihedrals_);
-  enableTerms(calculator.electrostaticEvaluator_->electrostaticTerms_);
+  // The exclusion reset is only possible if we know the original exclusion state.
+  // If it is unknown at this state, this class never changed any exclusions.
+  // We do not need to do anything.
+  if (originalElectrostaticExclusions_.cols() > 0) {
+    calculator.electrostaticEvaluator_->setExclusions(this->originalElectrostaticExclusions_);
+  }
 }
 
 } // namespace Qmmm

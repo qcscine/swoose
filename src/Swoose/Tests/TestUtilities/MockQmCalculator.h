@@ -53,7 +53,7 @@ class MockQmCalculatorSettings : public Scine::Utils::Settings {
 };
 
 /// @brief Mock class for a QM calculator to use in QM/MM tests.
-class MockQmCalculator : public Utils::CloneInterface<MockQmCalculator, Core::Calculator, Core::Calculator> {
+class MockQmCalculator final : public Utils::CloneInterface<MockQmCalculator, Core::Calculator, Core::Calculator> {
  public:
   static constexpr const char* model = "MOCK-QM";
   /// @brief Default Constructor.

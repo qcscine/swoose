@@ -92,6 +92,7 @@ double TitrationHelper::getPkaOfTrainingMolecule(std::string dataDirectory) {
 }
 
 double TitrationHelper::getEnergyOfDeprotonationForTrainingMolecule(std::string dataDirectory) {
+  (void)dataDirectory;
   return 0.0;
 }
 

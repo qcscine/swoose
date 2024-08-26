@@ -20,7 +20,7 @@ class InteractionTermEliminator;
 
 namespace MolecularMechanics {
 
-class ImproperDihedralType;
+struct ImproperDihedralType;
 
 /**
  * @class ImproperDihedralsEvaluator ImproperDihedralsEvaluator.h

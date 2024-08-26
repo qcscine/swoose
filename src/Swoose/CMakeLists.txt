@@ -162,6 +162,57 @@ if(SCINE_BUILD_PYTHON_BINDINGS)
   import_pybind11()
   set(PYBIND11_PYTHON_VERSION ${PYTHONVERSION})
 
+  # Figure out which targets the python bindings are going to need copied
+  include(TargetLibName)
+  set(_py_targets_to_copy Swoose)
+  target_lib_type(Scine::UtilsOS _utils_libtype)
+  if(_utils_libtype STREQUAL "SHARED_LIBRARY")
+    list(APPEND _py_targets_to_copy Scine::UtilsOS)
+  endif()
+  unset(_utils_libtype)
+
+  # Generate generator expressions for each targets and figure out filenames
+  # for the python setup file
+  set(swoose_PY_DEPS "")
+  foreach(target ${_py_targets_to_copy})
+    list(APPEND _py_target_gen_exprs "\$<TARGET_FILE:${target}>")
+    target_lib_filename(${target} _target_filename)
+    string(APPEND swoose_PY_DEPS ", \"${_target_filename}\"")
+  endforeach()
+  message(STATUS "Targets to copy for Python bindings: ${_py_targets_to_copy}")
+  unset(_py_targets_to_copy)
+
+  add_custom_command(TARGET Swoose POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${_py_target_gen_exprs} ${CMAKE_CURRENT_BINARY_DIR}/scine_swoose
+    COMMENT "Copying required shared libraries into Python package directory"
+  )
+  unset(_py_target_gen_exprs)
+
+  # Utils python dependency
+  include(FindPythonModule)
+  if(scine-utils-os_BINARY_DIR)
+    set(UTILS_PYTHONPATH ${scine-utils-os_BINARY_DIR}/src/Utils)
+  else()
+    find_python_module(scine_utilities)
+    if(PY_SCINE_UTILITIES)
+      set(UTILS_PYTHONPATH ${PY_SCINE_UTILITIES})
+    else()
+      message(WARNING "Utilities Python module not found. Cannot test Python module or generate stubs")
+    endif()
+  endif()
+
+  # Molassembler python dependency
+  if(molassembler_BINARY_DIR)
+    set(MASM_PYTHONPATH ${scine-utils-os_BINARY_DIR}/src/Utils)
+  else()
+    find_python_module(scine_molassembler)
+    if(PY_SCINE_MOLASSEMBLER)
+      set(MASM_PYTHONPATH ${PY_SCINE_MOLASSEMBLER})
+    else()
+      message(WARNING "Molassembler Python module not found. Cannot test Python module or generate stubs")
+    endif()
+  endif()
+
   # Python module
   pybind11_add_module(scine_swoose
     ${SWOOSE_PYTHON_FILES}
@@ -238,15 +289,19 @@ if(SCINE_BUILD_PYTHON_BINDINGS)
   endif()
 
   # Typing stubs
-  include(FindPythonModule)
   find_python_module(pybind11_stubgen)
-  if(PY_PYBIND11_STUBGEN)
+  if(PY_PYBIND11_STUBGEN AND UTILS_PYTHONPATH AND MASM_PYTHONPATH)
     add_custom_command(TARGET scine_swoose POST_BUILD
-      COMMAND ${PYTHON_EXECUTABLE} -m pybind11_stubgen -o . --root-module-suffix \"\" --no-setup-py --bare-numpy-ndarray scine_swoose
+      COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${UTILS_PYTHONPATH}:$ENV{PYTHONPATH} ${PYTHON_EXECUTABLE} -m pybind11_stubgen -o . --root-module-suffix \"\" --no-setup-py --bare-numpy-ndarray scine_swoose
       COMMENT "Generating python package typechecking stubs with pybind11-stubgen"
-    )
-  else()
+      BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/scine_swoose/__init__.pyi
+  )
+  elseif(UTILS_PYTHONPATH AND MASM_PYTHONPATH)
     message(STATUS "Not generating typechecking stubs for python package as pybind11-stubgen was not found")
+  elseif(UTILS_PYTHONPATH)
+    message(STATUS "Not generating typechecking stubs for Python package as SCINE Molassembler dependency was not found")
+  else()
+    message(STATUS "Not generating typechecking stubs for Python package as SCINE Utilities dependency was not found")
   endif()
 
   # Add setuptools file

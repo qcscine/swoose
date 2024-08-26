@@ -70,7 +70,7 @@ std::vector<Dihedral> GaffParameters::getMMImproperDihedrals(std::string central
   return improperDihedralsForGivenAtomTypes;
 }
 
-LennardJones GaffParameters::getMMLennardJones(std::string t1, std::string t2, double scalingFactor) const {
+LennardJones GaffParameters::getMMLennardJones(const std::string& t1, const std::string& t2, double scalingFactor) const {
   auto vdwAtom1 = lennardJonesPairs_.find(t1);
   auto vdwAtom2 = lennardJonesPairs_.find(t2);
 

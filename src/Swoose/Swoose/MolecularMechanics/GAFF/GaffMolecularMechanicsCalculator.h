@@ -27,10 +27,10 @@ class InteractionTermEliminator;
 namespace MolecularMechanics {
 class GaffParameters;
 class AtomTypesHolder;
-class BondType;
-class AngleType;
-class DihedralType;
-class ImproperDihedralType;
+struct BondType;
+struct AngleType;
+struct DihedralType;
+struct ImproperDihedralType;
 /**
  * @class GaffMolecularMechanicsCalculator GaffMolecularMechanicsCalculator.h
  * @brief Calculator for the GAFF Molecular Mechanics method.

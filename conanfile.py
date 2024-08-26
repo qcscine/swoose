@@ -3,7 +3,7 @@ from dev.conan.base import ScineConan
 
 class ScineSwooseConan(ScineConan):
     name = "scine_swoose"
-    version = "2.0.0"
+    version = "2.1.0"
     url = "https://github.com/qcscine/swoose"
     description = """
 Treat large molecular systems with self-parametrizing system-focused atomistic
@@ -22,8 +22,8 @@ models"""
     exports_sources = ["dev/cmake/*", "src/*", "CMakeLists.txt", "README.rst",
                        "LICENSE.txt", "dev/conan/hook.cmake", "dev/conan/glue/*"]
     requires = ["yaml-cpp/0.6.3",
-                "scine_utilities/[==9.0.0]",
-                "scine_molassembler/[==2.0.1]"]
+                "scine_utilities/10.0.0",
+                "scine_molassembler/3.0.0"]
     cmake_name = "Swoose"
 
     def requirements(self):
@@ -32,7 +32,7 @@ models"""
         }
 
         if self.options.get_safe("database"):
-            self.requires("scine_database/[==1.3.0]")
+            self.requires("scine_database/1.4.0")
 
         if hasattr(super(), "requirements"):
             super().requirements()

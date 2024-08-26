@@ -88,6 +88,7 @@ class SettingsPopulator {
   static void addMaxNumRefModelsOption(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addTolerancesForQmRegionSelection(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addQmRegionSelectionRandomSeed(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addPerformSfamParametrizations(Utils::UniversalSettings::DescriptorCollection& settings);
 
   // These functions used for QM region selection via a Database
   static void addMethodFamily(Utils::UniversalSettings::DescriptorCollection& settings);

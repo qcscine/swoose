@@ -9,7 +9,7 @@ find_dependency(ScineMolassembler REQUIRED)
 get_filename_component(SWOOSE_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
 # Generate Target
-include("${CMAKE_CURRENT_LIST_DIR}/SwooseTargets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/ScineSwooseTargets.cmake")
 
 @PACKAGE_INIT@
 

@@ -8,6 +8,7 @@
 #ifndef SWOOSE_QMMM_INTERACTIONTERMELIMINATOR_H
 #define SWOOSE_QMMM_INTERACTIONTERMELIMINATOR_H
 
+#include <Eigen/Sparse>
 #include <memory>
 #include <unordered_set>
 #include <vector>
@@ -22,10 +23,10 @@ class DihedralTerm;
 class ImproperDihedralTerm;
 class DispersionTerm;
 class RepulsionTerm;
-class ElectrostaticTerm;
 class HydrogenBondTerm;
-class LennardJonesTerm;
 class InteractionTermBase;
+class LennardJonesEvaluator;
+class ElectrostaticEvaluator;
 } // namespace MolecularMechanics
 
 namespace Qmmm {
@@ -80,7 +81,7 @@ class InteractionTermEliminator {
   void eliminateRepulsionTerms(std::vector<MolecularMechanics::RepulsionTerm>& repulsionTerms);
 
   // @brief Eliminates those Lennard-Jones interactions which are already covered by the QM calculation in QM/MM.
-  void eliminateLennardJonesTerms(std::vector<MolecularMechanics::LennardJonesTerm>& ljTerms);
+  void eliminateLennardJonesTerms(MolecularMechanics::LennardJonesEvaluator& lennardJonesEvaluator);
 
   // @brief Eliminates those hydrogen bond interactions which are already covered by the QM calculation in QM/MM.
   void eliminateHydrogenBondTerms(std::vector<MolecularMechanics::HydrogenBondTerm>& hydrogenBondTerms);
@@ -90,7 +91,7 @@ class InteractionTermEliminator {
    * @param electrostaticTerms The electrostatic terms of the MM model.
    * @param electrostaticEmbedding Whether electrostatic embedding is switched on in the QM/MM calculator.
    */
-  void eliminateElectrostaticTerms(std::vector<MolecularMechanics::ElectrostaticTerm>& electrostaticTerms,
+  void eliminateElectrostaticTerms(MolecularMechanics::ElectrostaticEvaluator& electrostaticEvaluator,
                                    bool electrostaticEmbedding);
 
   /*
@@ -98,6 +99,7 @@ class InteractionTermEliminator {
    */
   void eliminateTerm(MolecularMechanics::InteractionTermBase& term, const std::vector<int>& atomsInTerm, int allowedInQmRegion);
 
+  bool termToEliminate(const std::vector<int>& atomsInTerm, int allowedInQmRegion);
   /*
    * @brief Returns whether an atom with the given index is in the QM region.
    */
@@ -107,11 +109,11 @@ class InteractionTermEliminator {
   template<typename T>
   void enableTerms(std::vector<T>& terms);
 
-  // Eliminates all of the shared interaction terms that are present in all of the possible MM calculators.
+  // Eliminates all the shared interaction terms that are present in all the possible MM calculators.
   template<typename CalculatorType>
   void eliminateSharedInteractionTerms(bool electrostaticEmbedding, CalculatorType& calculator);
 
-  // Enables all of the shared interaction terms that are present in all of the possible MM calculators.
+  // Enables all of the shared interaction terms that are present in all the possible MM calculators.
   template<typename CalculatorType>
   void enableSharedInteractionTerms(CalculatorType& calculator);
 
@@ -123,6 +125,9 @@ class InteractionTermEliminator {
 
   // Boolean to keep track of whether we are in a reduced QM/MM energy calculation.
   bool eliminateEnvironmentOnlyTerms_ = false;
+  // The exclusion set before eliminating QM-QM internal terms.
+  Eigen::SparseMatrix<bool> originalLJExclusions_;
+  Eigen::SparseMatrix<bool> originalElectrostaticExclusions_;
 };
 
 } // namespace Qmmm

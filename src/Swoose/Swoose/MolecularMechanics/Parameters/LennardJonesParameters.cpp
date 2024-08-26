@@ -21,6 +21,9 @@ LennardJonesParameters::LennardJonesParameters(double vdwRadius, double wellDept
  */
 LennardJones LennardJonesParameters::toMMLennardJones(const LennardJonesParameters& otherLjParameters,
                                                       double scalingFactor) const {
+  // TODO: It is extremely inefficient to do the unit conversion and scaling here.
+  //       Either, we first convert all parameters or we do the conversion after summing over all
+  //       terms.
   double rij = (vdwRadius_ + otherLjParameters.vdwRadius_) * Utils::Constants::bohr_per_angstrom;
   double eij = std::sqrt(wellDepth_ * otherLjParameters.wellDepth_) * Utils::Constants::hartree_per_kCalPerMol * scalingFactor;
 

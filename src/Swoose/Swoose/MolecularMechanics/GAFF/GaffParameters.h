@@ -47,7 +47,7 @@ class GaffParameters : public MMParameters {
   /**
    * @brief Get Lennard-Jones for two atom types t1 and t2.
    */
-  LennardJones getMMLennardJones(std::string t1, std::string t2, double scalingFactor) const;
+  LennardJones getMMLennardJones(const std::string& t1, const std::string& t2, double scalingFactor) const;
 
   // These functions add certain parameters of the MM model
   void addLennardJones(std::string atomType, LennardJonesParameters lennardJonesParameters);

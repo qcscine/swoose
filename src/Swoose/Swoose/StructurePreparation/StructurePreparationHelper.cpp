@@ -56,6 +56,7 @@ std::string indexToAtomType(StructurePreparationData& data, int index) {
     if (proteinAtom.index == index)
       return proteinAtom.atomType;
   }
+  throw std::runtime_error("No atom type available for the given index!");
 }
 
 void getSideChainNeighbors(StructurePreparationData& data, int atomIndex, std::list<int>& atomsToAdd) {
@@ -272,7 +273,7 @@ void mapSubsystemIndicesToFullStructure(const Utils::AtomCollection& fullStructu
   subsystemMapping.push_back(indicesInStructure);
 }
 
-void handleBoundariesBetweenProteinAndNonRegContainer(StructurePreparationData& data, StructurePreparationFiles& files) {
+void handleBoundariesBetweenProteinAndNonRegContainer(StructurePreparationData& data) {
   // detect boundary regions
   std::map<int, int> boundaryAtoms;
   for (int i = 0; i < data.fullStructure.size(); ++i) {
@@ -467,8 +468,8 @@ std::vector<TitrableSite> collectTitrableSites(StructurePreparationData& data) {
 void determineChargedSites(std::vector<int>& listOfNegatives, std::vector<int>& listOfPositives,
                            const StructurePreparationData& data) {
   for (int index = 0; index < data.numberOfAtoms; ++index) {
-    bool negative = SpecialCaseHandler::isNegative(data, index, listOfNegatives);
-    bool positive = SpecialCaseHandler::isPositive(data, index, listOfPositives);
+    SpecialCaseHandler::isNegative(data, index, listOfNegatives);
+    SpecialCaseHandler::isPositive(data, index, listOfPositives);
   }
 }
 

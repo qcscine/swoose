@@ -1,6 +1,10 @@
 Changelog
 =========
 
+Release 2.1.0
+-------------
+- rework non-bonded interaction calculation to increase memory efficiency.
+
 Release 2.0.0
 -------------
 - enable electrostatic embedding QM/MM with Turbomole and xtb as QM calculators

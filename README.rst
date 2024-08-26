@@ -55,8 +55,15 @@ K.-S. Csizi, M. Reiher, "Automated preparation of nanoscopic structures: Graph-b
 sequence analysis, mismatch detection, and pH-consistent protonation with uncertainty estimates"
 *J. Comput. Chem*, **2024**, *45*, 761-776.
 
-K.-S. Csizi, M. Steiner, M. Reiher, "Quantum Magnifying Glass for Chemistry at the Nanoscale",
-*chemRxiv", **2023**, DOI 10.26434/chemrxiv-2023-t10sc.
+K.-S. Csizi, M. Steiner, M. Reiher, "Nanoscale chemical reaction exploration with a quantum magnifying glass",
+*Nat. Commun.*, **2024**, 15, 5320.
+
+Furthermore, when publishing results obtained with any SCINE module, please cite the following paper:
+
+T. Weymuth, J. P. Unsleber, P. L. Türtscher, M. Steiner, J.-G. Sobez, C. H. Müller, M. Mörchen,
+V. Klasovita, S. A. Grimmel, M. Eckhoff, K.-S. Csizi, F. Bosia, M. Bensberg, M. Reiher,
+"SCINE—Software for chemical interaction networks", *J. Chem. Phys.*, **2024**, *160*, 222501
+(DOI `10.1063/5.0206974 <https://doi.org/10.1063/5.0206974>`_).
 
 Support and Contact
 -------------------

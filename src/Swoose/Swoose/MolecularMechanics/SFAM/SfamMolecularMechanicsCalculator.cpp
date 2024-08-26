@@ -311,7 +311,13 @@ void SfamMolecularMechanicsCalculator::generatePotentialTerms(const SfamParamete
   if (!onlyCalculateBondedContribution_) {
     dispersionEvaluator_->setDispersionTerms(generator.getDispersionTerms(applyCutoffDuringInitialization_));
     repulsionEvaluator_->setRepulsionTerms(generator.getRepulsionTerms(applyCutoffDuringInitialization_));
-    electrostaticEvaluator_->setElectrostaticTerms(generator.getElectrostaticTerms(applyCutoffDuringInitialization_));
+
+    electrostaticEvaluator_->setCutOffRadius(std::make_shared<double>(nonCovalentCutoffRadius_));
+    electrostaticEvaluator_->resetExclusions(structure_.size());
+    electrostaticEvaluator_->addExclusions(topology);
+    // No Scaling of any interactions (e.g., 1-4 interactions). Therefore, we only resize the scaling information
+    // and leave it empty.
+    electrostaticEvaluator_->resetScaledInteractions(structure_.size());
   }
 }
 

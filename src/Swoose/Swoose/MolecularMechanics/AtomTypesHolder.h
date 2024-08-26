@@ -28,7 +28,7 @@ class AtomTypesHolder {
   /**
    * @brief Getter for the atom type for an atom with a certain index.
    */
-  std::string getAtomType(int index) const;
+  const std::string& getAtomType(unsigned int index) const;
 
   /**
    * @brief Returns the number of atom types stored in this object.
@@ -42,7 +42,7 @@ class AtomTypesHolder {
 inline AtomTypesHolder::AtomTypesHolder(std::vector<std::string> atomTypes) : atomTypes_(std::move(atomTypes)) {
 }
 
-inline std::string AtomTypesHolder::getAtomType(int index) const {
+inline const std::string& AtomTypesHolder::getAtomType(unsigned int index) const {
   return atomTypes_.at(index);
 }
 

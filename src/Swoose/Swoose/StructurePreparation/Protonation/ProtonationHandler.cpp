@@ -298,20 +298,20 @@ void ProtonationHandler::protonateTetrahedralGroups(const Utils::AtomCollection&
       if (nNeighbors_[index] == 1) {
         auto firstBondedAtom = listsOfNeighbors_[index].begin();
         std::vector<Eigen::Vector3d> hPos(3); // v2, v3, v4;
-        Eigen::Vector3d v1 = (structure.at(*firstBondedAtom).getPosition() - pos).normalized();
+        const Eigen::Vector3d v1 = (structure.at(*firstBondedAtom).getPosition() - pos).normalized();
 
         Utils::StructuralCompletion::generate3TetrahedronCornersFrom1Other(v1, hPos.at(0), hPos.at(1), hPos.at(2));
-        int counter = 0;
+        size_t counter = 0;
         for (auto i : hPos) {
           if (counter == hPos.size() - 1 && isPseudoTetrahedralAtom) {
             break;
           }
           auto bonded_element = structure.at(index).getElementType();
-          double sumOfVdWRadii = Utils::ElementInfo::covalentRadius(bonded_element) +
-                                 Utils::ElementInfo::covalentRadius(Utils::ElementType::H);
+          const double sumOfVdWRadii = Utils::ElementInfo::covalentRadius(bonded_element) +
+                                       Utils::ElementInfo::covalentRadius(Utils::ElementType::H);
           i *= sumOfVdWRadii;
           i += pos;
-          Utils::Atom hydrogen(Utils::ElementType::H, i);
+          const Utils::Atom hydrogen(Utils::ElementType::H, i);
           hydrogenAtoms_.push_back(hydrogen);
           counter++;
         }
@@ -321,21 +321,22 @@ void ProtonationHandler::protonateTetrahedralGroups(const Utils::AtomCollection&
         auto secondBondedAtom = std::next(listsOfNeighbors_[index].begin());
 
         std::vector<Eigen::Vector3d> hPos(2);
-        Eigen::Vector3d v1 = (structure.at(*firstBondedAtom).getPosition() - pos).normalized();
-        Eigen::Vector3d v2 = (structure.at(*secondBondedAtom).getPosition() - pos).normalized();
+        const Eigen::Vector3d v1 = (structure.at(*firstBondedAtom).getPosition() - pos).normalized();
+        const Eigen::Vector3d v2 = (structure.at(*secondBondedAtom).getPosition() - pos).normalized();
 
         Utils::StructuralCompletion::generate2TetrahedronCornersFrom2Others(v1, v2, hPos.at(0), hPos.at(1));
-        int counter = 0;
+        // TODO: Is there a reason why this counter is never incremented?
+        size_t counter = 0;
         for (auto i : hPos) {
           if (counter == hPos.size() - 1 && isPseudoTetrahedralAtom) {
             break;
           }
           auto bonded_element = structure.at(index).getElementType();
-          double sumOfVdWRadii = Utils::ElementInfo::covalentRadius(bonded_element) +
-                                 Utils::ElementInfo::covalentRadius(Utils::ElementType::H);
+          const double sumOfVdWRadii = Utils::ElementInfo::covalentRadius(bonded_element) +
+                                       Utils::ElementInfo::covalentRadius(Utils::ElementType::H);
           i *= sumOfVdWRadii;
           i += pos;
-          Utils::Atom hydrogen(Utils::ElementType::H, i);
+          const Utils::Atom hydrogen(Utils::ElementType::H, i);
 
           hydrogenAtoms_.push_back(hydrogen);
         }

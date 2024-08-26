@@ -100,7 +100,6 @@ double ImproperDihedralTerm::evaluateImproperDihedralTerm(const Utils::PositionC
   h4.setFirst3D(firstDer4);
 
   double theta = getTheta(A, B, G);
-  //  std::cout << "Theta: " << theta * 57.2958 << std::endl;
   auto result = improperDihedral_.getInteraction(theta);
 
   // Apply chain rule to get derivatives with respect to the energy

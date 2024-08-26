@@ -9,6 +9,10 @@ set(SWOOSE_MODULE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/GAFF/GaffCalculatorSettings.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/GAFF/GaffMolecularMechanicsCalculator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/GAFF/GaffMolecularMechanicsCalculator.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/InteractionExclusion.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/InteractionExclusion.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/ScaledInteractions.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/ScaledInteractions.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/MMExceptions.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/MMParameters.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/MMParameters.h
@@ -24,8 +28,6 @@ set(SWOOSE_MODULE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/SFAM/SfamAtomTypeIdentifier.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/Electrostatic.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/Electrostatic.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/ElectrostaticTerm.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/ElectrostaticTerm.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/ElectrostaticEvaluator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/ElectrostaticEvaluator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/Repulsion.cpp
@@ -75,8 +77,6 @@ set(SWOOSE_MODULE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/LennardJones.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/LennardJonesEvaluator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/LennardJonesEvaluator.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/LennardJonesTerm.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/LennardJonesTerm.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/HydrogenBond.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/HydrogenBond.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Interactions/HydrogenBondTerm.cpp

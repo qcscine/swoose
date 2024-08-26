@@ -70,13 +70,23 @@ void writePointChargesFile(const Utils::PositionCollection& positions,
   // First write the atomic charges
   for (int i = 0; i < positions.rows(); ++i) {
     // Write charge if this atom is NOT a QM atom.
+    double charge = chargeRedistributionResult.atomicCharges.at(i);
+    // TODO: This is a quick fix to ensure that no point charges are written which are
+    // so small that Turbomole doesn't consider them. A cleaner solution would be
+    // desirable.
+    // Note that we set the charge to 2e-6 such that all point charges are properly
+    // read in: our Turbomole output parser checks for a value of 1e-6 to determine
+    // the number of point charges.
+    if (writeTurbomoleFormat && std::fabs(charge) < 2e-6) {
+      charge = 2e-6;
+    }
     if (std::find(listOfQmAtoms.begin(), listOfQmAtoms.end(), i) == listOfQmAtoms.end()) {
       if (writeTurbomoleFormat) {
         pcFile << positions.row(i) << " ";
-        pcFile << chargeRedistributionResult.atomicCharges.at(i) << "\n";
+        pcFile << charge << "\n";
       }
       else {
-        pcFile << chargeRedistributionResult.atomicCharges.at(i) << " ";
+        pcFile << charge << " ";
         pcFile << positions.row(i) * Utils::Constants::angstrom_per_bohr << "\n";
       }
     }

@@ -110,7 +110,6 @@ const Utils::Results& GaffMolecularMechanicsCalculator::calculate(std::string de
 const Utils::Results& GaffMolecularMechanicsCalculator::calculateImpl(std::string description) {
   int nAtoms = structure_.size();
   double energy = 0.0;
-
   //  Initialize the atomic derivatives container
   Utils::AtomicSecondDerivativeCollection derivativesForBondedInteractions(nAtoms);
   derivativesForBondedInteractions.setZero();
@@ -119,9 +118,10 @@ const Utils::Results& GaffMolecularMechanicsCalculator::calculateImpl(std::strin
   int nAtomsInitialization = 0;
   if (!onlyCalculateBondedContribution_)
     nAtomsInitialization = nAtoms;
-  Utils::FullSecondDerivativeCollection fullDerivatives(nAtomsInitialization);
-  fullDerivatives.setZero();
+  const unsigned int derivativeOrder = (requiredProperties_.containsSubSet(Utils::Property::Hessian)) ? 2 : 1;
 
+  Utils::DerivativeCollection fullDerivatives(nAtomsInitialization, derivativeOrder);
+  fullDerivatives.setZero();
   double energyBonds = bondsEvaluator_->evaluate(derivativesForBondedInteractions);
   energy += energyBonds;
   double energyAngles = anglesEvaluator_->evaluate(derivativesForBondedInteractions);
@@ -130,7 +130,6 @@ const Utils::Results& GaffMolecularMechanicsCalculator::calculateImpl(std::strin
   energy += energyDihedrals;
   double energyImproperDihedrals = improperDihedralsEvaluator_->evaluate(derivativesForBondedInteractions);
   energy += energyImproperDihedrals;
-
   double energyLennardJones = 0.0;
   double energyElectro = 0.0;
   if (!onlyCalculateBondedContribution_) {
@@ -218,7 +217,6 @@ void GaffMolecularMechanicsCalculator::generatePotentialTerms(const std::string&
   GaffAtomTypeIdentifier atomTypeGenerator(structure_.getElements().size(), structure_.getElements(), listsOfNeighbors_,
                                            atomTypesFile_);
   auto atomTypes = atomTypeGenerator.getAtomTypes();
-
   if (!parametersHaveBeenSetInternally_ || parameterFilePathHasBeenChanged_) {
     if (parameterPath.empty()) {
       GaffParameterDefaultsProvider parameterProvider;
@@ -234,7 +232,8 @@ void GaffMolecularMechanicsCalculator::generatePotentialTerms(const std::string&
     parametersHaveBeenSetInternally_ = true;
     parameterFilePathHasBeenChanged_ = false;
   }
-
+  lennardJonesEvaluator_->setAtomTypesHolder(std::make_shared<AtomTypesHolder>(atomTypes));
+  lennardJonesEvaluator_->setParameters(std::make_shared<GaffParameters>(parameters_));
   generatePotentialTerms(parameters_, topology, atomTypes);
 }
 
@@ -256,15 +255,24 @@ void GaffMolecularMechanicsCalculator::generatePotentialTerms(const GaffParamete
 
   // Generate the potential terms
   GaffPotentialTermsGenerator generator(structure_.size(), atomTypes, topology, parameters, structure_.getPositions(),
-                                        nonCovalentCutoffRadius_, this->getLog());
+                                        this->getLog());
 
   bondsEvaluator_->setBondTerms(generator.getBondedTerms());
   anglesEvaluator_->setAngleTerms(generator.getAngleTerms());
   dihedralsEvaluator_->setDihedralTerms(generator.getDihedralTerms());
   improperDihedralsEvaluator_->setDihedralTerms(generator.getImproperDihedralTerms());
   if (!onlyCalculateBondedContribution_) {
-    lennardJonesEvaluator_->setLennardJonesTerms(generator.getLennardJonesTerms(applyCutoffDuringInitialization_));
-    electrostaticEvaluator_->setElectrostaticTerms(generator.getElectrostaticTerms(applyCutoffDuringInitialization_));
+    lennardJonesEvaluator_->setCutOffRadius(std::make_shared<double>(nonCovalentCutoffRadius_));
+    lennardJonesEvaluator_->resetExclusions(structure_.size());
+    lennardJonesEvaluator_->addExclusions(topology);
+    lennardJonesEvaluator_->resetScaledInteractions(structure_.size());
+    lennardJonesEvaluator_->addScaledInteractionPairs(topology);
+
+    electrostaticEvaluator_->setCutOffRadius(std::make_shared<double>(nonCovalentCutoffRadius_));
+    electrostaticEvaluator_->resetExclusions(structure_.size());
+    electrostaticEvaluator_->addExclusions(topology);
+    electrostaticEvaluator_->resetScaledInteractions(structure_.size());
+    electrostaticEvaluator_->addScaledInteractionPairs(topology);
   }
 }
 
@@ -289,7 +297,6 @@ void GaffMolecularMechanicsCalculator::initialize() {
           SwooseUtilities::TopologyUtils::generateListsOfNeighborsFromBondOrderMatrix(structure_.size(), bondOrders, 0.5);
     }
   }
-
   generatePotentialTerms(parameterFilePath_);
 }
 

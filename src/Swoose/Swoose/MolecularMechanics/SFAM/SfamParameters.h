@@ -34,7 +34,7 @@ class AtomTypesHolder;
  * @brief Class containing the parameters for SFAM's MM model obtained after parsing a SFAM parameter file.
  *        The angle and bond parameters are handled by the base class MMParameters.
  */
-class SfamParameters : public MMParameters {
+class SfamParameters final : public MMParameters {
  public:
   /** @brief Checks whether the SFAM parameters are valid. */
   bool sanityCheck(const AtomTypesHolder& atomTypes) const;

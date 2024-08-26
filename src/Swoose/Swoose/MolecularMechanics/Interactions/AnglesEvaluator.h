@@ -19,7 +19,7 @@ class InteractionTermEliminator;
 
 namespace MolecularMechanics {
 
-class AngleType;
+struct AngleType;
 
 class AnglesEvaluator {
  public:

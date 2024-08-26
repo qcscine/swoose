@@ -16,7 +16,7 @@
 namespace Scine {
 
 namespace Core {
-class Log;
+struct Log;
 } // namespace Core
 
 namespace Utils {

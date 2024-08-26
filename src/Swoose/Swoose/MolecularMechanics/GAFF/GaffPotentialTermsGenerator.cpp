@@ -19,15 +19,8 @@ namespace MolecularMechanics {
 GaffPotentialTermsGenerator::GaffPotentialTermsGenerator(int nAtoms, const AtomTypesHolder& atomTypes,
                                                          const IndexedStructuralTopology& topology,
                                                          const GaffParameters& parameters,
-                                                         const Utils::PositionCollection& positions,
-                                                         const double& nonCovalentCutoffRadius, Core::Log& log)
-  : nAtoms_(nAtoms),
-    atomTypesHolder_(atomTypes),
-    topology_(topology),
-    parameters_(parameters),
-    positions_(positions),
-    cutoff_(std::make_shared<double>(nonCovalentCutoffRadius)),
-    log_(log) {
+                                                         const Utils::PositionCollection& positions, Core::Log& log)
+  : nAtoms_(nAtoms), atomTypesHolder_(atomTypes), topology_(topology), parameters_(parameters), positions_(positions), log_(log) {
 }
 
 std::vector<BondedTerm> GaffPotentialTermsGenerator::getBondedTerms() {
@@ -95,46 +88,6 @@ std::vector<DihedralTerm> GaffPotentialTermsGenerator::getImproperDihedralTerms(
   }
 
   return improperDihedralList;
-}
-
-std::vector<LennardJonesTerm> GaffPotentialTermsGenerator::getLennardJonesTerms(bool applyCutoff) {
-  std::vector<LennardJonesTerm> ljList;
-
-  // 0 = excluded, 1 = included, -1 = scaled
-  Eigen::MatrixXi exclusionType = PotentialTermsHelper::getExclusionTypeMatrix(topology_, nAtoms_);
-
-  for (int a = 0; a < nAtoms_; ++a) {
-    for (int b = 0; b < a; ++b) {
-      if (applyCutoff) {
-        const auto& R = (positions_.row(b) - positions_.row(a)).norm();
-        if (R > *cutoff_)
-          continue;
-      }
-
-      auto type = exclusionType(a, b);
-      if (type == 0)
-        continue;
-
-      auto atomType1 = atomTypesHolder_.getAtomType(a);
-      auto atomType2 = atomTypesHolder_.getAtomType(b);
-
-      double factor = 1.0;
-      if (type == -1)
-        factor = scalingFactorForLennardJonesOneFourTerms_;
-      LennardJones lj = parameters_.getMMLennardJones(atomType1, atomType2, factor);
-      LennardJonesTerm term(a, b, lj, cutoff_);
-      ljList.push_back(term);
-    }
-  }
-
-  return ljList;
-}
-
-std::vector<ElectrostaticTerm> GaffPotentialTermsGenerator::getElectrostaticTerms(bool applyCutoff) {
-  // 0 = excluded, 1 = included, -1 = scaled
-  Eigen::MatrixXi exclusionType = PotentialTermsHelper::getExclusionTypeMatrix(topology_, nAtoms_);
-  return PotentialTermsHelper::getElectrostaticTerms(applyCutoff, cutoff_, scalingFactorForElectrostaticOneFourTerms_,
-                                                     exclusionType, positions_);
 }
 
 } // namespace MolecularMechanics

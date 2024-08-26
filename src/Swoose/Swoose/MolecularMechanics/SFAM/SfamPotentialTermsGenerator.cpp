@@ -164,13 +164,6 @@ std::vector<RepulsionTerm> SfamPotentialTermsGenerator::getRepulsionTerms(bool a
   return repulsionList;
 }
 
-std::vector<ElectrostaticTerm> SfamPotentialTermsGenerator::getElectrostaticTerms(bool applyCutoff) {
-  // 0 = excluded, 1 = included, -1 = scaled
-  Eigen::MatrixXi exclusionType = PotentialTermsHelper::getExclusionTypeMatrix(topology_, nAtoms_);
-  return PotentialTermsHelper::getElectrostaticTerms(applyCutoff, cutoff_, scalingFactorForElectrostaticOneFourTerms_,
-                                                     exclusionType, positions_);
-}
-
 std::vector<HydrogenBondTerm> SfamPotentialTermsGenerator::getHydrogenBondTerms() {
   std::vector<HydrogenBondTerm> hydrogenBondList;
   for (const auto& hydrogenBond : topology_.getHydrogenBondContainer()) {

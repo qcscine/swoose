@@ -79,8 +79,8 @@ TEST_F(AStructurePreparationTest, ProteinAndNonRegContainerAreSeparatedCorrectly
   processor.setFiles(testFiles);
   processor.analyzeStructure(plastocyanin_pdb_file);
 
-  Utils::AtomCollection nonRegContainer = Utils::ChemicalFileHandler::read(testFiles.nonRegContainerFile).first;
-  Utils::PdbStreamHandler handler;
+  const Utils::AtomCollection nonRegContainer = Utils::ChemicalFileHandler::read(testFiles.nonRegContainerFile).first;
+  const Utils::PdbStreamHandler handler;
   std::ifstream input;
   input.open(testFiles.proteinFile);
   auto protein = handler.read(input);
@@ -184,7 +184,7 @@ TEST_F(AStructurePreparationTest, CustomInformationForNonRegContainerCanBeAdded)
       Utils::NativeFilenames::combinePathSegments(structure_preparation_dir, systemName, "system.xyz"));
 
   StructurePreparationHelper::mergeProteinAndNonRegContainer(data, testFiles);
-  StructurePreparationHelper::handleBoundariesBetweenProteinAndNonRegContainer(data, testFiles);
+  StructurePreparationHelper::handleBoundariesBetweenProteinAndNonRegContainer(data);
   // write the atomic info file for the protein first
   StructurePreparationIO::writeAtomicInfoFileForProtein(data, testFiles.atomicInfoFile);
   StructurePreparationIO::addAtomicInformationForNonRegContainer(testFiles, data.subsystemMapping);

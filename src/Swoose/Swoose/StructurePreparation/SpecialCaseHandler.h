@@ -13,7 +13,7 @@
 
 namespace Scine {
 namespace Core {
-class Log;
+struct Log;
 }
 
 namespace Utils {
@@ -22,7 +22,7 @@ enum class ElementType : unsigned;
 } // namespace Utils
 
 namespace StructurePreparation {
-class StructurePreparationData;
+struct StructurePreparationData;
 
 namespace SpecialCaseHandler {
 
