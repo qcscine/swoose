@@ -36,6 +36,7 @@ double ElectrostaticEvaluator::evaluate(Utils::DerivativeCollection& derivatives
   for (auto& deriv : derivativeSet) {
     deriv.setZero();
   }
+
 #pragma omp parallel for schedule(dynamic)
   for (unsigned int iAtom = 0; iAtom < nAtoms; ++iAtom) {
     const unsigned int threadID = omp_get_thread_num();

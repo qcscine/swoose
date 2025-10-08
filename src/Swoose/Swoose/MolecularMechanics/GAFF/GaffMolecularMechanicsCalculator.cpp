@@ -11,6 +11,7 @@
 #include "GaffParameterDefaultsProvider.h"
 #include "GaffParameterParser.h"
 #include "GaffPotentialTermsGenerator.h"
+#include "Swoose/MolecularMechanics/GAFF/GaffOpenMMXMLFileParser.h"
 #include <Core/Log.h>
 #include <Swoose/Utilities/ConnectivityFileHandler.h>
 #include <Swoose/Utilities/TopologyUtils.h>
@@ -78,8 +79,12 @@ void GaffMolecularMechanicsCalculator::applySettings() {
     atomTypesFile_ = settings_->getString(gaffAtomTypesFile);
 
     std::string parameterFilePathFromSettings = settings_->getString(Utils::SettingsNames::parameterFilePath);
-    if (parameterFilePath_ != parameterFilePathFromSettings) {
+    std::vector<std::string> xmlParameterFilePathsFromSettings =
+        settings_->getStringList(SwooseUtilities::SettingsNames::openMMXMLFiles);
+
+    if (parameterFilePath_ != parameterFilePathFromSettings || xmlParameterFilePaths_ != xmlParameterFilePathsFromSettings) {
       parameterFilePath_ = parameterFilePathFromSettings;
+      xmlParameterFilePaths_ = xmlParameterFilePathsFromSettings;
       parameterFilePathHasBeenChanged_ = true;
     }
   }
@@ -108,7 +113,7 @@ const Utils::Results& GaffMolecularMechanicsCalculator::calculate(std::string de
  * Implementation of a calculation
  */
 const Utils::Results& GaffMolecularMechanicsCalculator::calculateImpl(std::string description) {
-  int nAtoms = structure_.size();
+  const int nAtoms = structure_.size();
   double energy = 0.0;
   //  Initialize the atomic derivatives container
   Utils::AtomicSecondDerivativeCollection derivativesForBondedInteractions(nAtoms);
@@ -122,13 +127,14 @@ const Utils::Results& GaffMolecularMechanicsCalculator::calculateImpl(std::strin
 
   Utils::DerivativeCollection fullDerivatives(nAtomsInitialization, derivativeOrder);
   fullDerivatives.setZero();
-  double energyBonds = bondsEvaluator_->evaluate(derivativesForBondedInteractions);
+
+  const double energyBonds = bondsEvaluator_->evaluate(derivativesForBondedInteractions);
   energy += energyBonds;
-  double energyAngles = anglesEvaluator_->evaluate(derivativesForBondedInteractions);
+  const double energyAngles = anglesEvaluator_->evaluate(derivativesForBondedInteractions);
   energy += energyAngles;
-  double energyDihedrals = dihedralsEvaluator_->evaluate(derivativesForBondedInteractions);
+  const double energyDihedrals = dihedralsEvaluator_->evaluate(derivativesForBondedInteractions);
   energy += energyDihedrals;
-  double energyImproperDihedrals = improperDihedralsEvaluator_->evaluate(derivativesForBondedInteractions);
+  const double energyImproperDihedrals = improperDihedralsEvaluator_->evaluate(derivativesForBondedInteractions);
   energy += energyImproperDihedrals;
   double energyLennardJones = 0.0;
   double energyElectro = 0.0;
@@ -204,6 +210,16 @@ const Utils::Results& GaffMolecularMechanicsCalculator::calculateImpl(std::strin
     partialEnergies.insert(std::make_pair("electrostatic", energyElectro));
     results_.set<Utils::Property::PartialEnergies>(partialEnergies);
   }
+  if (requiredProperties_.containsSubSet(Utils::Property::PartialGradients)) {
+    std::unordered_map<std::string, Utils::GradientCollection> partialGradients;
+    if (!onlyCalculateBondedContribution_) {
+      Utils::DerivativeCollection electrostaticDerivative(nAtomsInitialization, derivativeOrder);
+      electrostaticDerivative.setZero();
+      electrostaticEvaluator_->evaluate(electrostaticDerivative);
+      partialGradients.insert(std::make_pair("mm_electrostatic_gradients", electrostaticDerivative.getReferenceGradients()));
+      results_.set<Utils::Property::PartialGradients>(partialGradients);
+    }
+  }
   results_.set<Utils::Property::SuccessfulCalculation>(true);
 
   return results_;
@@ -218,15 +234,21 @@ void GaffMolecularMechanicsCalculator::generatePotentialTerms(const std::string&
                                            atomTypesFile_);
   auto atomTypes = atomTypeGenerator.getAtomTypes();
   if (!parametersHaveBeenSetInternally_ || parameterFilePathHasBeenChanged_) {
-    if (parameterPath.empty()) {
+    if (parameterPath.empty() && xmlParameterFilePaths_.empty()) {
       GaffParameterDefaultsProvider parameterProvider;
       this->getLog().output << "No parameter file was specified. Using the default GAFF parameters." << Core::Log::endl;
       parameters_ = *parameterProvider.getParameters();
     }
     else {
-      GaffParameterParser parser(parameterPath);
-      this->getLog().output << "Parsing the parameter file..." << Core::Log::endl;
-      parameters_ = *parser.parseParameters();
+      this->getLog().output << "Parsing the parameter file(s)..." << Core::Log::endl;
+      if (!xmlParameterFilePaths_.empty()) {
+        parameters_ = GaffOpenMMXMLFileParser::parseParameters(
+            this->settings_->getStringList(SwooseUtilities::SettingsNames::openMMXMLFiles), this->getLog());
+      }
+      if (!parameterPath.empty()) {
+        GaffParameterParser parser(parameterPath);
+        parameters_ = *parser.parseParameters();
+      }
       this->getLog().output << "Done." << Core::Log::nl << Core::Log::endl;
     }
     parametersHaveBeenSetInternally_ = true;
@@ -267,12 +289,14 @@ void GaffMolecularMechanicsCalculator::generatePotentialTerms(const GaffParamete
     lennardJonesEvaluator_->addExclusions(topology);
     lennardJonesEvaluator_->resetScaledInteractions(structure_.size());
     lennardJonesEvaluator_->addScaledInteractionPairs(topology);
+    lennardJonesEvaluator_->setInteractionScalingFactor(parameters.get14LennardJonesScaling());
 
     electrostaticEvaluator_->setCutOffRadius(std::make_shared<double>(nonCovalentCutoffRadius_));
     electrostaticEvaluator_->resetExclusions(structure_.size());
     electrostaticEvaluator_->addExclusions(topology);
     electrostaticEvaluator_->resetScaledInteractions(structure_.size());
     electrostaticEvaluator_->addScaledInteractionPairs(topology);
+    electrostaticEvaluator_->setInteractionScalingFactor(parameters.get14ElectrostaticScaling());
   }
 }
 
@@ -305,6 +329,12 @@ void GaffMolecularMechanicsCalculator::initialize() {
 void GaffMolecularMechanicsCalculator::setParameters(GaffParameters parameters) {
   parameters_ = std::move(parameters);
   parametersHaveBeenSetInternally_ = !parameters_.empty();
+}
+
+Utils::PropertyList GaffMolecularMechanicsCalculator::possibleProperties() const {
+  return Utils::Property::Energy | Utils::Property::Gradients | Utils::Property::Hessian |
+         Utils::Property::AtomicCharges | Utils::Property::SuccessfulCalculation | Utils::Property::BondOrderMatrix |
+         Utils::Property::PartialEnergies | Utils::Property::PartialGradients;
 }
 
 } // namespace MolecularMechanics

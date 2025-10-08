@@ -35,7 +35,7 @@ class SfamParameterParser {
   /**
    * @brief Parse the parameters.
    */
-  std::unique_ptr<SfamParameters> parseParameters();
+  SfamParameters parseParameters();
 
  private:
   bool parse(SfamParameters& parameters);
@@ -51,7 +51,6 @@ class SfamParameterParser {
   void checkIter(const std::sregex_token_iterator& iter);
 
   std::string parameterFile_;
-  int nAtoms_;
   const AtomTypesHolder& atomTypes_;
 };
 

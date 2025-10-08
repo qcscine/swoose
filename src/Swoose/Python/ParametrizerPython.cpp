@@ -42,6 +42,12 @@ void init_mm_parametrizer(pybind11::module& m) {
                            :param structure: The initial molecular structure for the simulation.
                          )delim");
 
+  mm_parametrizer.def("get_atom_types", &Parametrizer::getAtomTypes,
+                      R"delim(
+                            Getter for the atom type of each atom in the parameterized structures. Throws an error
+                            if no parameterization was done previously.
+                         )delim");
+
   mm_parametrizer.def_property(
       "settings", [](Parametrizer& p) -> Scine::Utils::Settings& { return p.settings(); },
       [](Parametrizer& p, Scine::Utils::Settings settings) { p.settings() = std::move(settings); },

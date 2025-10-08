@@ -7,6 +7,7 @@
 
 #include "IndexedStructuralTopologyCreator.h"
 #include "IndexedStructuralTopology.h"
+#include <Swoose/MolecularMechanics/Interactions/HydrogenBond.h>
 #include <Utils/Constants.h>
 
 namespace Scine {
@@ -88,7 +89,7 @@ void IndexedStructuralTopologyCreator::addNonBondedExclusions(IndexedStructuralT
                                                               const std::set<std::pair<int, int>>& excludedNB,
                                                               std::set<std::pair<int, int>>& scaledNB) const {
   // Verify that non-bonded exclusions have not been counted twice, one time as scaled and one time as fully excluded.
-  // In particular, make sure that a the scaled exclusion is erased if it is already a full exclusion.
+  // In particular, make sure that the scaled exclusion is erased if it is already a full exclusion.
   // This is needed when cycles are present in the system.
 
   for (auto p : excludedNB) {
@@ -106,10 +107,9 @@ void IndexedStructuralTopologyCreator::addNonBondedExclusions(IndexedStructuralT
 
 void IndexedStructuralTopologyCreator::addHydrogenBondsToIndexedStructuralTopology(IndexedStructuralTopology& topology,
                                                                                    const Utils::AtomCollection& structure) const {
+  using namespace MolecularMechanics::HydrogenBondHelper;
   constexpr double distanceThreshold = 6.0 * Utils::Constants::bohr_per_angstrom; // 6.0 Angstrom
   const auto& elementTypes = structure.getElements();
-  std::vector<Utils::ElementType> vectorOfDonorOrAcceptorElements = {Utils::ElementType::N, Utils::ElementType::O,
-                                                                     Utils::ElementType::F, Utils::ElementType::Cl};
 
   const auto& excludedNB = topology.getExcludedNonBondedContainer();
   //  const auto& scaledNB = topology.getScaledNonBondedContainer(); // TODO: see todo below
@@ -119,7 +119,7 @@ void IndexedStructuralTopologyCreator::addHydrogenBondsToIndexedStructuralTopolo
   // Loop over all bonds
   for (const auto& bond : topology.getBondContainer()) {
     // Loop over possible donor elements
-    for (const auto& donorElement : vectorOfDonorOrAcceptorElements) {
+    for (const auto& donorElement : vectorOfDonorOrAcceptorElements_) {
       const auto& elementOne = elementTypes[bond.atom1];
       const auto& elementTwo = elementTypes[bond.atom2];
       // Check whether this bond is a bond between H and the donor element
@@ -137,8 +137,8 @@ void IndexedStructuralTopologyCreator::addHydrogenBondsToIndexedStructuralTopolo
           // First, check distance threshold
           if ((structure.getPosition(acceptor) - structure.getPosition(hydrogen)).norm() > distanceThreshold)
             continue;
-          if (std::find(vectorOfDonorOrAcceptorElements.begin(), vectorOfDonorOrAcceptorElements.end(),
-                        elementTypes[acceptor]) != vectorOfDonorOrAcceptorElements.end()) {
+          if (std::find(vectorOfDonorOrAcceptorElements_.begin(), vectorOfDonorOrAcceptorElements_.end(),
+                        elementTypes[acceptor]) != vectorOfDonorOrAcceptorElements_.end()) {
             // Continue if acceptor equals the hydrogen atom
             if (acceptor == hydrogen)
               continue;

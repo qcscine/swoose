@@ -8,7 +8,6 @@
 #ifndef PDBPREPARATION_TITRATIONHELPER_H
 #define PDBPREPARATION_TITRATIONHELPER_H
 
-#include <Eigen/Dense>
 #include <memory>
 #include <string>
 #include <vector>
@@ -32,8 +31,6 @@ namespace MMParametrization {
 struct TrainingData;
 struct TitrationResults;
 
-// TODO: divide this class to protonator and protonation helper
-
 class TitrationHelper {
  public:
   TitrationHelper(std::shared_ptr<Utils::Settings>& settings);
@@ -47,12 +44,28 @@ class TitrationHelper {
    * @param superfluousHydrogens The hydrogens that must be eliminated.
    * @return Utils::AtomCollection The updated structure.
    */
-  Utils::AtomCollection changeProtonationState(const Utils::AtomCollection& refStructure, std::string residueName,
-                                               bool isBase, int indexOfCriticalAtom, std::vector<int> superfluousHydrogens);
-  // Collects tr
-  void collectTrainingData(TitrationResults& results);
-  static void calculateFreeEnergiesOfDeprotonation(TitrationResults& results);
+  Utils::AtomCollection changeProtonationState(const Utils::AtomCollection& refStructure,
+                                               const std::string& residueName, bool isBase, int indexOfCriticalAtom,
+                                               const std::vector<int>& superfluousHydrogens);
 
+  /**
+   * @brief Read training data from a directory.
+   * @param results The TitrationResults object defining which functional groups are expected in the training data
+   *                directory and the path to the directory. Furthermore, the training data is saved in the results
+   *                object.
+   */
+  void collectTrainingData(TitrationResults& results);
+  /**
+   * @brief Estimate the free energy for each protonation site. This function updates the data in the results object.
+   * @param results The results object defining the protonation sites.
+   */
+  static void calculateFreeEnergiesOfDeprotonation(TitrationResults& results);
+  /**
+   * @brief Try to determine the pKa value of the amino-acid residue with the given name. An exception is thrown if the
+   *        residue is not tabulated,
+   * @param residueName the name of the residue.
+   * @return The pKa value.
+   */
   double getModelPka(const std::string& residueName);
 
  private:

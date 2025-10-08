@@ -27,6 +27,7 @@ class GaffCalculatorSettings : public Scine::Utils::Settings {
     SettingsPopulator::addPrintContributionsMolecularMechanicsOption(_fields);
     SettingsPopulator::addOnlyCalculateBondedContribution(_fields);
     SettingsPopulator::addParameterAndConnectivityFile(_fields, true);
+    SettingsPopulator::addOpenMMXMLParameterFiles(_fields);
     SettingsPopulator::addDetectBondsWithCovalentRadiiOption(_fields);
     SettingsPopulator::addNonCovalentCutoffRadius(_fields);
     SettingsPopulator::addGaffAtomicChargesFile(_fields);

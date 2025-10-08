@@ -32,8 +32,8 @@ namespace Scine {
 namespace StructurePreparation {
 using namespace SpecialCaseHandler;
 
-ProtonationHandler::ProtonationHandler(StructurePreparationData& data, StructurePreparationFiles& files,
-                                       std::shared_ptr<Utils::Settings> settings)
+ProtonationHandler::ProtonationHandler(const StructurePreparationData& data, const StructurePreparationFiles& files,
+                                       const std::shared_ptr<Utils::Settings>& settings)
   : files_(files), data_(data), settings_(settings) {
 }
 

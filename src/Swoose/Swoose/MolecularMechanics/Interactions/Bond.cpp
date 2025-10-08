@@ -25,6 +25,12 @@ Utils::AutomaticDifferentiation::Second1D Bond::getInteraction(double bondLength
   Utils::AutomaticDifferentiation::Second1D dist(bondLength - equilibriumDistance_, 1, 0);
   return 0.5 * forceConstant_ * dist * dist;
 }
+double Bond::getForceConstant() const {
+  return forceConstant_;
+}
+double Bond::getEquilibriumDistance() const {
+  return equilibriumDistance_;
+}
 
 } // namespace MolecularMechanics
 } // namespace Scine

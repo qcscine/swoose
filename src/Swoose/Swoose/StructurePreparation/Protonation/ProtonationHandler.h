@@ -10,8 +10,6 @@
 
 #include "../ProteinStructures.h"
 #include "../StructurePreparationData.h"
-#include "TitrationData.h"
-#include <Core/Log.h>
 #include <Utils/Geometry/AtomCollection.h>
 #include <list>
 #include <memory>
@@ -29,8 +27,12 @@ class ProtonationHandler {
  public:
   /**
    * @brief Constructor
+   * @param data Initial data to base the protonation on.
+   * @param files Initial files to base the protonation on.
+   * @param settings The protonation settings.
    */
-  ProtonationHandler(StructurePreparationData& data, StructurePreparationFiles& files, std::shared_ptr<Utils::Settings> settings);
+  ProtonationHandler(const StructurePreparationData& data, const StructurePreparationFiles& files,
+                     const std::shared_ptr<Utils::Settings>& settings);
   ProtonationHandler();
   /**
    * @brief Protonates all amino acids

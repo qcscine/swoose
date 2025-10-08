@@ -36,6 +36,16 @@ class Bond {
    * @brief Evaluates the energy and its derivatives for one bond.
    */
   Utils::AutomaticDifferentiation::Second1D getInteraction(double bondLength) const;
+  /**
+   * @brief Getter for the force constant in hartree/bohr^2.
+   * @return The force constant.
+   */
+  double getForceConstant() const;
+  /**
+   * @brief Getter for the equilibrium bond length in bohr.
+   * @return The equilibrium bond length.
+   */
+  double getEquilibriumDistance() const;
 
  private:
   double equilibriumDistance_;

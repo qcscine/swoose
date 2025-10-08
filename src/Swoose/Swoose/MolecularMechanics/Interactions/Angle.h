@@ -33,6 +33,17 @@ class Angle {
   /** @brief Calculates the energy with derivatives of one angle term based on the angle. */
   Utils::AutomaticDifferentiation::Second1D getInteraction(double angle) const;
 
+  /**
+   * @brief Getter for the equilibrium angle in rad.
+   * @return The equilibrium angle.
+   */
+  double getEquilibriumAngle() const;
+  /**
+   * @brief Getter for the force constant in hartree/rad^2.
+   * @return The force constant.
+   */
+  double getForceConstant() const;
+
  private:
   double equilibriumAngle_;
   double forceConstant_;

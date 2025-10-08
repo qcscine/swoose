@@ -1,0 +1,158 @@
+<?xml version="1.0" ?>
+<ForceField>
+  <Residues>
+    <Residue name="4WI">
+      <Atom name="0" type="c" charge="0.38185098529411765"/>
+      <Atom name="1" type="c2" charge="0.045228985294117646"/>
+      <Atom name="2" type="c" charge="0.39172898529411765"/>
+      <Atom name="3" type="c" charge="0.36513198529411767"/>
+      <Atom name="4" type="c" charge="0.3379979852941177"/>
+      <Atom name="5" type="c3" charge="-0.26766501470588233"/>
+      <Atom name="6" type="c3" charge="-0.15438201470588236"/>
+      <Atom name="7" type="c3" charge="-0.16729601470588237"/>
+      <Atom name="8" type="c3" charge="-0.16748601470588237"/>
+      <Atom name="9" type="c3" charge="-0.06532201470588236"/>
+      <Atom name="10" type="cx" charge="-0.13964801470588237"/>
+      <Atom name="11" type="cx" charge="-0.14763301470588236"/>
+      <Atom name="12" type="cx" charge="0.037289985294117645"/>
+      <Atom name="13" type="c3" charge="-0.42673801470588235"/>
+      <Atom name="14" type="c3" charge="-0.4111500147058823"/>
+      <Atom name="15" type="c3" charge="-0.41582701470588235"/>
+      <Atom name="16" type="c3" charge="-0.42166801470588233"/>
+      <Atom name="17" type="c3" charge="-0.4249030147058823"/>
+      <Atom name="18" type="c3" charge="-0.2517940147058823"/>
+      <Atom name="19" type="c3" charge="-0.03585101470588235"/>
+      <Atom name="20" type="c3" charge="-0.05988201470588236"/>
+      <Atom name="21" type="c3" charge="0.7110529852941176"/>
+      <Atom name="22" type="c3" charge="0.059950985294117645"/>
+      <Atom name="23" type="n2" charge="-0.44369901470588236"/>
+      <Atom name="24" type="n" charge="-0.2958490147058823"/>
+      <Atom name="25" type="n" charge="-0.11936001470588237"/>
+      <Atom name="26" type="n" charge="-0.29425301470588233"/>
+      <Atom name="27" type="n" charge="-0.2633290147058823"/>
+      <Atom name="28" type="o" charge="-0.5229250147058824"/>
+      <Atom name="29" type="o" charge="-0.48446801470588235"/>
+      <Atom name="30" type="o" charge="-0.5059400147058823"/>
+      <Atom name="31" type="o" charge="-0.4629670147058823"/>
+      <Atom name="32" type="f" charge="-0.25816801470588235"/>
+      <Atom name="33" type="f" charge="-0.24694201470588237"/>
+      <Atom name="34" type="f" charge="-0.26536101470588236"/>
+      <Atom name="35" type="hc" charge="0.13320198529411764"/>
+      <Atom name="36" type="hc" charge="0.14830298529411765"/>
+      <Atom name="37" type="hc" charge="0.12986198529411763"/>
+      <Atom name="38" type="hc" charge="0.14741198529411764"/>
+      <Atom name="39" type="hc" charge="0.14560198529411764"/>
+      <Atom name="40" type="hc" charge="0.14656998529411763"/>
+      <Atom name="41" type="hc" charge="0.16032698529411765"/>
+      <Atom name="42" type="hc" charge="0.14255798529411765"/>
+      <Atom name="43" type="hc" charge="0.15037598529411764"/>
+      <Atom name="44" type="hc" charge="0.14755598529411765"/>
+      <Atom name="45" type="hc" charge="0.14685798529411764"/>
+      <Atom name="46" type="hc" charge="0.13938598529411764"/>
+      <Atom name="47" type="hc" charge="0.14156798529411763"/>
+      <Atom name="48" type="hc" charge="0.13639598529411764"/>
+      <Atom name="49" type="hc" charge="0.13955598529411764"/>
+      <Atom name="50" type="hc" charge="0.13877798529411764"/>
+      <Atom name="51" type="hc" charge="0.13589398529411764"/>
+      <Atom name="52" type="hc" charge="0.13131298529411764"/>
+      <Atom name="53" type="hc" charge="0.14169298529411764"/>
+      <Atom name="54" type="hc" charge="0.15104298529411764"/>
+      <Atom name="55" type="hc" charge="0.13888498529411764"/>
+      <Atom name="56" type="hc" charge="0.12748498529411764"/>
+      <Atom name="57" type="hc" charge="0.14952098529411764"/>
+      <Atom name="58" type="hc" charge="0.12387098529411764"/>
+      <Atom name="59" type="hc" charge="0.14150598529411765"/>
+      <Atom name="60" type="hc" charge="0.14626798529411764"/>
+      <Atom name="61" type="hc" charge="0.13616098529411763"/>
+      <Atom name="62" type="hc" charge="0.17630298529411764"/>
+      <Atom name="63" type="hc" charge="0.14530098529411764"/>
+      <Atom name="64" type="hn" charge="0.24404998529411764"/>
+      <Atom name="65" type="hn" charge="0.2813589852941177"/>
+      <Atom name="66" type="hn" charge="0.27396498529411767"/>
+      <Atom name="67" type="hn" charge="0.2794399852941177"/>
+      <Bond atomName1="6" atomName2="5"/>
+      <Bond atomName1="8" atomName2="0"/>
+      <Bond atomName1="8" atomName2="5"/>
+      <Bond atomName1="9" atomName2="2"/>
+      <Bond atomName1="10" atomName2="7"/>
+      <Bond atomName1="11" atomName2="9"/>
+      <Bond atomName1="11" atomName2="10"/>
+      <Bond atomName1="12" atomName2="10"/>
+      <Bond atomName1="12" atomName2="11"/>
+      <Bond atomName1="13" atomName2="12"/>
+      <Bond atomName1="14" atomName2="12"/>
+      <Bond atomName1="18" atomName2="8"/>
+      <Bond atomName1="19" atomName2="1"/>
+      <Bond atomName1="19" atomName2="18"/>
+      <Bond atomName1="20" atomName2="3"/>
+      <Bond atomName1="21" atomName2="4"/>
+      <Bond atomName1="22" atomName2="15"/>
+      <Bond atomName1="22" atomName2="16"/>
+      <Bond atomName1="22" atomName2="17"/>
+      <Bond atomName1="22" atomName2="20"/>
+      <Bond atomName1="23" atomName2="1"/>
+      <Bond atomName1="24" atomName2="0"/>
+      <Bond atomName1="24" atomName2="6"/>
+      <Bond atomName1="25" atomName2="3"/>
+      <Bond atomName1="25" atomName2="7"/>
+      <Bond atomName1="25" atomName2="9"/>
+      <Bond atomName1="26" atomName2="2"/>
+      <Bond atomName1="26" atomName2="19"/>
+      <Bond atomName1="27" atomName2="4"/>
+      <Bond atomName1="27" atomName2="20"/>
+      <Bond atomName1="28" atomName2="0"/>
+      <Bond atomName1="29" atomName2="2"/>
+      <Bond atomName1="30" atomName2="3"/>
+      <Bond atomName1="31" atomName2="4"/>
+      <Bond atomName1="32" atomName2="21"/>
+      <Bond atomName1="33" atomName2="21"/>
+      <Bond atomName1="34" atomName2="21"/>
+      <Bond atomName1="35" atomName2="5"/>
+      <Bond atomName1="36" atomName2="5"/>
+      <Bond atomName1="37" atomName2="6"/>
+      <Bond atomName1="38" atomName2="6"/>
+      <Bond atomName1="39" atomName2="7"/>
+      <Bond atomName1="40" atomName2="7"/>
+      <Bond atomName1="41" atomName2="8"/>
+      <Bond atomName1="42" atomName2="9"/>
+      <Bond atomName1="43" atomName2="10"/>
+      <Bond atomName1="44" atomName2="11"/>
+      <Bond atomName1="45" atomName2="13"/>
+      <Bond atomName1="46" atomName2="13"/>
+      <Bond atomName1="47" atomName2="13"/>
+      <Bond atomName1="48" atomName2="14"/>
+      <Bond atomName1="49" atomName2="14"/>
+      <Bond atomName1="50" atomName2="14"/>
+      <Bond atomName1="51" atomName2="15"/>
+      <Bond atomName1="52" atomName2="15"/>
+      <Bond atomName1="53" atomName2="15"/>
+      <Bond atomName1="54" atomName2="16"/>
+      <Bond atomName1="55" atomName2="16"/>
+      <Bond atomName1="56" atomName2="16"/>
+      <Bond atomName1="57" atomName2="17"/>
+      <Bond atomName1="58" atomName2="17"/>
+      <Bond atomName1="59" atomName2="17"/>
+      <Bond atomName1="60" atomName2="18"/>
+      <Bond atomName1="61" atomName2="18"/>
+      <Bond atomName1="62" atomName2="19"/>
+      <Bond atomName1="63" atomName2="20"/>
+      <Bond atomName1="64" atomName2="23"/>
+      <Bond atomName1="65" atomName2="24"/>
+      <Bond atomName1="66" atomName2="26"/>
+      <Bond atomName1="67" atomName2="27"/>
+      <ExternalBond atomName="1"/>
+    </Residue>
+  </Residues>
+  <HarmonicBondForce>
+    <Bond type1="87" type2="c2" length="0.1736" k="206020.15999999995"/>
+  </HarmonicBondForce>
+  <HarmonicAngleForce>
+    <Angle type1="c2" type2="87" type3="85" angle="1.7517869702267086" k="607.5168"/>
+    <Angle type1="c3" type2="c2" type3="87" angle="2.0884609829364145" k="531.368"/>
+    <Angle type1="n2" type2="c2" type3="87" angle="2.2649137703130418" k="663.5824"/>
+  </HarmonicAngleForce>
+  <PeriodicTorsionForce>
+    <Proper type1="85" type2="87" type3="c2" type4="c3" periodicity1="2" phase1="3.141592653589793" k1="8.4726"/>
+    <Proper type1="85" type2="87" type3="c2" type4="n2" periodicity1="2" phase1="3.141592653589793" k1="4.6024"/>
+  </PeriodicTorsionForce>
+</ForceField>

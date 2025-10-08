@@ -13,6 +13,8 @@
 #include "SpecialCaseHandler.h"
 #include "StructurePreparationData.h"
 #include "StructurePreparationSettings.h"
+#include "Swoose/StructurePreparation/Protonation/TitrationData.h"
+#include "boost/filesystem.hpp"
 #include <Core/Log.h>
 #include <Molassembler/Graph.h>
 #include <Molassembler/Interpret.h>
@@ -21,7 +23,6 @@
 #include <Utils/Bonds/BondDetector.h>
 #include <Utils/Geometry/ElementInfo.h>
 #include <Utils/IO/ChemicalFileFormats/ChemicalFileHandler.h>
-#include <Utils/IO/NativeFilenames.h>
 #include <Utils/Solvation/SoluteSolventComplex.h>
 #include <algorithm>
 #include <utility>

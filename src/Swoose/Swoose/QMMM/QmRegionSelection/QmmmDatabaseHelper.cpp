@@ -79,12 +79,12 @@ std::vector<ForcesCollection> QmmmDatabaseHelper::calculateForces() {
   auto bondOrdersID = bondOrdersProperty.create(model, "bond_orders", bondOrders_.getMatrix());
 
   // Add structure to database
-  int numCandidateModels = qmmmModelCandidates_.size();
-  long unsigned int numModels = numCandidateModels + qmmmReferenceModels_.size();
+  size_t numCandidateModels = qmmmModelCandidates_.size();
+  size_t numModels = numCandidateModels + qmmmReferenceModels_.size();
   std::vector<Database::ID> structureIDs(numModels);
-  for (long unsigned int i = 0; i < numModels; ++i) {
+  for (size_t i = 0; i < numModels; ++i) {
     int molecularCharge, spinMultiplicity;
-    if (int(i) < numCandidateModels) {
+    if (i < numCandidateModels) {
       molecularCharge = qmmmModelCandidates_.at(i).molecularCharge;
       spinMultiplicity = qmmmModelCandidates_.at(i).spinMultiplicity;
     }

@@ -9,7 +9,6 @@
 #define TITRATION_DATAMANAGER_H
 
 #include <Utils/Geometry/AtomCollection.h>
-#include <list>
 #include <vector>
 
 namespace Scine {
@@ -21,15 +20,15 @@ namespace StructurePreparation {
  */
 struct TitrableSite {
   std::string residueName;
-  int index;
+  int index = std::numeric_limits<int>::infinity();
   Utils::AtomCollection atoms;
   std::vector<int> indicesInFullStructure;
   bool isAcid = false;
   bool isBase = false;
-  int criticalAtom;
-  double refEnergy;
-  double nonRefEnergy;
-  double deltaE;
+  int criticalAtom = std::numeric_limits<int>::infinity();
+  double refEnergy = std::numeric_limits<double>::infinity();
+  double nonRefEnergy = std::numeric_limits<double>::infinity();
+  double deltaE = std::numeric_limits<double>::infinity();
 };
 
 } // namespace StructurePreparation

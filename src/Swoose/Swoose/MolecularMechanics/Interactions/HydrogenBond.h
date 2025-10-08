@@ -8,10 +8,58 @@
 #ifndef MOLECULARMECHANICS_HYDROGENBOND_H
 #define MOLECULARMECHANICS_HYDROGENBOND_H
 
+#include <Utils/Geometry/ElementInfo.h>
 #include <Utils/Math/AutomaticDifferentiation/Second1D.h>
+#include <array>
 
 namespace Scine {
 namespace MolecularMechanics {
+namespace HydrogenBondHelper {
+
+struct Donor {
+  Donor(std::string hAtomType, std::string dAtomType, double kHBD, double chargeD);
+  bool operator==(const Donor& rhs) const;
+  std::string hAtomType, dAtomType;
+  double kHBD, chargeD;
+};
+
+inline Donor::Donor(std::string dAtomType, std::string hAtomType, double kHBD, double chargeD)
+  : hAtomType(std::move(hAtomType)), dAtomType(std::move(dAtomType)), kHBD(std::move(kHBD)), chargeD(std::move(chargeD)) {
+}
+
+inline bool Donor::operator==(const Donor& rhs) const {
+  if ((dAtomType == rhs.dAtomType) && (hAtomType == rhs.hAtomType) && (kHBD == rhs.kHBD) && (chargeD == rhs.chargeD)) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+struct Acceptor {
+  Acceptor(std::string aAtomType, double kHBA, double chargeA);
+  bool operator==(const Acceptor& rhs) const;
+  std::string aAtomType;
+  double kHBA, chargeA;
+};
+
+inline Acceptor::Acceptor(std::string aAtomType, double kHBA, double chargeA)
+  : aAtomType(std::move(aAtomType)), kHBA(std::move(kHBA)), chargeA(std::move(chargeA)) {
+}
+
+inline bool Acceptor::operator==(const Acceptor& rhs) const {
+  if ((aAtomType == rhs.aAtomType) && (kHBA == rhs.kHBA) && (chargeA == rhs.chargeA)) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+static constexpr std::array<Utils::ElementType, 4> vectorOfDonorOrAcceptorElements_ = {
+    Utils::ElementType::N, Utils::ElementType::O, Utils::ElementType::F, Utils::ElementType::Cl};
+} // namespace HydrogenBondHelper
+
 /**
  * @class HydrogenBond HydrogenBond.h
  * @brief Class calculating the energy and derivatives

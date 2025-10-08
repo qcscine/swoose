@@ -10,7 +10,6 @@
 
 #include "../ProteinStructures.h"
 #include "../StructurePreparationData.h"
-#include "TitrationData.h"
 #include <Core/Log.h>
 #include <Utils/Geometry/AtomCollection.h>
 #include <list>
@@ -36,7 +35,12 @@ bool openBabelSuccess(std::istream& in);
 void removeProtonsFromStructure(Utils::AtomCollection& structure, std::vector<int> superfluousHydrogens);
 // Evaluates if an atom index is in a vector.
 bool isAtomOf(const std::list<int>& group, int index);
-
+/**
+ * @brief Check if the given atom type is in the group.
+ * @param group The group of atom type string.
+ * @param atomType The atom type.
+ * @return True, if the atom type is in the group, false otherwise.
+ */
 template<std::size_t s>
 bool isType(const std::array<const char*, s>& group, const std::string& atomType) {
   return (std::find(group.begin(), group.end(), atomType) != group.end());

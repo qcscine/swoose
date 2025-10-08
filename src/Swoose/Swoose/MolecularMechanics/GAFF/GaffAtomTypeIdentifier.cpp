@@ -646,34 +646,40 @@ void GaffAtomTypeIdentifier::checkConjugation() {
 }
 
 void GaffAtomTypeIdentifier::readGaffAtomTypesFromFile() {
-  std::ifstream indata(atomTypesFile_);
+  const auto atomTypes = readAmberAtomTypes(atomTypesFile_, nAtoms_);
+  for (int atomIndex = 0; atomIndex < nAtoms_; ++atomIndex) {
+    this->setAtomType(atomIndex, atomTypes[atomIndex]);
+  }
+}
+
+std::vector<std::string> GaffAtomTypeIdentifier::readAmberAtomTypes(const std::string& filePath, unsigned int nAtoms) {
+  std::ifstream indata(filePath);
   if (!indata.is_open())
-    throw std::runtime_error("The GAFF atom types file " + atomTypesFile_ + " cannot be opened.");
+    throw std::runtime_error("The GAFF atom types file " + filePath + " cannot be opened.");
 
   std::string line;
   while (line.empty())
     std::getline(indata, line);
 
-  int atomIndex = 0;
+  std::vector<std::string> atomTypes;
+  unsigned int atomIndex = 0;
   while (!line.empty()) {
     std::string atomType = line;
     atomType.erase(std::remove_if(atomType.begin(), atomType.end(), ::isspace), atomType.end());
-    if (atomType.length() > 2)
-      throw std::runtime_error(
-          "A GAFF atom type must consist either of one or two letters. Check the atom types file for errors.");
-    if (atomType.length() == 0)
+    if (atomType.empty())
       break;
-    std::transform(atomType.begin(), atomType.end(), atomType.begin(), ::tolower);
-    if (atomIndex < nAtoms_)
-      setAtomType(atomIndex, atomType);
+    if (atomIndex < nAtoms)
+      atomTypes.push_back(atomType);
     atomIndex++;
     if (indata.eof())
       break;
     std::getline(indata, line);
   }
 
-  if (nAtoms_ != atomIndex)
+  if (nAtoms != atomIndex)
     throw std::runtime_error("The number of atom types in the provided file does not match the number of atoms.");
+
+  return atomTypes;
 }
 
 } // namespace MolecularMechanics

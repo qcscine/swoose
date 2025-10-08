@@ -6,6 +6,7 @@
  */
 
 #include "MockQmCalculator.h"
+#include <Eigen/Dense>
 
 namespace Scine {
 namespace Swoose {
@@ -67,7 +68,7 @@ Utils::PropertyList MockQmCalculator::getRequiredProperties() const {
 }
 
 Utils::PropertyList MockQmCalculator::possibleProperties() const {
-  return Utils::Property::Energy | Utils::Property::Gradients | Utils::Property::Hessian;
+  return Utils::Property::Energy | Utils::Property::Gradients | Utils::Property::Hessian | Utils::Property::OneElectronMatrix;
 }
 
 const Utils::Results& MockQmCalculator::calculate(std::string description) {
@@ -88,6 +89,8 @@ const Utils::Results& MockQmCalculator::calculate(std::string description) {
     }
   }
 
+  const Eigen::MatrixXd oneElectronIntegrals = Eigen::MatrixXd::Identity(8, 8);
+
   results_.set<Utils::Property::Description>(description);
   if (requiredProperties_.containsSubSet(Utils::Property::Energy))
     results_.set<Utils::Property::Energy>(energy);
@@ -95,6 +98,9 @@ const Utils::Results& MockQmCalculator::calculate(std::string description) {
     results_.set<Utils::Property::Gradients>(gradients);
   if (requiredProperties_.containsSubSet(Utils::Property::Hessian))
     results_.set<Utils::Property::Hessian>(hessian);
+  if (requiredProperties_.containsSubSet(Utils::Property::OneElectronMatrix)) {
+    results_.set<Utils::Property::OneElectronMatrix>(oneElectronIntegrals);
+  }
   results_.set<Utils::Property::SuccessfulCalculation>(true);
   results_.set<Utils::Property::ProgramName>("mock");
   return results_;

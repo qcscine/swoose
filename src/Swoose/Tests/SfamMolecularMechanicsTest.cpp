@@ -6,6 +6,7 @@
  */
 
 #include "Files/tests_file_location.h"
+#include <Swoose/MolecularMechanics/SFAM/SfamAtomTypeIdentifier.h>
 #include <Swoose/MolecularMechanics/SFAM/SfamCalculatorSettings.h>
 #include <Swoose/MolecularMechanics/SFAM/SfamMolecularMechanicsCalculator.h>
 #include <Swoose/Utilities/TopologyUtils.h>
@@ -272,6 +273,51 @@ TEST_F(ASfamMolecularMechanicsTest, IncorrectConnectivityFileCausesException) {
   }
 
   ASSERT_STREQ(exceptionString.c_str(), "Connectivity file is invalid! Error during check of atom with index: 32");
+}
+
+TEST_F(ASfamMolecularMechanicsTest, ParameterfileWithMoreParametersThanRequired) {
+  Utils::AtomCollection testStructure = Utils::ChemicalFileHandler::read(fragment_xyz_file).first;
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, fragment_parameter_file);
+  calculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, fragment_connectivity_file);
+  calculator.setRequiredProperties(Utils::Property::Energy);
+  calculator.setStructure(testStructure);
+  EXPECT_NO_THROW(calculator.calculate("test calculation 1"));
+}
+
+TEST_F(ASfamMolecularMechanicsTest, WriteAndReadAtomTypes) {
+  const std::string atomTypesFileName = "atom_types.txt";
+  auto clonedCalculator = calculator.clone();
+  Utils::AtomCollection testStructure = Utils::ChemicalFileHandler::read(fragment_xyz_file).first;
+  clonedCalculator->settings().modifyString(Utils::SettingsNames::parameterFilePath, fragment_parameter_file);
+  clonedCalculator->settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, fragment_connectivity_file);
+  clonedCalculator->settings().modifyString(SwooseUtilities::SettingsNames::sfamAtomTypeFileName, atomTypesFileName);
+  clonedCalculator->setRequiredProperties(Utils::Property::Energy);
+
+  clonedCalculator->setStructure(testStructure);
+  Utils::Results results = clonedCalculator->calculate("test calculation 1");
+
+  std::ifstream file(atomTypesFileName);
+  ASSERT_TRUE(file.is_open());
+  file.close();
+  auto atomTypes = SfamAtomTypeIdentifier::getAtomTypesFromFile(atomTypesFileName, testStructure.size());
+  auto secondClone = clonedCalculator->clone();
+  secondClone->settings().modifyBool(SwooseUtilities::SettingsNames::sfamAtomTypesFromFile, true);
+  Utils::Results results2 = secondClone->calculate("test calculation 2");
+  EXPECT_NEAR(results.get<Utils::Property::Energy>(), results2.get<Utils::Property::Energy>(), 1e-6);
+  std::remove(atomTypesFileName.c_str());
+
+  EXPECT_THROW(SfamAtomTypeIdentifier::getAtomTypesFromFile(fragment_missing_atom_types, testStructure.size()),
+               std::runtime_error);
+}
+
+TEST_F(ASfamMolecularMechanicsTest, C6UpdateWithInsufficientParameters) {
+  Utils::AtomCollection testStructure = Utils::ChemicalFileHandler::read(fragment_xyz_file).first;
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, fragment_insufficient_parameter_file);
+  calculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, fragment_connectivity_file);
+  calculator.setRequiredProperties(Utils::Property::Energy);
+  calculator.setStructure(testStructure);
+  // Automatic update of the parameter file with new C6 coefficients.
+  EXPECT_NO_THROW(calculator.calculate("test calculation 1"));
 }
 
 } // namespace Tests

@@ -7,6 +7,7 @@ include(ImportCore)
 include(ImportMolassembler)
 include(ImportYamlCpp)
 include(AddEigen)
+include(ImportPugiXML)
 
 set(SWOOSE_DEPENDENCIES "scine_utilities" "scine_molassembler")
 # Only include database and mongocxx if required
@@ -42,6 +43,7 @@ if(SWOOSE_COMPILE_DATABASE)
   import_mongocxx()
 endif()
 import_yamlcpp()
+import_pugixml()
 set(SCINE_BUILD_TESTS ${_build_tests})
 
 find_package(Boost COMPONENTS program_options REQUIRED)
@@ -76,6 +78,7 @@ target_link_libraries(Swoose
   PRIVATE
     Scine::Molassembler
     yaml-cpp
+    pugixml
     $<$<BOOL:${SWOOSE_COMPILE_DATABASE}>:MongoDBCXX>
     $<$<BOOL:${OpenMP_CXX_FOUND}>:OpenMP::OpenMP_CXX>
   )
@@ -140,6 +143,13 @@ if(SCINE_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/App/AppUtils/Tasks.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/App/AppUtils/Tasks.h
   )
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message("Setting macro to identify DEBUG build: DEBUG_BUILD")
+    target_compile_options(Swoose_tests PRIVATE
+            -D DEBUG_BUILD
+    )
+  endif()
+
   target_link_libraries(Swoose_tests PRIVATE
     GTest::Main
     GMock::GMock
@@ -147,6 +157,7 @@ if(SCINE_BUILD_TESTS)
     Scine::Swoose
     Boost::program_options
     yaml-cpp
+    pugixml
     Scine::Molassembler
   )
   add_test(NAME Swoose COMMAND Swoose_tests)
@@ -233,6 +244,7 @@ if(SCINE_BUILD_PYTHON_BINDINGS)
     Scine::Core
     Scine::Swoose
     yaml-cpp
+    pugixml
   )
   install(CODE
     "execute_process(COMMAND ${PYTHON_EXECUTABLE} -m pip install --prefix=${CMAKE_INSTALL_PREFIX} --upgrade --no-deps ${CMAKE_CURRENT_BINARY_DIR}

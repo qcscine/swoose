@@ -6,12 +6,12 @@
  */
 
 #include "StructureProcessor.h"
-#include "ProteinStructures.h"
 #include "Protonation/ProtonationHandler.h"
 #include "SpecialCaseHandler.h"
 #include "StructurePreparationHelper.h"
 #include "StructurePreparationIO.h"
 #include "StructurePreparationSettings.h"
+#include "Swoose/StructurePreparation/Protonation/TitrationData.h"
 #include <Swoose/Utilities/ConnectivityFileHandler.h>
 #include <Swoose/Utilities/TitrationFileHandler.h>
 #include <Utils/Geometry/ElementTypes.h>

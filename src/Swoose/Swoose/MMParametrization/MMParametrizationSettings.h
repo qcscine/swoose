@@ -45,6 +45,8 @@ class MMParametrizationSettings : public Scine::Utils::Settings {
     SettingsPopulator::addTitration(_fields);
     SettingsPopulator::addUseThermochemistryForTitration(_fields);
     SettingsPopulator::addTrainingDataDirectory(_fields);
+    SettingsPopulator::addExportSfamForOpenMM(_fields);
+    SettingsPopulator::addSfamOpenMMFileName(_fields);
     SettingsPopulator::addYamlSettingsForDirectMode(_fields); // used only for internal use by app and python bindings
     SettingsPopulator::addTitrationSiteFile(_fields);
 

@@ -39,6 +39,7 @@ class QmRegionSelectorSettings : public Utils::Settings {
     SettingsPopulator::addMethodFamily(_fields);
     SettingsPopulator::addProgram(_fields);
     SettingsPopulator::addYamlSettingsForDirectMode(_fields); // used only for internal use by app and python bindings
+    SettingsPopulator::addExcludedResidueLabelSettings(_fields);
 
     // Database related settings:
     SettingsPopulator::addDatabaseSettings(_fields, "scine_swoose_qm_region_selection");

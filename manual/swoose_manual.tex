@@ -18,7 +18,7 @@
 
 %%
 % Book metadata
-\title[SCINE Swoose manual]{User Manual \vskip 0.5em {\setlength{\parindent}{0pt} \Huge SCINE Swoose 2.1.0}}
+\title[SCINE Swoose manual]{User Manual \vskip 0.5em {\setlength{\parindent}{0pt} \Huge SCINE Swoose 3.0.0}}
 \author[The SCINE Swoose Developers]{\noindent Moritz Bensberg, Christoph Brunken, Katja-Sophia Csizi, Miguel Steiner, Thomas Weymuth, and Markus Reiher}
 \publisher{ETH Z\"urich}
 
@@ -239,107 +239,6 @@ For information on how to cite \textsc{Swoose}, check out the \textit{References
 
 \chapter{Installation}\label{ch:installation}
 
-\section{Conan package}
-Conan\footnote{\texttt{conan.io}} is a Python-based package distribution
-solution. It integrates well with C++ code built with CMake, greatly simplifying
-the installation of libraries with multiple dependencies. Conan is installed
-with \texttt{pip}:
-
-\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
-\begin{verbatim}
-python3 -m pip install conan
-\end{verbatim}
-\end{mdframed}
-
-\textsc{Swoose} packages are distributed from our research group's remote,
-which can be added with:
-
-\begin{mdframed}[backgroundcolor=LightSteelBlue!25, userdefinedwidth=16.1cm, linewidth=0pt]
-\begin{verbatim}
-conan remote add scine https://scine-artifactory.ethz.ch/artifactory/api/conan/public
-\end{verbatim}
-\end{mdframed}
-
-Before we install \textsc{Swoose}, consider the options the package
-provides. They are summarized below, with valid values and the default option
-value in bold face:
-
-\begin{itemize}
-  \item \texttt{python=[True, \textbf{False}]}: Build the Python bindings
-  \item \texttt{tests=[True, \textbf{False}]}: Build and run tests
-  \item \texttt{microarch=[detect, \textbf{none}]}: Tune build to CPU
-    instruction set
-  \item \texttt{database=[True, \textbf{False}]}: Builds the SCINE Database module
-\end{itemize}
-
-The base command to install \textsc{Swoose} is:
-
-\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
-\begin{verbatim}
-conan install scine_swoose/2.1.0@
-\end{verbatim}
-\end{mdframed}
-
-Changes to default options can be supplied right after \hl{\:\texttt{conan} \texttt{install}\:} with \hl{\:\texttt{-o} \texttt{scine\_swoose:<option>=<value>}\:}.
-
-For instance, if you want Python bindings, your install command will be:
-
-\begin{mdframed}[backgroundcolor=LightSteelBlue!25, userdefinedwidth=12cm, linewidth=0pt]
-\begin{verbatim}
-conan install -o scine_swoose:python=True scine_swoose/2.1.0@
-\end{verbatim}
-\end{mdframed}
-
-Conan will proceed to identify your operating system, architecture and compiler.
-It will scan the dependencies of \textsc{Swoose} and try to find a prebuilt
-package for your system. If no package is available in binary form for your
-system, \texttt{conan} can handle its build with the addition of
-\hl{\:\texttt{-{}-build=missing}\:} as advised by \texttt{conan}'s error message. If the package is
-available in binary form, it will be downloaded.
-
-By default, Conan does not modify the environment, it will just create the package in the local cache.
-In order to automatically add the required libraries to the \hl{\:\texttt{LD\_LIBRARY\_PATH}\:} environment variable and to directly use the \textsc{Swoose} executable without specifiying its full location, you can execute:
-
-\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
-\begin{verbatim}
-conan install scine_swoose/2.1.0@ -g virtualrunenv
-\end{verbatim}
-\end{mdframed}
-
-This will generate files that can be called to activate or deactive your environment via:
-\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
-\begin{verbatim}
-source activate_run.sh
-source deactivate_run.sh
-\end{verbatim}
-\end{mdframed}
-
-After activation, the \textsc{Swoose} executable is present in your \texttt{PATH}.
-
-If you also want to install the modules \textsc{Sparrow} and \textsc{xTB} via Conan, you can create a file with the name \texttt{conanfile.txt}. It should have the following content:
-
-\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
-\begin{verbatim}
-[requires]
-scine_swoose/[>=2.1.0]@
-scine_sparrow/[>=5.0.0]@
-scine_xtb_wrapper/[>=3.0.0]@
-
-[options]
-scine_swoose:database=False
-
-[generators]
-virtualenv
-\end{verbatim}
-\end{mdframed}
-
-Subsequently, you can run the following command in the directory in which the file \texttt{conanfile.txt} is located:
-\begin{mdframed}[backgroundcolor=LightSteelBlue!25, linewidth=0pt]
-\begin{verbatim}
-conan install . --build=missing
-\end{verbatim}
-\end{mdframed}
-
 \section{Python bindings on PyPI}
 If you want to experiment with just the Python bindings, those are available as
 a package from PyPI for Linux platforms.\footnote{Caveat: Your CPU architecture
@@ -466,7 +365,7 @@ setting_key_3: setting_value_3
 \hline
 -h~~[-{}-help] & Prints the help message of the binary. \\
 -m~~[-{}-mode]~~\textit{arg} & Sets the mode of the binary. The current options are: \textit{prepare-analyze} (detects errors in enzyme structures, e.g. PDB's), \textit{prepare-protonate} (Protonates a given input structure), \textit{prepare-finalize} (for a detailed description, see Section \ref{ch:struct_prep}), \textit{calculate} (single point calculation, by default with the SFAM molecular mechanics model),
-\textit{parametrize} (parametrizes the SFAM force field), \textit{optimize} (optimizing the molecular structure), \textit{md} (performing a molecular dynamics simulation), \textit{select\_qm} (performs an automated QM region selection) \\
+\textit{parametrize} (parametrizes the SFAM force field), \textit{optimize} (optimizing the molecular structure), \textit{md} (performing a molecular dynamics simulation), \textit{select\_qm} (performs an automated QM region selection)  \\
 
 -y~~[-{}-settings]~~\textit{arg} & Sets the path to the settings file (YAML file format). \\
 -s~~[-{}-structure]~~\textit{arg} & Sets the path to the molecular structure input (XYZ file format). \\
@@ -733,6 +632,11 @@ Furthermore, there exist the following additional settings:
 \item \hl{increase\_scf\_safety}: Decides whether to apply safer SCF convergence settings when using the \textsc{Orca} or \textsc{Turbomole} reference program. In both cases, SCF damping is switched on and for \textsc{Turbomole} an orbital shift of 0.5\,Hartree is applied additionally. This setting currently only works in the \textit{database} mode.
 \item \hl{existing\_parameters}: The path to an already existing SFAM parameter file, which contains parameters that can be re-used for the current parametrization. If a parameter is available in that file, it is not optimized again. Reference data is only calculated for the fragments, which are still needed. This setting currently only works if the atoms and their order are identical between the two systems that are considered and just their connectivity varies. This will be extended in the future. The default is an empty string, i.e., no existing parameters are considered and the parametrization is carried out normally.
 \item \hl{enable\_early\_termination}: Decides whether the reference data generation in \textit{database} mode will be terminated once enough data for a parametrization has been collected. This may speed up the parametrization procedure significantly. The default is set to \textit{true}.
+\item \hl{export\_SFAM\_for\_openMM}: Decides whether to export the SFAM functional form and its parameters in the XML file format, which can be interfaced with OpenMM.\cite{eastman2017} The default is set to \textit{false}.
+Note that the SFAM does not use residues. Therefore, each atom type is its own residue and the residue mapping must be provided explicitly to OpenMM.
+\item \hl{sfam\_openmm\_file\_name}: The name of the XML file to which the parameters are exported for OpenMM.\cite{eastman2017} The default is set to \textit{./sfam.xml}.
+\item \hl{sfam\_atom\_type\_file}: Path to the atom type file to be used by SFAM. The default is set to \textit{""}. If an atom type file is given, the atom types are written to this file after atom type construction. If \textit{sfam\_atom\_types\_from\_file} is true, the atom types in the file are used instead of constructing them on the fly.
+\item \item \hl{sfam\_atom\_types\_from\_file}: If true, atom types are read from file. An atom type file must also be provided (see \textit{sfam\_atom\_type\_file}).
 \end{itemize}
 
 \chapter{Calculations With SFAM}\label{ch:mm_calculation}
@@ -776,6 +680,7 @@ Furthermore, the following settings are only available for GAFF (not for SFAM):
 \begin{itemize}
 \item \hl{gaff\_atomic\_charges\_file}: The path to a file containing the atomic charges of the system to be applied in the GAFF calculation for the electrostatic interactions. This file should be a simple text file with the atomic partial charge of each atom on a separate line. Note that the order of the atoms must be the same as in the structure file. For an example, see the information about the atomic charges file for the \textit{read} reference data mode in section \nameref{sec:parametrization}. The default of this setting is an empty string, i.e., only atomic charges of zero are used in the GAFF calculation.
 \item \hl{gaff\_atom\_types\_file}: The path to a file containing the atom types of the system. The default is an empty string, which means that the automated atom type identifier will be applied instead. Note that our automated atom type identifier is still in beta phase and may assign some atom types incorrectly (especially for aromatic systems), which can lead to missing parameters. The format of this file is as follows: the file contains one atom type (case-insensitive) in each line, hence, there should be as many lines with atom types as there are atoms in the system (the order must be equal to the order of atoms in the provided XYZ file). Note that an empty line will result in the file parsing to stop, which means one can add additional comments to the file after such an empty line was inserted.
+\item \hl{openmm\_xml\_files}: List of OpenMM-style XML parameter files. This file can contain any Amber force field. Use this feature together with the gaff\_atom\_types\_file.
 \end{itemize}
 
 
@@ -867,6 +772,10 @@ After the reference data is calculated, the model with the QM region that contai
 
 \begin{itemize}
 \item \hl{tol\_percentage\_error}: Tolerance for mean error of the forces in percent of the minimum error among all of the candidate models. \textit{20.0} is set as the default. Note that errors below $1\cdot 10^{-4}$ are considered zero when checking against this tolerance.
+\end{itemize}
+
+\begin{itemize}
+    \item \hl{excluded\_residue\_labels}: Atoms belonging to residues with labels given in this list will be excluded from the QM region.
 \end{itemize}
 
 \chapter{Structure Preparations}\label{ch:struct_prep}

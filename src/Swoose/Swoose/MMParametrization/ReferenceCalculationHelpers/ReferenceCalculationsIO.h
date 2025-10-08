@@ -56,28 +56,28 @@ void readReferenceDataFromFiles(ParametrizationData& data, TitrationResults& tit
 Utils::ExternalQC::TurbomoleMainOutputParser getPreparedTurbomoleParser(const std::string& referenceDataDir, int fragmentIndex);
 /**
  * @brief This function writes the structures/fragments for all titrable sites to disk. The additional structures
- * correspond to the respective sites in their non-reference (i. e. charged) protonation state.
+ * correspond to the respective sites in their non-reference (i.e. charged) protonation state.
  */
 void writeAdditionalDataForTitration(ParametrizationData& data, int fragmentIndex, int criticalAtomIndex,
                                      std::string referenceDataDir, std::shared_ptr<Utils::Settings> settings);
 /**
- * @brief This function reades the reference data for structures/fragments for all titrable sites from disk.
+ * @brief This function reads the reference data for structures/fragments for all titrable sites from disk.
  */
-void saveAdditionalStructuresForTitration(ParametrizationData& data, TitrationResults& results, int fragmentIndex,
-                                          std::string referenceDataDir);
+void loadAdditionalStructuresForTitration(ParametrizationData& data, TitrationResults& results, int fragmentIndex,
+                                          const std::string& referenceDataDir);
 /**
- * @brief This function reades the reference data for structures/fragments for all titrable sites from disk.
+ * @brief This function reads the reference data for structures/fragments for all titrable sites from disk.
  */
 void parseElectronicEnergiesForTitration(ParametrizationData& data, TitrationResults& results, int fragmentIndex,
-                                         std::string referenceDataDir, bool parseTurbomoleOutput,
-                                         std::shared_ptr<Utils::Settings> settings);
+                                         const std::string& referenceDataDir, bool parseTurbomoleOutput,
+                                         const std::shared_ptr<Utils::Settings>& settings);
 /**
  * @brief Writes a file with atom indices that should be constrained during the optimization.
  *
  * @param constrainedAtoms The atom indices to be constrained.
  * @param constrainedAtomsFile The filename.
  */
-void writeConstrainedAtomsFile(const std::vector<int>& constrainedAtoms, std::string& constrainedAtomsFile);
+void writeConstrainedAtomsFile(const std::vector<int>& constrainedAtoms, const std::string& constrainedAtomsFile);
 
 static constexpr const char* nonRefStateDir = "non_ref_state";
 } // namespace ReferenceCalculationsIO

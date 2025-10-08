@@ -28,9 +28,10 @@ void QmRegionSelector::generateQmRegion(const Utils::AtomCollection& fullSystem)
   qmmmModelCandidates_.clear();
   qmmmReferenceModels_.clear();
   Utils::BondOrderCollection bondOrders = this->getBondOrders(fullSystem);
-  QmRegionCandidateGenerator::generateQmRegionCandidates(qmmmModelCandidates_, qmmmReferenceModels_, fullSystem,
-                                                         bondOrders, this->settings(), this->getLog());
-
+  this->getLog().output << "Generating candidate and reference models." << Core::Log::nl;
+  QmRegionCandidateGenerator::generateQmRegionCandidates(
+      qmmmModelCandidates_, qmmmReferenceModels_, fullSystem, bondOrders, this->settings(), this->getLog(),
+      this->settings().getStringList(SwooseUtilities::SettingsNames::excludedResidueLabels));
   this->getLog().output << "Candidate and reference models were generated." << Core::Log::nl;
   if (qmmmModelCandidates_.size() == 1) {
     this->getLog().output << "Only one QM/MM candidate model was generated." << Core::Log::nl << Core::Log::endl;

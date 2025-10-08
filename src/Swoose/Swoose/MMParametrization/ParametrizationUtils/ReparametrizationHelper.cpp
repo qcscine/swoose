@@ -21,7 +21,7 @@ void ReparametrizationHelper::parseProvidedParameters(const std::string& paramet
   log_.output << "Parsing provided parameter file '" << parameterFile << "' to extract existing parameters..."
               << Core::Log::endl;
   MolecularMechanics::SfamParameterParser parser(parameterFile, data_.atomTypes);
-  data_.parameters = *parser.parseParameters();
+  data_.parameters = parser.parseParameters();
 }
 
 void ReparametrizationHelper::manipulateTopology() {

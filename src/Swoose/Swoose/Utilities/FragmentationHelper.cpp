@@ -24,7 +24,8 @@ std::mt19937 randomEngine(42);
 void addAtomsUpToReasonableCut(Utils::AtomCollection& atomsToAdd, std::vector<int>& alreadyAddedAtoms,
                                std::deque<bool>& isSaturatingAtom, int atomInside, int atomOutside,
                                const Utils::AtomCollection& fullStructure, const std::vector<std::list<int>>& listsOfNeighbors,
-                               double probabilityToDivide, std::shared_ptr<std::mt19937> randomEngine) {
+                               double probabilityToDivide, std::shared_ptr<std::mt19937> randomEngine,
+                               const std::vector<std::string>& excludedResidueTypes) {
   // If both atoms are already in the atomsToAdd structure, just return from this function.
   // This prevents problems with cycles.
   if (std::find(alreadyAddedAtoms.begin(), alreadyAddedAtoms.end(), atomInside) != alreadyAddedAtoms.end()) {
@@ -34,6 +35,12 @@ void addAtomsUpToReasonableCut(Utils::AtomCollection& atomsToAdd, std::vector<in
   }
   else {
     alreadyAddedAtoms.push_back(atomInside); // add inside atom to already added atoms vector
+  }
+
+  // If the outside atom is blocked from being added to the QM region, return immediately.
+  if (std::find(excludedResidueTypes.begin(), excludedResidueTypes.end(),
+                std::get<0>(fullStructure.getResidueInformation(atomOutside))) != excludedResidueTypes.end()) {
+    return;
   }
 
   // First, check whether the system is divisible at this bond
@@ -49,7 +56,7 @@ void addAtomsUpToReasonableCut(Utils::AtomCollection& atomsToAdd, std::vector<in
         continue;
       // Call the function again making the outside atom the new inside atom and the neighbor the outside atom
       addAtomsUpToReasonableCut(atomsToAdd, alreadyAddedAtoms, isSaturatingAtom, atomOutside, neighbor, fullStructure,
-                                listsOfNeighbors, probabilityToDivide, randomEngine);
+                                listsOfNeighbors, probabilityToDivide, randomEngine, excludedResidueTypes);
     }
   }
   else {

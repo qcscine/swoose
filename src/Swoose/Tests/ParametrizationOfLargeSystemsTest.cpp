@@ -19,6 +19,7 @@
 #include <Swoose/MMParametrization/ParametrizationUtils/SuperfluousFragmentIdentifier.h>
 #include <Swoose/MolecularMechanics/SFAM/SfamAtomTypeIdentifier.h>
 #include <Swoose/MolecularMechanics/Topology/IndexedStructuralTopologyCreator.h>
+#include <Swoose/Utilities/FragmentationHelper.h>
 #include <Utils/Bonds/BondDetector.h>
 #include <Utils/Geometry/ElementInfo.h>
 #include <Utils/IO/ChemicalFileFormats/ChemicalFileHandler.h>
@@ -85,7 +86,7 @@ TEST_F(AParametrizationOfLargeSystemsTest, FragmentOfDermcidinIsFragmentedCorrec
   // Number of fragments should be the same as the number of atoms in the molecular system
   ASSERT_THAT(data.vectorOfStructures.size(), Eq(numberOfAtoms));
   for (const auto& s : data.vectorOfStructures) {
-    ASSERT_THAT(s->size(), Gt(19));  // All fragments have at least 20 atoms
+    ASSERT_THAT(s->size(), Gt(3));   // All fragments have at least 4 atoms
     ASSERT_THAT(s->size(), Lt(100)); // All fragments have less than 100 atoms
 
     int totalNumberOfElectrons = 0;
@@ -123,18 +124,14 @@ TEST_F(AParametrizationOfLargeSystemsTest, FragmentOfDermcidinIsFragmentedCorrec
       ASSERT_TRUE(constrainedAtoms.empty());
     }
     else if (k == 115) {
-      ASSERT_THAT(constrainedAtoms.size(), Eq(4));
-      ASSERT_THAT(constrainedAtoms[0], Eq(7));
-      ASSERT_THAT(constrainedAtoms[1], Eq(26));
-      ASSERT_THAT(constrainedAtoms[2], Eq(24));
-      ASSERT_THAT(constrainedAtoms[3], Eq(27));
+      ASSERT_THAT(constrainedAtoms.size(), Eq(0));
     }
   }
 
   // Test for one specific system that the fragment is correct
   Utils::AtomCollection testFragment = *data.vectorOfStructures[46];
-  ASSERT_THAT(testFragment.size(), Eq(37));
-  Eigen::RowVector3d positionOfOneSaturatingHydrogen = testFragment.getPosition(32);
+  ASSERT_THAT(testFragment.size(), Eq(49));
+  Eigen::RowVector3d positionOfOneSaturatingHydrogen = testFragment.getPosition(40);
   ASSERT_THAT(positionOfOneSaturatingHydrogen(0), DoubleNear(5.88945, 1e-3));
   ASSERT_THAT(positionOfOneSaturatingHydrogen(1), DoubleNear(14.8917, 1e-3));
   ASSERT_THAT(positionOfOneSaturatingHydrogen(2), DoubleNear(20.6470, 1e-3));
@@ -149,7 +146,7 @@ TEST_F(AParametrizationOfLargeSystemsTest, FragmentOfDermcidinIsFragmentedCorrec
 
   // Testing the superfluous fragment identifier
   SuperfluousFragmentIdentifier::identifySuperfluousFragments(data, silentLogger, nullptr);
-  ASSERT_THAT(data.superfluousFragments.size(), Eq(17));
+  ASSERT_THAT(data.superfluousFragments.size(), Eq(14));
 }
 
 TEST_F(AParametrizationOfLargeSystemsTest, TopologyIsGeneratedCorrectlyForDermcidin) {

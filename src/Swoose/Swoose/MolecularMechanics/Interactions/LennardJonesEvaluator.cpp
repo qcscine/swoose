@@ -37,6 +37,7 @@ double LennardJonesEvaluator::evaluate(Utils::DerivativeCollection& derivatives)
   for (auto& deriv : derivativeSet) {
     deriv.setZero();
   }
+
 #pragma omp parallel for schedule(dynamic)
   for (unsigned int iAtom = 0; iAtom < nAtoms; ++iAtom) {
     const unsigned int threadID = omp_get_thread_num();
@@ -73,9 +74,9 @@ double LennardJonesEvaluator::evaluateTermsForAtom(unsigned int atomIndex, Utils
       continue;
     }
     const auto& atomTypeII = this->atomTypesHolder_->getAtomType(atomIndexII);
-    const auto combinedParameters = parameters_->getMMLennardJones(atomTypeI, atomTypeII, scaling);
+    const auto combinedParameters = parameters_->getMMLennardJones(atomTypeI, atomTypeII);
     const auto value = Utils::AutomaticDifferentiation::get3Dfrom1D<Utils::DerivativeOrder::Two>(
-        combinedParameters.getInteraction(distance), positionDifference);
+        combinedParameters.getInteraction(distance, scaling), positionDifference);
     derivatives.addDerivative(int(atomIndex), int(atomIndexII), value);
     energyIncrement += value.value();
   }

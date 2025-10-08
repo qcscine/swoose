@@ -158,6 +158,17 @@ class QmmmCalculator : public Utils::CloneInterface<QmmmCalculator, Core::Embedd
   void optimizeLinks();
   void handleElectrostaticEmbedding();
   void removeCalculatorSpecificSettings();
+  /**
+   * @brief If QM/QM atom indices are present in the settings for the QM calculator, the atom indices are
+   * adjusted according to the atom index in the QM region. And all capping atoms are assigned to the QM
+   * core to which they are bonded.
+   */
+  void adjustQMQMEmbeddingAtomIndices();
+  /**
+   * @brief Getter for the bonding partners of the capping atoms.
+   * @return For each capping atom the index of the atom in the QM region is returned.
+   */
+  std::vector<unsigned int> getBondPartnersOfCappingAtoms();
   /*
    * @brief Implementation of a calculation.
    */
@@ -185,6 +196,17 @@ class QmmmCalculator : public Utils::CloneInterface<QmmmCalculator, Core::Embedd
    * @brief Sets the current log of this calculator to the underlying QM and MM calculators.
    */
   void setLogForUnderlyingCalculators();
+
+  std::pair<Utils::Results, Utils::Results> runCalculatorsWithReducedMMInteractions();
+  std::pair<Utils::Results, Utils::Results> runCalculators();
+  void storeEnergy(const std::pair<Utils::Results, Utils::Results>& results);
+  void storeGradients(const std::pair<Utils::Results, Utils::Results>& results);
+  void storeAtomicCharges(const std::pair<Utils::Results, Utils::Results>& results);
+  void storeBondOrders(const std::pair<Utils::Results, Utils::Results>& results);
+  void storeOneElectronIntegrals(const std::pair<Utils::Results, Utils::Results>& results);
+  ///@brief Returns true if the required properties need an evaluation of the MM calculator.
+  bool propertiesRequireMMEvaluation();
+
   // The required properties.
   Utils::PropertyList requiredProperties_;
   // The settings.

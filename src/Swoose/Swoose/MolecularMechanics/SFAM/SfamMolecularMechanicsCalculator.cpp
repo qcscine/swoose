@@ -255,8 +255,19 @@ void SfamMolecularMechanicsCalculator::generatePotentialTerms(const std::string&
     topologyCreator.addHydrogenBondsToIndexedStructuralTopology(topology_, structure_);
 
   // Find out atom types
-  SfamAtomTypeIdentifier atomTypeGenerator(structure_.getElements().size(), structure_.getElements(), listsOfNeighbors_);
-  atomTypes_ = atomTypeGenerator.getAtomTypes(sfamAtomTypeLevel_);
+  if (this->settings().getString(SwooseUtilities::SettingsNames::sfamAtomTypeFileName) != "" and
+      this->settings().getBool(SwooseUtilities::SettingsNames::sfamAtomTypesFromFile)) {
+    atomTypes_ = SfamAtomTypeIdentifier::getAtomTypesFromFile(
+        this->settings().getString(SwooseUtilities::SettingsNames::sfamAtomTypeFileName), structure_.getElements().size());
+  }
+  else {
+    SfamAtomTypeIdentifier atomTypeGenerator(structure_.getElements().size(), structure_.getElements(), listsOfNeighbors_);
+    atomTypes_ = atomTypeGenerator.getAtomTypes(sfamAtomTypeLevel_);
+    if (this->settings().getString(SwooseUtilities::SettingsNames::sfamAtomTypeFileName) != "") {
+      SfamAtomTypeIdentifier::writeAtomTypesToFile(
+          this->settings().getString(SwooseUtilities::SettingsNames::sfamAtomTypeFileName), atomTypes_);
+    }
+  }
 
   if (!parametersHaveBeenSetInternally_ || parameterFilePathHasBeenChanged_) {
     if (parameterPath.empty())
@@ -264,7 +275,7 @@ void SfamMolecularMechanicsCalculator::generatePotentialTerms(const std::string&
 
     SfamParameterParser parser(parameterPath, atomTypes_);
     this->getLog().output << "Parsing the parameter file..." << Core::Log::endl;
-    parameters_ = *parser.parseParameters();
+    parameters_ = parser.parseParameters();
     parametersHaveBeenSetInternally_ = true;
     parameterFilePathHasBeenChanged_ = false;
     this->getLog().output << "Done." << Core::Log::nl << Core::Log::endl;
@@ -274,7 +285,6 @@ void SfamMolecularMechanicsCalculator::generatePotentialTerms(const std::string&
       DispersionC6Parameters::fillC6MatrixForCurrentStructure(parameters_, structure_, atomTypes_);
       if (!parameters_.sanityCheck(atomTypes_))
         throw std::runtime_error("The parameters, which were read from a file, are not valid!");
-
       // If check successful, then update parameters file with C6 parameters
       MMParametrization::ParameterFileWriter::writeSfamParametersToFile(parameterPath, parameters_);
       this->getLog().output << "As no C6 coefficients were provided, they were calculated on the fly and the "
@@ -282,7 +292,6 @@ void SfamMolecularMechanicsCalculator::generatePotentialTerms(const std::string&
                             << Core::Log::endl;
     }
   }
-
   generatePotentialTerms(parameters_, topology_, atomTypes_);
 }
 

@@ -14,7 +14,6 @@
 #include <Utils/Math/AtomicSecondDerivativeCollection.h>
 #include <Utils/Math/AutomaticDifferentiation/AutomaticDifferentiationHelpers.h>
 #include <Utils/Math/FullSecondDerivativeCollection.h>
-#include <iomanip>
 
 namespace Scine {
 namespace MolecularMechanics {

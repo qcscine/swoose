@@ -17,6 +17,7 @@
 #include <Utils/IO/ChemicalFileFormats/XyzStreamHandler.h>
 #include <Utils/IO/FormattedIOUtils.h>
 #include <gmock/gmock.h>
+#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <fstream>
 
@@ -53,7 +54,7 @@ TEST_F(AGaffMolecularMechanicsTest, GaffAtomTypesAreAssignedCorrectlyForAlanine)
   auto atomTypes = gaffAtomTypeIdentifier.getAtomTypes();
 
   const char* const correctTypes[] = {"hn", "n3", "hn", "c3", "hc", "c3", "hc", "hc", "hc", "c", "o", "oh", "ho"};
-  for (int i = 0; i < atomTypes.size(); ++i) {
+  for (unsigned int i = 0; i < atomTypes.size(); ++i) {
     ASSERT_STREQ(atomTypes.getAtomType(i).c_str(), correctTypes[i]);
   }
 }
@@ -71,7 +72,7 @@ TEST_F(AGaffMolecularMechanicsTest, GaffAtomTypesAreAssignedCorrectlyForMelatoni
                                       "ha", "ha", "ha", "os", "c3", "hc", "hc", "hc", "c3", "c3", "n",
                                       "c",  "c3", "hc", "hc", "hc", "hc", "hn", "o",  "hc", "hc", "hc"};
   // TODO: Atoms 0, 1 and 2 are difficult to assign.
-  for (int i = 3; i < atomTypes.size(); ++i) {
+  for (unsigned int i = 3; i < atomTypes.size(); ++i) {
     ASSERT_STREQ(atomTypes.getAtomType(i).c_str(), correctTypes[i]);
   }
 }
@@ -91,8 +92,8 @@ TEST_F(AGaffMolecularMechanicsTest, GaffDummyAtomTypesAreReadFromFileCorrectlyFo
                                       "c",  "c3", "hc", "hc", "hc", "hc", "y5", "y4", "y3", "y2", "y1"};
   // Some atoms are replaced by non-existing dummy atom types (containing x, y, or z), however, should be
   // fine, because the atom types are read in from file.
-  for (int i = 0; i < atomTypes.size(); ++i) {
-    ASSERT_STREQ(atomTypes.getAtomType(i).c_str(), correctTypes[i]);
+  for (unsigned int i = 0; i < atomTypes.size(); ++i) {
+    ASSERT_STREQ(boost::algorithm::to_lower_copy(atomTypes.getAtomType(i)).c_str(), correctTypes[i]);
   }
 }
 
@@ -133,7 +134,7 @@ TEST_F(AGaffMolecularMechanicsTest, GaffAtomTypesAreAssignedCorrectlyForTyrosine
                                       "ha", "ca", "ca", "ha", "ca", "ha", "oh", "ho", "h1", "ho", "hn", "hn"};
   GaffAtomTypeIdentifier gaffAtomTypeIdentifier(structure.size(), structure.getElements(), listsOfNeighbors);
   auto atomTypes = gaffAtomTypeIdentifier.getAtomTypes();
-  for (int i = 0; i < atomTypes.size(); ++i) {
+  for (unsigned int i = 0; i < atomTypes.size(); ++i) {
     if (strcmp(correctTypes[i], "h1") == 0) {
       // "hc" is the "non-special" equivalent atom type
       ASSERT_TRUE(atomTypes.getAtomType(i) == std::string("h1") || atomTypes.getAtomType(i) == std::string("hc"));
@@ -431,6 +432,102 @@ TEST_F(AGaffMolecularMechanicsTest, GaffCalculationOfAlanineWithDefaultParameter
     }
   }
 }
+
+TEST_F(AGaffMolecularMechanicsTest, EthanolEnergyVSOpenMM) {
+  GaffMolecularMechanicsCalculator molecularMechanicsCalculator;
+  Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(ethanol_xyz_file).first;
+  // Ensure that the same GAFF parameters are used as in OpenMM.
+  molecularMechanicsCalculator.settings().modifyStringList(SwooseUtilities::SettingsNames::openMMXMLFiles,
+                                                           std::vector<std::string>({openmm_gaff_2_11_xml_file}));
+  molecularMechanicsCalculator.setRequiredProperties(Utils::Property::Energy | Utils::Property::PartialEnergies);
+  molecularMechanicsCalculator.settings().modifyBool(SwooseUtilities::SettingsNames::detectBondsWithCovalentRadii, true);
+  Eigen::VectorXd atomicCharges(9);
+  atomicCharges << -0.444914, -0.054616, -0.538846, 0.147860, 0.142592, 0.138576, 0.120042, 0.134865, 0.354442;
+  std::ofstream file(atomicChargesFile);
+  Utils::matrixToCsv(file, atomicCharges, ',');
+  file.close();
+  molecularMechanicsCalculator.settings().modifyString(SwooseUtilities::SettingsNames::gaffAtomicChargesFile, atomicChargesFile);
+  molecularMechanicsCalculator.setStructure(structure);
+  auto results = molecularMechanicsCalculator.calculate("test calculation ethanol");
+  const double energy = results.get<Utils::Property::Energy>();
+  auto partialEnergies = results.get<Utils::Property::PartialEnergies>();
+  // I do not know why the bond energies are slightly more off. This is probably caused by small differences in the
+  // numerics.
+  ASSERT_NEAR(partialEnergies["bonds"], 0.001253359605327894, 2e-5);
+  ASSERT_NEAR(partialEnergies["angles"], 0.0058917531546377475, 5e-6);
+  ASSERT_NEAR(partialEnergies["dihedral"], 0.004978114508647682, 1e-6);
+  ASSERT_NEAR(partialEnergies["improper_dihedral"], 0.0, 1e-6);
+  ASSERT_NEAR(partialEnergies["lennard_jones"] + partialEnergies["electrostatic"], 0.002339981102174547, 1e-6);
+  ASSERT_NEAR(energy, 0.01446320837078787, 3e-5);
+}
+
+/*
+ * Compiling Swoose in DEBUG slows it down so much that we cannot run this test in reasonable time anymore.
+ */
+#ifndef DEBUG_BUILD
+TEST_F(AGaffMolecularMechanicsTest, SolvatedProteinVsOpenMM) {
+  /*
+   * The idea of this test is to ensure that OpenMM and Swoose give similar energies for large
+   * systems and that Swoose is able to run MM calculations for large systems. The test system
+   * contains ~86k atoms.
+   */
+  GaffMolecularMechanicsCalculator molecularMechanicsCalculator;
+  Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(sars_cov2_protein_solvated_pdb_file).first;
+  // Ensure that the same GAFF parameters are used as in OpenMM.
+  molecularMechanicsCalculator.settings().modifyStringList(
+      SwooseUtilities::SettingsNames::openMMXMLFiles,
+      std::vector<std::string>({openmm_gaff_2_11_xml_file, openmm_amber_protein_xml, openmm_tip3pfb_xml, openmm_wi_ligand_xml}));
+  molecularMechanicsCalculator.setRequiredProperties(Utils::Property::Energy | Utils::Property::PartialEnergies);
+  molecularMechanicsCalculator.settings().modifyBool(SwooseUtilities::SettingsNames::detectBondsWithCovalentRadii, true);
+  molecularMechanicsCalculator.settings().modifyString(SwooseUtilities::SettingsNames::gaffAtomicChargesFile,
+                                                       sars_cov2_protein_solvated_charges_file);
+  molecularMechanicsCalculator.settings().modifyString(SwooseUtilities::SettingsNames::gaffAtomTypesFile,
+                                                       sars_cov2_protein_solvated_atom_type_file);
+  molecularMechanicsCalculator.setStructure(structure);
+  auto results = molecularMechanicsCalculator.calculate("test calculation Sars-CoV2 - bonded 4WI ligand");
+  const double energy = results.get<Utils::Property::Energy>();
+  auto partialEnergies = results.get<Utils::Property::PartialEnergies>();
+  // The differences between Swoose and OpenMM accumulate with increasing number of atoms. + RigidWater vs, non rigid
+  // water.
+  ASSERT_NEAR(partialEnergies["bonds"], 1.2650828668726626, 0.01);
+  ASSERT_NEAR(partialEnergies["angles"], 3.48321647445473, 0.01);
+  ASSERT_NEAR(partialEnergies["dihedral"] + partialEnergies["improper_dihedral"], 6.222403435340055, 0.015);
+  ASSERT_NEAR(partialEnergies["lennard_jones"] + partialEnergies["electrostatic"], -518.6754666206758, 1e-3);
+  ASSERT_NEAR(energy, -507.7047928563433, 0.03);
+}
+
+TEST_F(AGaffMolecularMechanicsTest, SolvatedProteinWithAtomClasses) {
+  /*
+   * The idea of this test is to ensure that Swoose is able to work with systems for which the
+   * parameters are provided as atom classes.
+   */
+
+  GaffMolecularMechanicsCalculator molecularMechanicsCalculator;
+  Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(sars_cov2_protein_solvated_pdb_file_99).first;
+  // Ensure that the same GAFF parameters are used as in OpenMM.
+  molecularMechanicsCalculator.settings().modifyStringList(
+      SwooseUtilities::SettingsNames::openMMXMLFiles,
+      std::vector<std::string>(
+          {openmm_gaff_2_11_xml_file, openmm_amber99sbildn_xml_file, openmm_tip3p_xml, openmm_wi_ligand_xml_99}));
+  molecularMechanicsCalculator.setRequiredProperties(Utils::Property::Energy | Utils::Property::PartialEnergies);
+  molecularMechanicsCalculator.settings().modifyString(SwooseUtilities::SettingsNames::gaffAtomicChargesFile,
+                                                       sars_cov2_protein_solvated_charges_file_99);
+  molecularMechanicsCalculator.settings().modifyString(SwooseUtilities::SettingsNames::gaffAtomTypesFile,
+                                                       sars_cov2_protein_solvated_atom_type_file_99);
+  molecularMechanicsCalculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath,
+                                                       sars_cov2_protein_solvated_connectivity_file_99);
+  molecularMechanicsCalculator.setStructure(structure);
+  auto results = molecularMechanicsCalculator.calculate("test calculation Sars-CoV2 - bonded 4WI ligand");
+  const double energy = results.get<Utils::Property::Energy>();
+  auto partialEnergies = results.get<Utils::Property::PartialEnergies>();
+  // The differences between Swoose and OpenMM accumulate with increasing number of atoms.
+  ASSERT_NEAR(partialEnergies["bonds"], 1.940644757697543, 1e-4);
+  ASSERT_NEAR(partialEnergies["angles"], 4.19561659164599, 1e-4);
+  ASSERT_NEAR(partialEnergies["dihedral"] + partialEnergies["improper_dihedral"], 5.3959707074566285, 0.015);
+  ASSERT_NEAR(partialEnergies["lennard_jones"] + partialEnergies["electrostatic"], -257.8792014011501, 1e-4);
+  ASSERT_NEAR(energy, -246.34696785653787, 0.015);
+}
+#endif
 
 } // namespace Tests
 } // namespace Scine

@@ -33,7 +33,7 @@ namespace SwooseUtilities {
 // The index given to saturating atoms in the atomIndexMapping object
 static constexpr int indexForSaturatingAtoms = -1;
 // Minimum size of a subsystem
-static constexpr int minimumSubsystemSize_ = 20;
+static constexpr int minimumSubsystemSize_ = 4;
 
 namespace FragmentationHelper {
 /**
@@ -49,11 +49,13 @@ namespace FragmentationHelper {
  * @param listsOfNeighbors The full system's connectivity as lists of neighbors.
  * @param probabilityToDivide Probability of dividing at a bond that is divisible in principle.
  * @param randomEngine A pointer to a Mersenne Twister pseudo-random generator.
+ * @param excludedResidueTypes Always exclude atoms with this residue label from the QM region.
  */
 void addAtomsUpToReasonableCut(Utils::AtomCollection& atomsToAdd, std::vector<int>& alreadyAddedAtoms,
                                std::deque<bool>& isSaturatingAtom, int atomInside, int atomOutside,
                                const Utils::AtomCollection& fullStructure, const std::vector<std::list<int>>& listsOfNeighbors,
-                               double probabilityToDivide, std::shared_ptr<std::mt19937> randomEngine);
+                               double probabilityToDivide, std::shared_ptr<std::mt19937> randomEngine,
+                               const std::vector<std::string>& excludedResidueTypes);
 /**
  * @brief This function adds a set of atoms to an existing molecular structure.
  * @param atomsToAdd The atoms to add.

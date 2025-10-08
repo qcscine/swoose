@@ -25,6 +25,7 @@ static constexpr const char* hydrogenBondCorrection = "hydrogen_bond_correction"
 static constexpr const char* applyCutoffDuringInitialization = "apply_cutoff_during_initialization";
 static constexpr const char* gaffAtomicChargesFile = "gaff_atomic_charges_file";
 static constexpr const char* gaffAtomTypesFile = "gaff_atom_types_file";
+static constexpr const char* openMMXMLFiles = "openmm_xml_files";
 
 // Mostly used for QM/MM
 static constexpr const char* chargeRedistributionKey = "charge_redistribution";
@@ -60,6 +61,10 @@ static constexpr const char* terminateAfterReferenceDataGeneration = "ref_data_g
 static constexpr const char* useCsvInputFormat = "use_csv";
 static constexpr const char* convertChargesCm5 = "convert_charges_cm5";
 static constexpr const char* yamlSettingsFilePath = "yaml_settings_file_path";
+static constexpr const char* exportSfamForOpenMM = "export_SFAM_for_openMM";
+static constexpr const char* sfamOpenMMFileName = "sfam_openmm_file_name";
+static constexpr const char* sfamAtomTypeFileName = "sfam_atom_type_file";
+static constexpr const char* sfamAtomTypesFromFile = "sfam_atom_types_from_file";
 static constexpr const char* titrate = "titrate";
 static constexpr const char* useThermoChemistryForTitration = "use_thermochemistry_for_titration";
 static constexpr const char* trainingDataDirectory = "training_data_directory";
@@ -77,6 +82,7 @@ static constexpr const char* maxNumRefModels = "max_num_ref_models";
 static constexpr const char* tolerancePercentageError = "tol_percentage_error";
 static constexpr const char* tolerancePercentageSymmetryScore = "tol_percentage_sym_score";
 static constexpr const char* qmRegionSelectionRandomSeed = "qm_region_selection_seed";
+static constexpr const char* excludedResidueLabels = "excluded_residue_labels";
 
 // Mostly used for structure preparation
 static constexpr const char* preparationDataDirectory = "preparation_directory";

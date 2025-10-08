@@ -18,7 +18,7 @@ namespace MolecularMechanics {
  * @class AtomTypesHolder AtomTypesHolder.h
  * @brief Class containing the MM atom types of the atoms in a molecular system.
  */
-class AtomTypesHolder {
+class AtomTypesHolder : public std::vector<std::string> {
  public:
   /**
    * @brief Constructor.
@@ -31,24 +31,11 @@ class AtomTypesHolder {
   const std::string& getAtomType(unsigned int index) const;
 
   /**
-   * @brief Returns the number of atom types stored in this object.
+   * @brief Returns a vector of unique atom types, i.e., no duplicates.
+   * @return The unique atom types.
    */
-  int size() const;
-
- private:
-  std::vector<std::string> atomTypes_;
+  std::vector<std::string> uniqueAtomTypes() const;
 };
-
-inline AtomTypesHolder::AtomTypesHolder(std::vector<std::string> atomTypes) : atomTypes_(std::move(atomTypes)) {
-}
-
-inline const std::string& AtomTypesHolder::getAtomType(unsigned int index) const {
-  return atomTypes_.at(index);
-}
-
-inline int AtomTypesHolder::size() const {
-  return atomTypes_.size();
-}
 
 } // namespace MolecularMechanics
 } // namespace Scine

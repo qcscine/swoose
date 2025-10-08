@@ -7,17 +7,13 @@
 
 #include "../App/AppUtils/Tasks.h"
 #include "Files/tests_file_location.h"
-#include "TestUtilities/MockQmCalculator.h"
 #include <Core/Log.h>
 #include <Core/ModuleManager.h>
 #include <Swoose/MMParametrization/MMParametrizationSettings.h>
 #include <Swoose/MMParametrization/Parametrizer.h>
-#include <Swoose/MolecularMechanics/SFAM/SfamCalculatorSettings.h>
 #include <Swoose/MolecularMechanics/SFAM/SfamMolecularMechanicsCalculator.h>
 #include <Swoose/QMMM/QmmmCalculator.h>
-#include <Swoose/QMMM/QmmmCalculatorSettings.h>
 #include <Swoose/StructurePreparation/StructurePreparationData.h>
-#include <Swoose/StructurePreparation/StructurePreparationSettings.h>
 #include <Swoose/StructurePreparation/StructureProcessor.h>
 #include <Utils/GeometryOptimization/QmmmGeometryOptimizer.h>
 #include <Utils/IO/ChemicalFileFormats/ChemicalFileHandler.h>

@@ -13,12 +13,15 @@
 #include "QmmmHessianEvaluator.h"
 #include <Core/Log.h>
 #include <Core/ModuleManager.h>
+#include <Swoose/MolecularMechanics/GAFF/GaffAtomTypeIdentifier.h>
 #include <Swoose/MolecularMechanics/MolecularMechanicsCalculator.h>
+#include <Swoose/Utilities/ConnectivityFileHandler.h>
+#include <Swoose/Utilities/TopologyUtils.h>
+#include <Utils/Bonds/BondDetector.h>
 #include <Utils/ExternalQC/Orca/OrcaCalculatorSettings.h>
 #include <Utils/GeometryOptimization/CoordinateSystem.h>
 #include <Utils/GeometryOptimization/GeometryOptimizer.h>
 #include <Utils/Optimizer/GradientBased/Bfgs.h>
-#include <Utils/UniversalSettings/OptimizationSettingsNames.h>
 #include <iomanip>
 
 namespace Scine {
@@ -160,6 +163,7 @@ void QmmmCalculator::setStructureImpl(const Utils::AtomCollection& structure) {
 
   qmRegion_ = QmmmHelpers::createQmRegion(listOfQmAtoms_, structure_, mmCalculator_->listsOfNeighbors(), qmRegionFile_,
                                           mmBoundaryAtoms_);
+  applySettings();
   // Only set the structure for the QM calculator if no calculation has been conducted yet and if the elements
   // of the structure changed. This prevents too many calculation directories during a geometry optimization.
   if (results_.has<Utils::Property::SuccessfulCalculation>() &&
@@ -234,7 +238,7 @@ void QmmmCalculator::optimizeLinks() {
   optimizer.check.maxIter = maxCycles;
   optimizer.check.deltaValue = 1e-6;
   std::vector<int> fixedAtoms;
-  for (int i = 0; i < static_cast<int>(listOfQmAtoms_.size()); ++i) {
+  for (unsigned int i = 0; i < listOfQmAtoms_.size(); ++i) {
     fixedAtoms.push_back(i);
   }
   // add observer to have trajectory
@@ -262,6 +266,113 @@ void QmmmCalculator::optimizeLinks() {
   qmCalculator_->setRequiredProperties(requiredProperties);
 }
 
+std::pair<Utils::Results, Utils::Results> QmmmCalculator::runCalculatorsWithReducedMMInteractions() {
+  prepareTermsForMmCalculator(true);
+  const auto calculatorResults = this->runCalculators();
+  prepareTermsForMmCalculator(false);
+  return calculatorResults;
+}
+
+std::pair<Utils::Results, Utils::Results> QmmmCalculator::runCalculators() {
+  this->getLog().debug << "Calculating QM energy..." << Core::Log::endl;
+  const Utils::Results qmResults =
+      Utils::CalculationRoutines::calculateWithCatch(*qmCalculator_, getLog(), "QM calculation failed");
+  Utils::Results mmResults;
+  if (this->propertiesRequireMMEvaluation()) {
+    this->getLog().debug << "Calculating MM energy..." << Core::Log::endl;
+    mmResults = Utils::CalculationRoutines::calculateWithCatch(*mmCalculator_, getLog(), "MM calculation failed");
+  }
+  return std::make_pair(qmResults, mmResults);
+}
+
+bool QmmmCalculator::propertiesRequireMMEvaluation() {
+  return this->requiredProperties_.containsSubSet(Utils::Property::Energy) ||
+         this->requiredProperties_.containsSubSet(Utils::Property::Gradients) ||
+         this->requiredProperties_.containsSubSet(Utils::Property::PartialHessian) ||
+         this->requiredProperties_.containsSubSet(Utils::Property::PartialEnergies) ||
+         this->requiredProperties_.containsSubSet(Utils::Property::PartialGradients) ||
+         this->requiredProperties_.containsSubSet(Utils::Property::BondOrderMatrix) ||
+         this->requiredProperties_.containsSubSet(Utils::Property::CoefficientMatrix) ||
+         this->requiredProperties_.containsSubSet(Utils::Property::AtomicCharges);
+}
+
+void QmmmCalculator::storeEnergy(const std::pair<Utils::Results, Utils::Results>& results) {
+  const double qmEnergy = results.first.get<Utils::Property::Energy>();
+  const double mmEnergy = results.second.get<Utils::Property::Energy>();
+  const double totalEnergy = qmEnergy + mmEnergy;
+  results_.set<Utils::Property::Energy>(totalEnergy);
+  // Output:
+  this->getLog().debug << std::setprecision(10) << "QM energy (Hartree): " << qmEnergy << Core::Log::endl;
+  this->getLog().debug << "MM energy (Hartree): " << mmEnergy << Core::Log::endl;
+
+  if (requiredProperties_.containsSubSet(Utils::Property::PartialEnergies)) {
+    std::unordered_map<std::string, double> partialEnergies;
+    partialEnergies.insert(std::make_pair("qm_energy", qmEnergy));
+    partialEnergies.insert(std::make_pair("mm_energy", mmEnergy));
+    if (!results.second.has<Utils::Property::PartialEnergies>()) {
+      throw std::runtime_error("MM calculator does not provide partial energies!");
+    }
+    for (const auto& partialResult : results.second.get<Utils::Property::PartialEnergies>()) {
+      partialEnergies.insert(partialResult);
+    }
+    if (results.first.has<Utils::Property::PartialEnergies>()) {
+      for (const auto& partialResult : results.first.get<Utils::Property::PartialEnergies>()) {
+        partialEnergies.insert(partialResult);
+      }
+    }
+    results_.set<Utils::Property::PartialEnergies>(partialEnergies);
+  }
+}
+
+void QmmmCalculator::storeGradients(const std::pair<Utils::Results, Utils::Results>& results) {
+  Utils::GradientCollection pcGradientsContributions;
+  if (electrostaticEmbedding_ && mmAtomsLeft_)
+    pcGradientsContributions = results.first.get<Utils::Property::PointChargesGradients>();
+
+  const auto mmContribution = results.second.get<Utils::Property::Gradients>();
+  QmmmGradientsEvaluator gradEvaluator(results.first.get<Utils::Property::Gradients>(), mmContribution,
+                                       pcGradientsContributions, listOfQmAtoms_, mmBoundaryAtoms_,
+                                       mmCalculator_->listsOfNeighbors(), structure_, qmRegion_);
+  const auto totalGradient = gradEvaluator.calculateQmmmGradients();
+  results_.set<Utils::Property::Gradients>(totalGradient);
+  if (requiredProperties_.containsSubSet(Utils::Property::PartialEnergies)) {
+    const auto qmAndPCGradientContribution = totalGradient - mmContribution;
+    std::unordered_map<std::string, Utils::GradientCollection> partialGradients;
+    partialGradients.insert(std::make_pair("qm_gradients", qmAndPCGradientContribution));
+    partialGradients.insert(std::make_pair("mm_gradients", mmContribution));
+    results_.set<Utils::Property::PartialGradients>(partialGradients);
+  }
+}
+
+void QmmmCalculator::storeAtomicCharges(const std::pair<Utils::Results, Utils::Results>& results) {
+  auto totalCharges = results.second.get<Utils::Property::AtomicCharges>();
+  auto qmCharges = results.first.get<Utils::Property::AtomicCharges>();
+  int indexInQm = 0;
+  for (const auto& indexInTotal : listOfQmAtoms_) {
+    totalCharges[indexInTotal] = qmCharges[indexInQm++];
+  }
+  results_.set<Utils::Property::AtomicCharges>(totalCharges);
+}
+
+void QmmmCalculator::storeBondOrders(const std::pair<Utils::Results, Utils::Results>& results) {
+  auto totalBondOrders = results.second.get<Utils::Property::BondOrderMatrix>();
+  const auto qmBondOrders = results.first.get<Utils::Property::BondOrderMatrix>();
+  unsigned int nQm = listOfQmAtoms_.size();
+  for (unsigned int i = 0; i < nQm - 1; ++i) {
+    auto totalIndexI = listOfQmAtoms_[i];
+    for (unsigned int j = i + 1; j < nQm; ++j) {
+      auto totalIndexJ = listOfQmAtoms_[j];
+      totalBondOrders.setOrder(totalIndexI, totalIndexJ, qmBondOrders.getOrder(i, j));
+    }
+  }
+  results_.set<Utils::Property::BondOrderMatrix>(totalBondOrders);
+}
+
+void QmmmCalculator::storeOneElectronIntegrals(const std::pair<Utils::Results, Utils::Results>& results) {
+  const auto integrals = results.first.get<Utils::Property::OneElectronMatrix>();
+  results_.set<Utils::Property::OneElectronMatrix>(integrals);
+}
+
 const Utils::Results& QmmmCalculator::calculateImpl(std::string description) {
   setLogForUnderlyingCalculators();
 
@@ -275,100 +386,40 @@ const Utils::Results& QmmmCalculator::calculateImpl(std::string description) {
     this->getLog().debug << "Optimizing QM links..." << Core::Log::endl;
     optimizeLinks();
   }
+  adjustQMQMEmbeddingAtomIndices();
 
-  this->getLog().debug << "Calculating QM energy..." << Core::Log::endl;
-  auto qmResults = Utils::CalculationRoutines::calculateWithCatch(*qmCalculator_, getLog(), "QM calculation failed");
-  double qmEnergy = qmResults.get<Utils::Property::Energy>();
-  this->getLog().debug << "Calculating MM energy..." << Core::Log::endl;
-  Utils::Results mmResults;
-  double mmEnergy;
-  Utils::GradientCollection mmGradients;
-
-  if (!calculateReducedQmMmEnergy_) {
-    mmResults = Utils::CalculationRoutines::calculateWithCatch(*mmCalculator_, getLog(), "MM calculation failed");
-    mmEnergy = mmResults.get<Utils::Property::Energy>();
-    if (requiredProperties_.containsSubSet(Utils::Property::Gradients)) {
-      mmGradients = mmResults.get<Utils::Property::Gradients>();
-    }
+  std::pair<Utils::Results, Utils::Results> results;
+  if (calculateReducedQmMmEnergy_) {
+    results = runCalculatorsWithReducedMMInteractions();
   }
   else {
-    prepareTermsForMmCalculator(true);
-    mmResults = Utils::CalculationRoutines::calculateWithCatch(*mmCalculator_, getLog(), "MM calculation failed");
-    mmEnergy = mmResults.get<Utils::Property::Energy>();
-    if (requiredProperties_.containsSubSet(Utils::Property::Gradients)) {
-      mmGradients = mmResults.get<Utils::Property::Gradients>();
-    }
-    prepareTermsForMmCalculator(false);
+    results = runCalculators();
   }
-  // Output:
-  this->getLog().debug << std::setprecision(10) << "QM energy (Hartree): " << qmEnergy << Core::Log::endl;
-  this->getLog().debug << "MM energy (Hartree): " << mmEnergy << Core::Log::endl;
-
-  // Total energy:
-  double totalEnergy = qmEnergy + mmEnergy;
 
   // Assemble results
   results_.set<Utils::Property::Description>(std::move(description));
-  if (requiredProperties_.containsSubSet(Utils::Property::Energy)) {
-    results_.set<Utils::Property::Energy>(totalEnergy);
+  if (requiredProperties_.containsSubSet(Utils::Property::Energy) ||
+      requiredProperties_.containsSubSet(Utils::Property::PartialEnergies)) {
+    this->storeEnergy(results);
   }
-  if (requiredProperties_.containsSubSet(Utils::Property::Gradients)) {
-    Utils::GradientCollection pcGradientsContributions;
-    if (electrostaticEmbedding_ && mmAtomsLeft_)
-      pcGradientsContributions = qmResults.get<Utils::Property::PointChargesGradients>();
-
-    QmmmGradientsEvaluator gradEvaluator(qmResults.get<Utils::Property::Gradients>(), mmGradients,
-                                         pcGradientsContributions, listOfQmAtoms_, mmBoundaryAtoms_,
-                                         mmCalculator_->listsOfNeighbors(), structure_, qmRegion_);
-    results_.set<Utils::Property::Gradients>(gradEvaluator.calculateQmmmGradients());
+  if (requiredProperties_.containsSubSet(Utils::Property::Gradients) ||
+      requiredProperties_.containsSubSet(Utils::Property::PartialGradients)) {
+    this->storeGradients(results);
   }
-
+  if (requiredProperties_.containsSubSet(Utils::Property::BondOrderMatrix)) {
+    this->storeBondOrders(results);
+  }
+  if (requiredProperties_.containsSubSet(Utils::Property::AtomicCharges)) {
+    this->storeAtomicCharges(results);
+  }
   if (requiredProperties_.containsSubSet(Utils::Property::PartialHessian)) {
     QmmmHessianEvaluator hessianEvaluator(qmCalculator_, listOfQmAtoms_);
     results_.set<Utils::Property::PartialHessian>(hessianEvaluator.calculatePartialHessian());
   }
-  if (requiredProperties_.containsSubSet(Utils::Property::AtomicCharges)) {
-    auto totalCharges = mmResults.get<Utils::Property::AtomicCharges>();
-    auto qmCharges = qmResults.get<Utils::Property::AtomicCharges>();
-    int indexInQm = 0;
-    for (const auto& indexInTotal : listOfQmAtoms_) {
-      totalCharges[indexInTotal] = qmCharges[indexInQm++];
-    }
-    results_.set<Utils::Property::AtomicCharges>(totalCharges);
+  if (requiredProperties_.containsSubSet(Utils::Property::OneElectronMatrix)) {
+    this->storeOneElectronIntegrals(results);
   }
-  if (requiredProperties_.containsSubSet(Utils::Property::BondOrderMatrix)) {
-    auto totalBondOrders = mmResults.get<Utils::Property::BondOrderMatrix>();
-    const auto qmBondOrders = qmResults.get<Utils::Property::BondOrderMatrix>();
-    int nQm = static_cast<int>(listOfQmAtoms_.size());
-    for (int i = 0; i < nQm - 1; ++i) {
-      auto totalIndexI = listOfQmAtoms_[i];
-      for (int j = i + 1; j < nQm; ++j) {
-        auto totalIndexJ = listOfQmAtoms_[j];
-        totalBondOrders.setOrder(totalIndexI, totalIndexJ, qmBondOrders.getOrder(i, j));
-      }
-    }
-    results_.set<Utils::Property::BondOrderMatrix>(totalBondOrders);
-  }
-  if (requiredProperties_.containsSubSet(Utils::Property::PartialEnergies)) {
-    std::unordered_map<std::string, double> partialEnergies;
-    partialEnergies.insert(std::make_pair("qm_energy", qmEnergy));
-    partialEnergies.insert(std::make_pair("mm_energy", mmEnergy));
-    if (!mmResults.has<Utils::Property::PartialEnergies>()) {
-      throw std::runtime_error("MM calculator does not provide partial energies!");
-    }
-    for (const auto& partialResult : mmResults.get<Utils::Property::PartialEnergies>()) {
-      partialEnergies.insert(partialResult);
-    }
-    if (qmResults.has<Utils::Property::PartialEnergies>()) {
-      for (const auto& partialResult : qmResults.get<Utils::Property::PartialEnergies>()) {
-        partialEnergies.insert(partialResult);
-      }
-    }
-    results_.set<Utils::Property::PartialEnergies>(partialEnergies);
-  }
-
   results_.set<Utils::Property::SuccessfulCalculation>(true);
-
   return results_;
 }
 
@@ -399,6 +450,12 @@ void QmmmCalculator::setRequiredProperties(const Utils::PropertyList& requiredPr
   auto qmProperties = requiredProperties_;
   // mm properties
   auto mmProperties = requiredProperties_;
+  if (requiredProperties_.containsSubSet(Utils::Property::PartialGradients)) {
+    qmProperties.removeProperty(Utils::Property::PartialGradients);
+    mmProperties.removeProperty(Utils::Property::PartialGradients);
+    qmProperties.addProperties(Utils::Property::Gradients);
+    mmProperties.addProperties(Utils::Property::Gradients);
+  }
   if (requiredProperties_.containsSubSet(Utils::Property::PartialHessian)) {
     mmProperties.removeProperty(Utils::Property::PartialHessian);
     qmProperties.removeProperty(Utils::Property::PartialHessian);
@@ -414,7 +471,10 @@ void QmmmCalculator::setRequiredProperties(const Utils::PropertyList& requiredPr
         !qmCalculator_->possibleProperties().containsSubSet(Utils::Property::PartialEnergies)) {
       qmProperties.removeProperty(Utils::Property::PartialEnergies);
     }
-    if (electrostaticEmbedding_ && requiredProperties_.containsSubSet(Utils::Property::Gradients) && mmAtomsLeft_) {
+    if (electrostaticEmbedding_ &&
+        (requiredProperties_.containsSubSet(Utils::Property::Gradients) ||
+         requiredProperties_.containsSubSet(Utils::Property::PartialGradients)) &&
+        mmAtomsLeft_) {
       qmProperties.addProperty(Utils::Property::PointChargesGradients);
       qmCalculator_->setRequiredProperties(qmProperties);
     }
@@ -429,13 +489,20 @@ Utils::PropertyList QmmmCalculator::getRequiredProperties() const {
 }
 
 Utils::PropertyList QmmmCalculator::possibleProperties() const {
-  Utils::PropertyList properties{Utils::Property::Energy | Utils::Property::Gradients | Utils::Property::PartialHessian |
-                                 Utils::Property::SuccessfulCalculation | Utils::Property::PartialEnergies};
+  Utils::PropertyList properties{Utils::Property::Energy | Utils::Property::Gradients |
+                                 Utils::Property::PartialHessian | Utils::Property::SuccessfulCalculation |
+                                 Utils::Property::PartialEnergies | Utils::Property::PartialGradients};
   if (qmCalculator_ && qmCalculator_->possibleProperties().containsSubSet(Utils::Property::BondOrderMatrix)) {
     properties.addProperties(Utils::Property::BondOrderMatrix);
   }
   if (qmCalculator_ && qmCalculator_->possibleProperties().containsSubSet(Utils::Property::AtomicCharges)) {
     properties.addProperties(Utils::Property::AtomicCharges);
+  }
+  if (qmCalculator_ && qmCalculator_->possibleProperties().containsSubSet(Utils::Property::OneElectronMatrix)) {
+    properties.addProperties(Utils::Property::OneElectronMatrix);
+  }
+  if (qmCalculator_ && qmCalculator_->possibleProperties().containsSubSet(Utils::Property::CoefficientMatrix)) {
+    properties.addProperties(Utils::Property::CoefficientMatrix);
   }
   return properties;
 }
@@ -492,6 +559,7 @@ void QmmmCalculator::applySettingsToUnderlyingCalculators() {
       }
       qmCalculator_->settings().modifyValue(d.first, settings_->getValue(d.first));
     }
+    this->adjustQMQMEmbeddingAtomIndices();
   }
 }
 
@@ -522,6 +590,11 @@ void QmmmCalculator::setLogForUnderlyingCalculators() {
 }
 
 QmmmCalculator::~QmmmCalculator() {
+  if (this->electrostaticEmbedding_ && boost::filesystem::exists(pointChargesFilename_)) {
+    std::string backupName = "old." + std::string(pointChargesFilename_);
+    boost::filesystem::remove(backupName);
+    boost::filesystem::rename(pointChargesFilename_, backupName);
+  }
   boost::filesystem::remove(pointChargesFilename_);
 }
 
@@ -551,5 +624,56 @@ std::shared_ptr<Core::Calculator> QmmmCalculator::getQuantumMechanicsCalculator(
   return this->qmCalculator_;
 }
 
+void QmmmCalculator::adjustQMQMEmbeddingAtomIndices() {
+  if (!this->settings_->valueExists(Utils::SettingsNames::qmqmAtomIndices) || this->listOfQmAtoms_.empty()) {
+    return;
+  }
+  std::vector<unsigned int> bondingPartnersOfCappingAtoms = getBondPartnersOfCappingAtoms();
+
+  std::map<int, int> fullSystemIndexToQmAtomIndex;
+  for (unsigned int i = 0; i < this->listOfQmAtoms_.size(); ++i) {
+    fullSystemIndexToQmAtomIndex.insert(std::make_pair(this->listOfQmAtoms_[i], i));
+  }
+  const std::vector<std::vector<int>>& originalQmqmAtomIndices =
+      this->settings_->getIntListList(Utils::SettingsNames::qmqmAtomIndices);
+  std::map<int, unsigned int> qmAtomToSubsystemMap;
+  std::vector<std::vector<int>> updatedQmqmAtomIndices;
+  for (unsigned int iSubsystem = 0; iSubsystem < originalQmqmAtomIndices.size(); ++iSubsystem) {
+    const auto& subsystemIndices = originalQmqmAtomIndices[iSubsystem];
+    std::vector<int> updatedSubsystemIndices;
+    for (const auto& atomIndex : subsystemIndices) {
+      unsigned int indexInQMRegion = fullSystemIndexToQmAtomIndex[atomIndex];
+      qmAtomToSubsystemMap.insert(std::make_pair(indexInQMRegion, iSubsystem));
+      updatedSubsystemIndices.push_back(indexInQMRegion);
+    }
+    updatedQmqmAtomIndices.push_back(updatedSubsystemIndices);
+  }
+
+  for (unsigned int iCappingAtom = 0; iCappingAtom < bondingPartnersOfCappingAtoms.size(); ++iCappingAtom) {
+    const int cappingAtomIndexInQmRegion = int(iCappingAtom + this->listOfQmAtoms_.size());
+    const int bondingPartner = int(bondingPartnersOfCappingAtoms[iCappingAtom]);
+    const unsigned int bondingPartnerSubsystemIndex = qmAtomToSubsystemMap[bondingPartner];
+    updatedQmqmAtomIndices[bondingPartnerSubsystemIndex].push_back(cappingAtomIndexInQmRegion);
+  }
+  this->qmCalculator_->settings().modifyIntListList(Utils::SettingsNames::qmqmAtomIndices, updatedQmqmAtomIndices);
+}
+std::vector<unsigned int> QmmmCalculator::getBondPartnersOfCappingAtoms() {
+  if (qmRegion_.size() < int(this->listOfQmAtoms_.size())) {
+    throw std::runtime_error(
+        "The QM region has fewer atoms than assigned to it by index. This must be an input error.");
+  }
+  std::vector<unsigned int> bondingPartnersOfCappingAtoms;
+  unsigned int nCappingAtoms = qmRegion_.size() - this->listOfQmAtoms_.size();
+  const Utils::BondOrderCollection bondOrders = Utils::BondDetector::detectBonds(qmRegion_);
+  for (unsigned int iCappingAtom = 0; iCappingAtom < nCappingAtoms; ++iCappingAtom) {
+    unsigned int indexInQmRegion = iCappingAtom + this->listOfQmAtoms_.size();
+    const auto bondPartners = bondOrders.getBondPartners(indexInQmRegion);
+    if (bondPartners.empty()) {
+      throw std::runtime_error("A capping atom is not bonded to any other atom in the system.");
+    }
+    bondingPartnersOfCappingAtoms.push_back(bondPartners[0]);
+  }
+  return bondingPartnersOfCappingAtoms;
+}
 } // namespace Qmmm
 } // namespace Scine

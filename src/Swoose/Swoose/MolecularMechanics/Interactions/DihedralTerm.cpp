@@ -30,25 +30,24 @@ double DihedralTerm::evaluateDihedralTerm(const Utils::PositionCollection& posit
                                           Utils::AtomicSecondDerivativeCollection& derivatives) const {
   if (this->disabled_)
     return 0.0;
-  if (!dihedral_.hasParameters()) // Check this only if this term is not disabled
-    throw MMDihedralParametersNotAvailableException(typeOfDihedral_.a1, typeOfDihedral_.a2, typeOfDihedral_.a3,
-                                                    typeOfDihedral_.a4);
+  if (!dihedral_.hasParameters()) // Allow zero terms.
+    return 0.0;
 
   // Calculating the dihedral energy and its derivatives according to
   // A. Blondel, M. Karplus, New Formulation for Derivatives of Torsion Angles and Improper Torsion Angles in Molecular
   // Mechanics: Elimination of Singularities, JCC, 17, 1996, 1132-1141.
-  Eigen::Vector3d F(positions.row(firstAtom_) - positions.row(secondAtom_));
-  Eigen::Vector3d G(positions.row(secondAtom_) - positions.row(thirdAtom_));
-  Eigen::Vector3d H(positions.row(fourthAtom_) - positions.row(thirdAtom_));
+  const Eigen::Vector3d F(positions.row(firstAtom_) - positions.row(secondAtom_));
+  const Eigen::Vector3d G(positions.row(secondAtom_) - positions.row(thirdAtom_));
+  const Eigen::Vector3d H(positions.row(fourthAtom_) - positions.row(thirdAtom_));
 
   auto A = F.cross(G);
   auto B = H.cross(G);
 
-  double A2 = A.squaredNorm();
-  double B2 = B.squaredNorm();
+  const double A2 = A.squaredNorm();
+  const double B2 = B.squaredNorm();
   //  double A4 = A2 * A2;
   //  double B4 = B2 * B2;
-  double G1 = G.norm();
+  const double G1 = G.norm();
   //  double G2 = G1 * G1;
   //  double G3 = G1 * G2;
 
@@ -98,7 +97,7 @@ double DihedralTerm::evaluateDihedralTerm(const Utils::PositionCollection& posit
   h3.setFirst3D(firstDer3);
   h4.setFirst3D(firstDer4);
 
-  double theta = getTheta(A, B, G);
+  const double theta = getTheta(A, B, G);
   auto result = dihedral_.getInteraction(theta);
 
   // Apply chain rule to get derivatives with respect to the energy
@@ -136,7 +135,7 @@ void DihedralTerm::setSecondDerivative(Utils::AutomaticDifferentiation::Second3D
 }
 
 double DihedralTerm::getTheta(const Eigen::Vector3d& A, const Eigen::Vector3d& B, const Eigen::Vector3d& G) {
-  double acosArg = A.dot(B) / (A.norm() * B.norm());
+  const double acosArg = A.dot(B) / (A.norm() * B.norm());
   //  acosArg *= -1;
   double theta = acos(acosArg);
   // Needed because of numerical instabilities provoking theta = nan
@@ -146,7 +145,7 @@ double DihedralTerm::getTheta(const Eigen::Vector3d& A, const Eigen::Vector3d& B
     theta = 4.0 * atan(1);
 
   // Invert sign of theta if it should be negative (NB: acos delivers only values between 0 and pi)
-  double asinArg = B.cross(A).dot(G) / (A.norm() * B.norm() * G.norm());
+  const double asinArg = B.cross(A).dot(G) / (A.norm() * B.norm() * G.norm());
   if (asinArg < 0) {
     theta *= -1;
   }

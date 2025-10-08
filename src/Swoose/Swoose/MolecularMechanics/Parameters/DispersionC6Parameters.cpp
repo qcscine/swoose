@@ -17,7 +17,7 @@ namespace DispersionC6Parameters {
 
 void fillC6MatrixForCurrentStructure(SfamParameters& parameters, const Utils::AtomCollection& structure,
                                      const AtomTypesHolder& atomTypes) {
-  parameters.prepareC6Matrix(atomTypes);
+  parameters.prepareC6andC8Matrices(atomTypes);
   Utils::Dftd3::Dftd3 d3Method;
   std::vector<Utils::Dftd3::Dftd3Atom> structureOfDftd3Atoms;
 
@@ -44,17 +44,21 @@ void fillC6MatrixForCurrentStructure(SfamParameters& parameters, const Utils::At
   for (int a = 1; a < structure.size(); ++a) {
     for (int b = 0; b < a; ++b) {
       auto c6 = d3Method.calculateC6Coefficient(structureOfDftd3Atoms[a], structureOfDftd3Atoms[b]);
+      auto c8 = d3Method.calculateC8Coefficient(structureOfDftd3Atoms[a], structureOfDftd3Atoms[b], c6);
       auto atomTypeA = atomTypes.getAtomType(a);
       auto atomTypeB = atomTypes.getAtomType(b);
       int numOccurred = occurrences(indexMap.at(atomTypeA), indexMap.at(atomTypeB)) +
                         occurrences(indexMap.at(atomTypeB), indexMap.at(atomTypeA));
       if (numOccurred == 0) {
         parameters.setC6(atomTypeA, atomTypeB, static_cast<float>(c6));
+        parameters.setC8(atomTypeA, atomTypeB, static_cast<float>(c8));
       }
       else {
         float previousC6 = parameters.getC6(atomTypeA, atomTypeB);
         float newC6 = (previousC6 * numOccurred + c6) / (numOccurred + 1); // get the mean value
+        float newC8 = d3Method.calculateC8Coefficient(structureOfDftd3Atoms[a], structureOfDftd3Atoms[b], newC6);
         parameters.setC6(atomTypeA, atomTypeB, newC6);
+        parameters.setC8(atomTypeA, atomTypeB, newC8);
       }
       occurrences(indexMap.at(atomTypeA), indexMap.at(atomTypeB))++;
     }

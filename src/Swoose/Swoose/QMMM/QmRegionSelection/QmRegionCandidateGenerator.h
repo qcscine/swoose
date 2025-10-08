@@ -9,6 +9,7 @@
 #define SWOOSE_QMMM_QMREGIONCANDIDATEGENERATOR_H
 
 #include <list>
+#include <string>
 #include <vector>
 
 namespace Scine {
@@ -41,10 +42,12 @@ namespace QmRegionCandidateGenerator {
  * @param bondOrders Bond orders of the full system.
  * @param settings The settings.
  * @param log The logger.
+ * @param excludedResidueTypes A list of residue labels to exclude from the QM region.
  */
-void generateQmRegionCandidates(std::vector<QmmmModel>& qmmmModelCandidates, std::vector<QmmmModel>& qmmmReferenceModels,
-                                const Utils::AtomCollection& fullStructure, const Utils::BondOrderCollection& bondOrders,
-                                const Utils::Settings& settings, Core::Log& log);
+void generateQmRegionCandidates(std::vector<QmmmModel>& qmmmModelCandidates,
+                                std::vector<QmmmModel>& qmmmReferenceModels, const Utils::AtomCollection& fullStructure,
+                                const Utils::BondOrderCollection& bondOrders, const Utils::Settings& settings,
+                                Core::Log& log, const std::vector<std::string>& excludedResidueTypes);
 
 /**
  * @brief Given a cutting probability of 100 percent, one only gets a single QM region candidate

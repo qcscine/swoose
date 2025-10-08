@@ -48,6 +48,20 @@ class SfamAtomTypeIdentifier {
    * @brief This function generates an atom type level from its string representation.
    */
   static SfamAtomTypeLevel generateSfamAtomTypeLevelFromString(std::string sfamAtomTypeLevelString);
+  /**
+   * @brief Read the SFAM atom types from file.
+   * @param sfamAtomTypesFileName Name of the file containing the SFAM atom types.
+   * @param nAtoms The number of atoms in the system. This value is used for sanity checking that every atom has its
+   * type.
+   * @return  The atom types.
+   */
+  static AtomTypesHolder getAtomTypesFromFile(const std::string& sfamAtomTypesFileName, unsigned int nAtoms);
+  /**
+   * @brief Write the SFAM atom types to a file.
+   * @param fileName The name of the file to which the atom types are written.
+   * @param atomTypes The atom types.
+   */
+  static void writeAtomTypesToFile(const std::string& fileName, const AtomTypesHolder& atomTypes);
 
  private:
   int nAtoms_;

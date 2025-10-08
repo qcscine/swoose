@@ -9,11 +9,9 @@
 #define PDBPREPARATION_PDBPREPARATIONHELPER_H
 
 #include "StructurePreparationData.h"
-#include "boost/filesystem.hpp"
 #include <Utils/Geometry/AtomCollection.h>
 #include <list>
 #include <memory>
-#include <string>
 #include <vector>
 
 namespace Scine {
@@ -65,7 +63,7 @@ Utils::AtomCollection addSolvation(StructurePreparationData& data, std::shared_p
  * @brief A method that updates several objects in the StructurePreparationData object.
  */
 void updatePdbPreparationData(StructurePreparationData& data, Utils::AtomCollection& structure);
-/*
+/**
  * @brief Updates the information regarding the nonRegContainer.
  */
 void updateNonRegContainerVector(StructurePreparationData& data);
@@ -83,27 +81,33 @@ void removeAtomsFromStructure(Utils::AtomCollection& structure, std::list<int> a
  */
 void determineChargedSites(std::vector<int>& listOfNegatives, std::vector<int>& listOfPositives,
                            const StructurePreparationData& data);
-/*
+/**
  * @brief This functions extracts all atoms that are part of the amino acid side chain by recursively following the
  * bonds starting from CA.
  * @param atomIndex The Index of the CA atom in the amino acid.
  * @param atomsToAdd This list is filled with all indices that belong to this amino acid.
  */
 void getSideChainNeighbors(StructurePreparationData& data, int atomIndex, std::list<int>& atomsToAdd);
-/*
+/**
  * @brief Detects C-Termini in the structure and moves the corresponding residue to the protein substructure.
  */
 void findTermini(StructurePreparationData& data, std::list<int>& atomsToTransferToNonRegContainer);
-/*
+/**
  * @brief This function maps the indices of protein and nonRegContainer to the indices in the full structure.
  */
 void mapSubsystemIndicesToFullStructure(const Utils::AtomCollection& fullStructure,
                                         const Utils::AtomCollection& structure, std::vector<int>& indicesInStructure,
                                         std::vector<std::vector<int>>& subsystemMapping);
-/*
+/**
  * @brief Internally transfers atoms from the protein substructure to the nonRegContainer substructure.
  */
 void moveAtomsFromProteinToNonRegContainer(StructurePreparationData& data, const std::list<int>& atomsToMove);
+/**
+ * @brief Check a.index < b.index.
+ * @param a Atom a.
+ * @param b Atom b.
+ * @return a.index < b.index.
+ */
 bool compareByIndex(const ProteinAtom& a, const ProteinAtom& b);
 
 } // namespace StructurePreparationHelper

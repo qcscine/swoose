@@ -14,6 +14,7 @@
 #include "ParametrizationUtils/AtomicChargesAssembler.h"
 #include "ParametrizationUtils/ConnectivityGenerator.h"
 #include "ParametrizationUtils/FullHessianAssembler.h"
+#include "ParametrizationUtils/OpenMMExportHelper.h"
 #include "ParametrizationUtils/ParameterFileWriter.h"
 #include "ParametrizationUtils/ReparametrizationHelper.h"
 #include "ParametrizationUtils/SuperfluousFragmentIdentifier.h"
@@ -202,6 +203,12 @@ void Parametrizer::writeParametersAndConnectivity() {
     ParameterFileWriter::writeSfamParametersToFile(parameterFilePath, data_.parameters, *settings_);
   if (!connectivityFilePath.empty())
     SwooseUtilities::ConnectivityFileHandler::writeListsOfNeighbors(connectivityFilePath, data_.listsOfNeighbors);
+
+  if (settings_->getBool(SwooseUtilities::SettingsNames::exportSfamForOpenMM)) {
+    OpenMMExportHelper helper(settings_, data_);
+    helper.exportSfamForceField();
+    helper.exportTopology();
+  }
 }
 
 void Parametrizer::generateTopology() {
@@ -286,6 +293,17 @@ const Utils::Settings& Parametrizer::settings() const {
 
 Utils::Settings& Parametrizer::settings() {
   return *settings_;
+}
+
+std::vector<std::string> Parametrizer::getAtomTypes() {
+  if (!this->data_.numberOfAtoms) {
+    throw std::runtime_error("Atom types are only available after parametrization");
+  }
+  std::vector<std::string> atomTypeStrings;
+  for (int i = 0; i < this->data_.numberOfAtoms; ++i) {
+    atomTypeStrings.push_back(this->data_.atomTypes.getAtomType(i));
+  }
+  return atomTypeStrings;
 }
 
 } // namespace MMParametrization

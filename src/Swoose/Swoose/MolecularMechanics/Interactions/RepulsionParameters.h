@@ -8,8 +8,10 @@
 #ifndef MOLECULARMECHANICS_REPULSIONPARAMETERS_H
 #define MOLECULARMECHANICS_REPULSIONPARAMETERS_H
 
+#include <Utils/Geometry/ElementInfo.h>
 #include <Utils/Typenames.h>
 #include <Eigen/Core>
+#include <iostream>
 #include <memory>
 
 namespace Scine {
@@ -28,10 +30,6 @@ class RepulsionParameters {
    */
   explicit RepulsionParameters(const Eigen::MatrixXd& R0, const double& betaRepulsion);
   /**
-   * @brief Getter for the effective charge of a certain element.
-   */
-  double getEffectiveCharge(Utils::ElementType element) const;
-  /**
    * @brief Getter for the D3 cutoff radius R0 for two atoms.
    */
   double getR0(int atom1Index, int atom2Index) const;
@@ -41,15 +39,25 @@ class RepulsionParameters {
   double getBetaRepulsion();
 
  private:
-  int getValenceElectronNumbers(Utils::ElementType element) const;
-  double getValenceElectronScalingFactor(Utils::ElementType element) const;
-
   // The matrix of D3 cutoff radii.
   const Eigen::MatrixXd& R0_;
 
   // The global beta parameter for the Pauli repulsion.
   double betaRepulsion_;
+};
 
+class RepulsionParameterHelper {
+ public:
+  /**
+   * @brief Default constructor.
+   */
+  RepulsionParameterHelper() = default;
+  /**
+   * @brief Getter for the effective charge of a certain element.
+   */
+  double getEffectiveCharge(Utils::ElementType element);
+
+ private:
   // Taken from J. Chem. Theory Comput. 2014, 10, 4497-4514
   double valenceElectronScalingFactors_[94] = {
       2.35, 2.35, 1.7,  5.5,  0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 2.5,  3.0,  0.75, 0.75, 0.75, 0.75, 0.75, 0.75, 3.0,

@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Release 3.0.0
+-------------
+- changed the minimum subsystem size for the fragment generation during QM/MM
+  parametrization from 20 to 4. This allows the user to define QM region center
+  atoms more flexibly.
+- enable the export of the SFAM MM model in the XML file format, which can be interfaced with OpenMM.
+- SFAM parameter files now also include an index map for the C6 coefficients. Furthermore, they can be used even if they
+  define more parameters than needed for the given system.
+- SFAM atom types can now be read/written from/to a file.
+
 Release 2.1.0
 -------------
 - rework non-bonded interaction calculation to increase memory efficiency.

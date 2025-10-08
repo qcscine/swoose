@@ -31,6 +31,7 @@ class SettingsPopulator {
   static void addOnlyCalculateBondedContribution(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addParameterAndConnectivityFile(Utils::UniversalSettings::DescriptorCollection& settings,
                                               bool setEmptyDefault = true);
+  static void addOpenMMXMLParameterFiles(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addDetectBondsWithCovalentRadiiOption(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addNonCovalentCutoffRadius(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addHydrogenBondCorrection(Utils::UniversalSettings::DescriptorCollection& settings);
@@ -74,6 +75,10 @@ class SettingsPopulator {
   static void addUseCsvInputFormatOption(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addConvertToCm5Option(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addYamlSettingsForDirectMode(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addExcludedResidueLabelSettings(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addExportSfamForOpenMM(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addSfamOpenMMFileName(Utils::UniversalSettings::DescriptorCollection& settings);
+  static void addSfamAtomTypeFile(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addTitration(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addUseThermochemistryForTitration(Utils::UniversalSettings::DescriptorCollection& settings);
   static void addTrainingDataDirectory(Utils::UniversalSettings::DescriptorCollection& settings);
@@ -149,6 +154,12 @@ inline void SettingsPopulator::addParameterAndConnectivityFile(Utils::UniversalS
   else
     connectivityFilePath.setDefaultValue("Connectivity.dat");
   settings.push_back(SettingsNames::connectivityFilePath, std::move(connectivityFilePath));
+}
+
+inline void SettingsPopulator::addOpenMMXMLParameterFiles(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::StringListDescriptor xmlParameterFiles("List of paths to OpenMM XML parameter files");
+  xmlParameterFiles.setDefaultValue({});
+  settings.push_back(SettingsNames::openMMXMLFiles, xmlParameterFiles);
 }
 
 inline void SettingsPopulator::addDetectBondsWithCovalentRadiiOption(Utils::UniversalSettings::DescriptorCollection& settings) {
@@ -480,6 +491,14 @@ inline void SettingsPopulator::addYamlSettingsForDirectMode(Utils::UniversalSett
   settings.push_back(SettingsNames::yamlSettingsFilePath, std::move(yamlSettingsFilePath));
 }
 
+inline void SettingsPopulator::addExcludedResidueLabelSettings(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::StringListDescriptor excludedResidueLabels(
+      "Residue labels excluded in the QM region selection."
+      "For instance, to exclude water provide the label HOH.");
+  excludedResidueLabels.setDefaultValue(std::vector<std::string>());
+  settings.push_back(SettingsNames::excludedResidueLabels, std::move(excludedResidueLabels));
+}
+
 inline void SettingsPopulator::addQmRegionCenterAtoms(Utils::UniversalSettings::DescriptorCollection& settings) {
   Utils::UniversalSettings::IntListDescriptor centerAtoms(
       "The center atom(s) around which the QM Region will be constructed.");
@@ -619,6 +638,33 @@ inline void SettingsPopulator::addProgram(Utils::UniversalSettings::DescriptorCo
   Utils::UniversalSettings::StringDescriptor program("The underlying programs such as 'Turbomole/SFAM'.");
   program.setDefaultValue("Any/Swoose");
   settings.push_back(Utils::SettingsNames::program, std::move(program));
+}
+
+inline void SettingsPopulator::addExportSfamForOpenMM(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::BoolDescriptor exportSfamForOpenMM(
+      "Whether to export the SFAM parameters in a file format (XML) compatible with OpenMM.");
+  exportSfamForOpenMM.setDefaultValue(false);
+  settings.push_back(SettingsNames::exportSfamForOpenMM, std::move(exportSfamForOpenMM));
+}
+
+inline void SettingsPopulator::addSfamOpenMMFileName(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::StringDescriptor sfamOpenMMFileName(
+      "The name of the XML file to which OpenMM parameters are exported.");
+  sfamOpenMMFileName.setDefaultValue("sfam.xml");
+  settings.push_back(SettingsNames::sfamOpenMMFileName, std::move(sfamOpenMMFileName));
+}
+
+inline void SettingsPopulator::addSfamAtomTypeFile(Utils::UniversalSettings::DescriptorCollection& settings) {
+  Utils::UniversalSettings::StringDescriptor sfamAtomTypeFileName("The name of the atom type file used by SFAM.");
+  sfamAtomTypeFileName.setDefaultValue("");
+  settings.push_back(SettingsNames::sfamAtomTypeFileName, std::move(sfamAtomTypeFileName));
+
+  Utils::UniversalSettings::BoolDescriptor sfamAtomTypesFromFile(
+      "If true, atom types are read from the file specified by the sfamAtomTypeFileName setting. "
+      "If false, atom types are determined based on their connectivity and written to the atom types file if it is "
+      "given.");
+  sfamAtomTypesFromFile.setDefaultValue(false);
+  settings.push_back(SettingsNames::sfamAtomTypesFromFile, std::move(sfamAtomTypesFromFile));
 }
 
 } // namespace SwooseUtilities

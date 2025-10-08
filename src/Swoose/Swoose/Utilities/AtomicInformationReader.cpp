@@ -44,8 +44,11 @@ void AtomicInformationReader::read(const std::string& filename, std::map<int, in
       throw std::runtime_error("The number of unpaired electrons of atom " + std::to_string(index) + " cannot be negative.");
 
     // Check that an index was not specified more than once
-    if ((formalCharges.find(index) != formalCharges.end()) || (unpairedElectrons.find(index) != unpairedElectrons.end()))
-      throw std::runtime_error("In the atomic information file, don't give information about the same atom twice.");
+    if ((formalCharges.find(index) != formalCharges.end()) || (unpairedElectrons.find(index) != unpairedElectrons.end())) {
+      throw std::runtime_error(
+          "In the atomic information file, don't give information about the same atom twice. Atom index " +
+          std::to_string(index));
+    }
 
     // Check that the index is valid
     if ((index < 0) || (index >= numberOfAtoms))
@@ -61,7 +64,9 @@ void AtomicInformationReader::read(const std::string& filename, std::map<int, in
     if (unpairedEle != 0)
       unpairedElectrons[index] = unpairedEle;
 
-    std::getline(indata, line);
+    if (!std::getline(indata, line)) {
+      break;
+    }
   }
 }
 

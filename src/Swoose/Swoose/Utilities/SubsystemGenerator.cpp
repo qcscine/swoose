@@ -29,8 +29,8 @@ static constexpr const char* failedAttemptStructureLargestRadiusFilename = "fail
 
 SubsystemGenerator::SubsystemGenerator(const Utils::AtomCollection& fullStructure,
                                        const Utils::BondOrderCollection& bondOrders, FragmentAnalyzer& fragmentAnalyzer,
-                                       double bondOrderThreshold, int maximumSubsystemSize, Core::Log& log,
-                                       int randomSeed, double probabilityToDivideBond)
+                                       double bondOrderThreshold, int maximumSubsystemSize, Core::Log& log, int randomSeed,
+                                       double probabilityToDivideBond, std::vector<std::string> excludedResidueTypes)
   : fullStructure_(fullStructure),
     bondOrders_(bondOrders),
     fragmentAnalyzer_(fragmentAnalyzer),
@@ -38,7 +38,8 @@ SubsystemGenerator::SubsystemGenerator(const Utils::AtomCollection& fullStructur
     maximumSubsystemSize_(maximumSubsystemSize),
     randomEngine_(std::make_shared<std::mt19937>(randomSeed)),
     log_(log),
-    probabilityToDivideBond_(probabilityToDivideBond) {
+    probabilityToDivideBond_(probabilityToDivideBond),
+    excludedResidueTypes_(excludedResidueTypes) {
   // Fill up the vector containing the subgraph sizes, which is needed later.
   subgraphSizes_ = FragmentationHelper::calculateSubgraphSizes(fullStructure_, bondOrders_);
   // Generate lists of neighbors from bond order matrix.
@@ -126,7 +127,8 @@ void SubsystemGenerator::tryGeneratingSensibleSubsystem(Utils::AtomCollection& s
     auto distance = (preliminarySubsystem.getPosition(i) - centralAtom.getPosition()).norm();
 
     // Should this atom be added to the subsystem?
-    bool validAtom = nAtoms > 4 || subgraphSizes_.at(indexMap[i]) <= 4;
+    const bool excludedByResidueLabel = excludedResidueLabel(std::get<0>(fullStructure_.getResidueInformation(indexMap[i])));
+    const bool validAtom = (nAtoms > 3 || subgraphSizes_.at(indexMap[i]) <= 4) && !excludedByResidueLabel;
 
     if (validAtom) {
       if (distance > 1e-2) { // If it is the central atom, then it was already added.
@@ -135,7 +137,7 @@ void SubsystemGenerator::tryGeneratingSensibleSubsystem(Utils::AtomCollection& s
           if (bondOrders_.getOrder(indexMap[i], pbp.second) > bondOrderThreshold_) {
             FragmentationHelper::addAtomsUpToReasonableCut(atomsToAdd, atomsToAddIndices, isSaturatingAtom, indexMap[i],
                                                            pbp.second, fullStructure_, listsOfNeighbors_,
-                                                           probabilityToDivideBond_, randomEngine_);
+                                                           probabilityToDivideBond_, randomEngine_, excludedResidueTypes_);
           }
         }
       }
@@ -163,10 +165,14 @@ void SubsystemGenerator::tryGeneratingSensibleSubsystem(Utils::AtomCollection& s
   else {
     additionToRadius += 0.1; // add 0.1 bohr
   }
-
   // Check whether subsystem is too small or large
   FragmentationHelper::checkSizeOfSubsystem(subsystem.size(), additionToRadius, unsuccessful, atomIndex,
                                             fullStructure_.size(), maximumSubsystemSize_, log_);
+}
+
+bool SubsystemGenerator::excludedResidueLabel(const std::string& label) {
+  return std::find(excludedResidueTypes_.begin(), excludedResidueTypes_.end(), label) != excludedResidueTypes_.end();
+  ;
 }
 
 } // namespace SwooseUtilities

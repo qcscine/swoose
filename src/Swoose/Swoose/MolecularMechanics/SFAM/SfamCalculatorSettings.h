@@ -32,6 +32,8 @@ class SfamCalculatorSettings : public Scine::Utils::Settings {
     SettingsPopulator::addNonCovalentCutoffRadius(_fields);
     SettingsPopulator::addHydrogenBondCorrection(_fields);
     SettingsPopulator::addApplyCutoffDuringInitializationOption(_fields);
+    SettingsPopulator::addSfamOpenMMFileName(_fields);
+    SettingsPopulator::addSfamAtomTypeFile(_fields);
     resetToDefaults();
   };
 };

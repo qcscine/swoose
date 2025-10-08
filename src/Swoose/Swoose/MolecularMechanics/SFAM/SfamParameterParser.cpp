@@ -18,13 +18,13 @@ namespace Scine {
 namespace MolecularMechanics {
 
 SfamParameterParser::SfamParameterParser(std::string filename, const AtomTypesHolder& atomTypes)
-  : parameterFile_(std::move(filename)), nAtoms_(atomTypes.size()), atomTypes_(atomTypes) {
+  : parameterFile_(std::move(filename)), atomTypes_(atomTypes) {
 }
 
-std::unique_ptr<SfamParameters> SfamParameterParser::parseParameters() {
-  auto parameters = std::make_unique<SfamParameters>();
+SfamParameters SfamParameterParser::parseParameters() {
+  SfamParameters parameters;
 
-  bool successful = parse(*parameters);
+  bool successful = parse(parameters);
   if (!successful)
     throw std::runtime_error("The parameter file is not valid!");
 
@@ -300,8 +300,44 @@ bool SfamParameterParser::parseC6Parameters(std::istream& in, SfamParameters& pa
   if (!std::getline(in, line))
     return false;
 
-  parameters.prepareC6Matrix(atomTypes_);
-  int a = 0;
+  std::map<std::string, int> c6IndicesMap;
+  while (!line.empty() && line[0] != '!' && line[0] != '*') {
+    std::regex rgx("\\s+");
+    std::sregex_token_iterator iter(line.begin(), line.end(), rgx, -1);
+
+    checkIter(iter);
+    if (*iter == "")
+      iter++;
+
+    checkIter(iter);
+    std::string atomTypeString = *iter++;
+    checkIter(iter);
+    double index = std::stoi(*iter++);
+
+    c6IndicesMap.insert({atomTypeString, index});
+    if (!std::getline(in, line))
+      return false;
+  }
+  std::map<int, int> externalToInternalIndexMap;
+  const auto uniqueAtomTypes = atomTypes_.uniqueAtomTypes();
+  for (unsigned int internalIndex = 0; internalIndex < uniqueAtomTypes.size(); ++internalIndex) {
+    auto iter = c6IndicesMap.find(uniqueAtomTypes[internalIndex]);
+    if (iter == c6IndicesMap.end()) {
+      return true;
+    }
+    unsigned externalIndex = std::distance(c6IndicesMap.begin(), iter);
+    externalToInternalIndexMap.insert({externalIndex, internalIndex});
+  }
+
+  while (line.find(keyword) == std::string::npos) {
+    if (!std::getline(in, line))
+      return false;
+  }
+  if (!std::getline(in, line))
+    return false;
+  parameters.prepareC6andC8Matrices(atomTypes_);
+  unsigned int rowsRead = 0;
+  int externalIndexA = 0;
   while (!line.empty() && line[0] != '!' && line[0] != '*') {
     std::regex rgx("\\s+");
     std::sregex_token_iterator iter(line.begin(), line.end(), rgx, -1);
@@ -311,28 +347,33 @@ bool SfamParameterParser::parseC6Parameters(std::istream& in, SfamParameters& pa
     if (*iter == "")
       iter++;
 
-    if (a >= int(parameters.getC6IndicesMap().size()))
-      throw std::runtime_error("Error while parsing C6 coefficients from parameter file!");
-    for (int b = 0; b <= a; ++b) {
-      if (iter != endOfLine) {
-        float c6 = std::stof(*iter++);
-        parameters.setC6(a, b, c6);
-      }
-      else {
-        throw std::runtime_error("Error while parsing C6 coefficients from parameter file!");
+    auto iterA = externalToInternalIndexMap.find(externalIndexA);
+    if (iterA != externalToInternalIndexMap.end()) {
+      ++rowsRead;
+      for (int externalIndexB = 0; externalIndexB <= externalIndexA; ++externalIndexB) {
+        auto iterB = externalToInternalIndexMap.find(externalIndexB);
+        if (iterB == externalToInternalIndexMap.end()) {
+          continue;
+        }
+        if (iter != endOfLine) {
+          float c6 = std::stof(*iter++);
+          parameters.setC6(iterA->second, iterB->second, c6);
+        }
+        else {
+          throw std::runtime_error("Error while parsing C6 coefficients from parameter file!");
+        }
       }
     }
-    if (iter != endOfLine) // no more values allowed after that in the current line
-      throw std::runtime_error("Error while parsing C6 coefficients from parameter file!");
-    a++;
+    externalIndexA++;
     if (!std::getline(in, line))
       break; // at the very end of the file, no empty line or "*" symbol is needed!
   }
   // If there was not the correct number of rows parsed, reset the C6 matrix,
   // such that it can be detected from the outside (by the MM parameter sanity check)
   // that the parsing was not successful.
-  if (a != int(parameters.getC6IndicesMap().size()))
-    parameters.resetC6Matrix();
+  if (rowsRead != parameters.getC6IndicesMap().size()) {
+    parameters.resetC6andC8Matrices();
+  }
   return true;
 }
 

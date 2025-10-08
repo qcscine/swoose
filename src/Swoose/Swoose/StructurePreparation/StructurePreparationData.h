@@ -87,7 +87,13 @@ struct Default {
   std::string titrationSitesFile = "titrable_sites.dat";
 };
 
+/**
+ * This struct collect the file paths that are used during the structure preparation.
+ */
 struct StructurePreparationFiles {
+  StructurePreparationFiles() {
+    initialize();
+  }
   Default d;
   /**
    * @brief The path to the protein structure file.
@@ -134,8 +140,10 @@ struct StructurePreparationFiles {
    * @brief This file contains the atom index and the residue name of a pH sensible atom.
    */
   std::string titrationSitesFile;
+  /**
+   * @brief Initializes the file paths based on the working directory and the default filenames.
+   */
   void initialize() {
-    // Define files here because they are needed in every mode
     proteinFile = Utils::NativeFilenames::combinePathSegments(workingDirectory, d.proteinFile);
     nonRegContainerFile = Utils::NativeFilenames::combinePathSegments(workingDirectory, d.nonRegContainerFile);
     protonatedProteinFile = Utils::NativeFilenames::combinePathSegments(workingDirectory, d.protonatedProteinFile);

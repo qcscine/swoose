@@ -154,5 +154,54 @@ TEST_F(QmmmTest, QmmmCalculationWorksForMelatonin) {
   }
 }
 
+TEST_F(QmmmTest, QmmmCalculationProvidesOneElectronIntegrals) {
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
+  calculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
+  calculator.settings().modifyBool(SwooseUtilities::SettingsNames::calculateReducedQmMmEnergy, false);
+  calculator.settings().modifyString(SwooseUtilities::SettingsNames::qmRegionXyzFile, qmRegionXyzFile);
+  calculator.settings().modifyIntList(Utils::SettingsNames::qmAtomsList, qmAtoms);
+  calculator.settings().modifyBool(Utils::SettingsNames::electrostaticEmbedding, true);
+
+  auto log = Core::Log::silent();
+  calculator.setLog(log);
+
+  calculator.setStructure(testStructure);
+  calculator.setRequiredProperties(Utils::Property::OneElectronMatrix);
+  auto results = calculator.calculate("test calculation");
+  const auto& oneElectronIntegrals = results.get<Utils::Property::OneElectronMatrix>();
+  EXPECT_NEAR(8, oneElectronIntegrals.trace(), 1e-12);
+  EXPECT_EQ(8, oneElectronIntegrals.rows());
+  EXPECT_EQ(8, oneElectronIntegrals.cols());
+  EXPECT_NEAR(0.0, oneElectronIntegrals(3, 4), 1e-12);
+}
+
+TEST_F(QmmmTest, NoMMAtoms) {
+  QmmmCalculator qmmmCalculator;
+  auto& manager = Core::ModuleManager::getInstance();
+  auto mmCalculator = std::make_shared<MolecularMechanics::SfamMolecularMechanicsCalculator>();
+  auto mmCalculatorAsCalculator = std::dynamic_pointer_cast<Core::Calculator>(mmCalculator);
+  auto qmCalculator = manager.get<Core::Calculator>("MOCK-QM", "MockModule");
+  qmmmCalculator.setUnderlyingCalculators({qmCalculator, mmCalculatorAsCalculator});
+
+  calculator.settings().modifyString(Utils::SettingsNames::parameterFilePath, melatonin_param_file);
+  calculator.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, melatonin_connectivity_file);
+  calculator.settings().modifyBool(SwooseUtilities::SettingsNames::calculateReducedQmMmEnergy, false);
+  std::vector<int> allQMAtoms;
+  for (int i = 0; i < 33; i++) {
+    allQMAtoms.push_back(i);
+  }
+  calculator.settings().modifyIntList(Utils::SettingsNames::qmAtomsList, allQMAtoms);
+  calculator.settings().modifyBool(Utils::SettingsNames::electrostaticEmbedding, true);
+
+  auto log = Core::Log::silent();
+  calculator.setLog(log);
+
+  calculator.setStructure(testStructure);
+  calculator.setRequiredProperties(Utils::Property::Energy | Utils::Property::Gradients);
+  auto calculators = calculator.getUnderlyingCalculators();
+  auto results = calculator.calculate("test calculation");
+  ASSERT_TRUE(results.has<Utils::Property::Energy>());
+}
+
 } // namespace Tests
 } // namespace Scine

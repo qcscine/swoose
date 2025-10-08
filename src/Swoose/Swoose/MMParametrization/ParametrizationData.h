@@ -146,17 +146,23 @@ struct TrainingData {
 struct TitrationResults {
   std::vector<std::string> requiredFunctionalGroups;
   /**
-   * @brief Vector of unique pointers to molecular structures
-   *        that represent the optimized subsystems of the pH sensitive fragments in their non-reference state.
+   * @brief Map of site index to the optimized subsystems of the pH sensitive fragments in their non-reference state.
    */
   std::map<int, std::unique_ptr<Utils::AtomCollection>> vectorOfOptimizedNonRefStructures;
+  /**
+   * @brief Site index to hessian map. The index corresponds to the order in sites.
+   */
   std::map<int, std::unique_ptr<Utils::HessianMatrix>> vectorOfHessiansForNonRefStates;
+
   /**
    * @brief This map stores a pair of electronic energies (reference state and (charged) non-reference state)
    * corresponding to a fragment index of a pH-sensitive site.
    */
-  std::vector<StructurePreparation::TitrableSite> sites;
   std::map<int, std::pair<double, double>> electronicEnergies;
+  /**
+   * @brief Site list.
+   */
+  std::vector<StructurePreparation::TitrableSite> sites;
 
   std::vector<TrainingData> trainingData;
 };

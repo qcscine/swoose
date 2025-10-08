@@ -60,7 +60,6 @@ class AStructurePreparationTest : public Test {
 
 TEST_F(AStructurePreparationTest, FilesCanBeInitializedWithDefaults) {
   StructurePreparationFiles defaultFiles;
-  defaultFiles.initialize();
   ASSERT_THAT(defaultFiles.proteinFile, Eq("rmc.pdb"));
   ASSERT_THAT(defaultFiles.nonRegContainerFile, Eq("nonregular_container.xyz"));
   // now with a prepending working directory

@@ -39,7 +39,7 @@ class AngleParameters {
   double getEquilibriumAngle() const;
 
  private:
-  double forceConstant_;    // Unit: kcal/mol/(rad^2)
+  double forceConstant_;    // Unit: kcal/(mol*rad^2)
   double equilibriumAngle_; // Unit: degrees
 };
 

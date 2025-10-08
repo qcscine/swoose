@@ -69,6 +69,8 @@ class GaffMolecularMechanicsCalculator final
    */
   std::string name() const override;
 
+  Utils::PropertyList possibleProperties() const override;
+
  private:
   // friend class declarations
   friend class Qmmm::InteractionTermEliminator;
@@ -104,6 +106,7 @@ class GaffMolecularMechanicsCalculator final
   double nonCovalentCutoffRadius_;
   std::string connectivityFilePath_;
   std::string parameterFilePath_;
+  std::vector<std::string> xmlParameterFilePaths_;
   /*
    * Tracks whether the parameter file path has been recently changed.
    * This boolean is set to true when the member 'parameterFilePath_' is updated

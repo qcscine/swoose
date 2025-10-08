@@ -125,7 +125,7 @@ TEST_F(ATitrationTest, EnergiesAndStructuresAreParsedCorrectlyInReadMode) {
   data.siteIspHSensitive.resize(1);
   data.siteIspHSensitive.at(0) = true;
 
-  ReferenceCalculationsIO::saveAdditionalStructuresForTitration(data, results, fragmentIndex, glutamine_ref_calc_dir);
+  ReferenceCalculationsIO::loadAdditionalStructuresForTitration(data, results, fragmentIndex, glutamine_ref_calc_dir);
   auto refStructure = *results.vectorOfOptimizedNonRefStructures.find(0)->second;
   ASSERT_THAT(refStructure.size(), Eq(17));
 

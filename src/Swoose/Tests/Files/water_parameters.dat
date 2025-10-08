@@ -24,6 +24,10 @@ a2   7.1
 beta   7.4
 scaling_factor_for_atomic_charges   1
 
+! c6 indices
+H_O2_H2 0
+O2_H2 1
+
 ! c6 coefficients
 3.09321  
 5.43715  0  

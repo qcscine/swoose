@@ -30,5 +30,17 @@ void Dihedral::setCosinePreFactor(double cosPreFactor) {
   cosPreFactor_ = cosPreFactor;
 }
 
+double Dihedral::getHalfBarrierHeight() const {
+  return halfBarrierHeight_;
+}
+
+int Dihedral::getPeriodicity() const {
+  return periodicity_;
+}
+
+double Dihedral::getPhaseShift() const {
+  return phaseShift_;
+}
+
 } // namespace MolecularMechanics
 } // namespace Scine

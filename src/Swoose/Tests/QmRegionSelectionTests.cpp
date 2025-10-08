@@ -8,6 +8,7 @@
 #include "Files/tests_file_location.h"
 #include <Core/Log.h>
 #include <Core/ModuleManager.h>
+#include <Swoose/MolecularMechanics/GAFF/GaffMolecularMechanicsCalculator.h>
 #include <Swoose/MolecularMechanics/SFAM/SfamMolecularMechanicsCalculator.h>
 #include <Swoose/QMMM/QmRegionSelection/QmRegionCandidateGenerator.h>
 #include <Swoose/QMMM/QmRegionSelection/QmRegionSelector.h>
@@ -128,8 +129,9 @@ TEST_F(QmRegionSelectionTests, MultipleQmRegionCandidatesAreConstructedCorrectly
 
   // Generate candidates and reference models
   std::vector<QmmmModel> qmmmModelCandidates, qmmmReferenceModels;
-  QmRegionCandidateGenerator::generateQmRegionCandidates(qmmmModelCandidates, qmmmReferenceModels, structure,
-                                                         bondOrders, qmRegionSelector.settings(), silentLogger);
+  std::vector<std::string> excludedResidueTypes;
+  QmRegionCandidateGenerator::generateQmRegionCandidates(qmmmModelCandidates, qmmmReferenceModels, structure, bondOrders,
+                                                         qmRegionSelector.settings(), silentLogger, excludedResidueTypes);
 
   // Asserts
   ASSERT_TRUE(qmmmModelCandidates.size() > 10);
@@ -157,16 +159,18 @@ TEST_F(QmRegionSelectionTests, MultipleQmRegionCandidatesAreConstructedCorrectly
   qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCandidateMinSize, 80);
   qmmmModelCandidates.clear();
   qmmmReferenceModels.clear();
-  EXPECT_THROW(QmRegionCandidateGenerator::generateQmRegionCandidates(qmmmModelCandidates, qmmmReferenceModels, structure,
-                                                                      bondOrders, qmRegionSelector.settings(), silentLogger),
+  EXPECT_THROW(QmRegionCandidateGenerator::generateQmRegionCandidates(qmmmModelCandidates, qmmmReferenceModels,
+                                                                      structure, bondOrders, qmRegionSelector.settings(),
+                                                                      silentLogger, excludedResidueTypes),
                std::runtime_error);
 
   qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionRefMaxSize, 70);
   qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCandidateMinSize, 60);
   qmmmModelCandidates.clear();
   qmmmReferenceModels.clear();
-  EXPECT_THROW(QmRegionCandidateGenerator::generateQmRegionCandidates(qmmmModelCandidates, qmmmReferenceModels, structure,
-                                                                      bondOrders, qmRegionSelector.settings(), silentLogger),
+  EXPECT_THROW(QmRegionCandidateGenerator::generateQmRegionCandidates(qmmmModelCandidates, qmmmReferenceModels,
+                                                                      structure, bondOrders, qmRegionSelector.settings(),
+                                                                      silentLogger, excludedResidueTypes),
                std::runtime_error);
 }
 
@@ -192,8 +196,9 @@ TEST_F(QmRegionSelectionTests, ReferenceModelEqualsFullSystemIfPossible) {
 
   // Generate candidates and reference models
   std::vector<QmmmModel> qmmmModelCandidates, qmmmReferenceModels;
-  QmRegionCandidateGenerator::generateQmRegionCandidates(qmmmModelCandidates, qmmmReferenceModels, structure,
-                                                         bondOrders, qmRegionSelector.settings(), silentLogger);
+  std::vector<std::string> excludedResidueTypes;
+  QmRegionCandidateGenerator::generateQmRegionCandidates(qmmmModelCandidates, qmmmReferenceModels, structure, bondOrders,
+                                                         qmRegionSelector.settings(), silentLogger, excludedResidueTypes);
 
   // Asserts
   ASSERT_FALSE(qmmmModelCandidates.empty());
@@ -353,8 +358,8 @@ TEST_F(QmRegionSelectionTests, TwoDisconnectedQmAtomsCanBeSet) {
   auto qmRegionIndices = qmRegionSelector.getQmRegionIndices();
   auto qmRegionInfo = qmRegionSelector.getQmRegionChargeAndMultiplicity();
 
-  ASSERT_THAT(qmRegion.size(), Eq(45));
-  ASSERT_THAT(qmRegionIndices.size(), Eq(45));
+  ASSERT_THAT(qmRegion.size(), Eq(41));
+  ASSERT_THAT(qmRegionIndices.size(), Eq(41));
   ASSERT_THAT(qmRegionInfo.first, Eq(0));
   ASSERT_THAT(qmRegionInfo.second, Eq(1));
 
@@ -484,5 +489,56 @@ TEST_F(QmRegionSelectionTests, QmRegionSelectionWorksInDirectMode) {
 }
 #endif
 
+TEST_F(QmRegionSelectionTests, QmRegionSelectionExcludingWater) {
+  auto& manager = Core::ModuleManager::getInstance();
+  if (!manager.moduleLoaded("MockModule")) {
+    manager.load("Test/TestUtilities");
+  }
+
+  // Read in structure
+  Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(solvated_glycine_peptide_pdb_file).first;
+  QmRegionSelector qmRegionSelector;
+  auto calculator = std::make_shared<QmmmCalculator>();
+
+  auto mmCalculator = std::make_shared<MolecularMechanics::GaffMolecularMechanicsCalculator>();
+  auto mmCalculatorAsCalculator = std::dynamic_pointer_cast<Core::Calculator>(mmCalculator);
+  auto qmCalculator = manager.get<Core::Calculator>("MOCK-QM", "MockModule");
+  calculator->setUnderlyingCalculators({qmCalculator, mmCalculatorAsCalculator});
+  calculator->settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath,
+                                      solvated_glycine_peptide_connectivity_file);
+  calculator->settings().modifyBool(Utils::SettingsNames::electrostaticEmbedding, false);
+  calculator->settings().modifyStringList(SwooseUtilities::SettingsNames::openMMXMLFiles, {openmm_gaff_2_11_xml_file});
+  calculator->settings().modifyString(SwooseUtilities::SettingsNames::gaffAtomicChargesFile,
+                                      solvated_glycine_peptide_charges_file);
+
+  calculator->setStructure(structure);
+
+  // Add three more settings
+  qmRegionSelector.settings().modifyIntList(SwooseUtilities::SettingsNames::qmRegionCenterAtoms, {0});
+  qmRegionSelector.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath,
+                                           solvated_glycine_peptide_connectivity_file);
+  qmRegionSelector.settings().modifyDouble(SwooseUtilities::SettingsNames::cuttingProbability, 1.0);
+  qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCandidateMinSize, 30);
+  qmRegionSelector.settings().modifyInt(SwooseUtilities::SettingsNames::qmRegionCandidateMaxSize, 90);
+  qmRegionSelector.settings().modifyStringList(SwooseUtilities::SettingsNames::excludedResidueLabels, {"R11", "R12"});
+
+  qmRegionSelector.setUnderlyingCalculator(calculator);
+  qmRegionSelector.setLog(silentLogger);
+
+  // Generate QM region and gather results
+  qmRegionSelector.generateQmRegion(structure);
+
+  auto resultIndices = qmRegionSelector.getQmRegionIndices();
+  auto resultStructure = qmRegionSelector.getQmRegionStructure();
+
+  for (const auto& idx : resultIndices) {
+    /*
+     * This test exludes all atoms belonging to water molecules from the QM region. These atoms have indices > 73 in the
+     * full structure. Furthermore, there is probably a capping H-atom in this QM region (index of -1) since we cut a
+     * covalent bond.
+     */
+    ASSERT_TRUE(idx < 73);
+  }
+}
 } // namespace Tests
 } // namespace Scine

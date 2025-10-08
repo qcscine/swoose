@@ -87,6 +87,47 @@ AtomTypesHolder SfamAtomTypeIdentifier::getAtomTypes(SfamAtomTypeLevel atl) {
   return AtomTypesHolder(atomTypes_);
 }
 
+AtomTypesHolder SfamAtomTypeIdentifier::getAtomTypesFromFile(const std::string& sfamAtomTypesFileName, unsigned int nAtoms) {
+  std::ifstream indata(sfamAtomTypesFileName);
+  if (!indata.is_open())
+    throw std::runtime_error("The SFAM atom types file " + sfamAtomTypesFileName + " cannot be opened.");
+
+  std::string line;
+  while (line.empty())
+    std::getline(indata, line);
+
+  AtomTypesHolder atomTypes;
+  unsigned int atomIndex = 0;
+  while (!line.empty()) {
+    std::string atomType = line;
+    atomType.erase(std::remove_if(atomType.begin(), atomType.end(), ::isspace), atomType.end());
+    if (atomType.empty())
+      break;
+    if (atomIndex < nAtoms)
+      atomTypes.push_back(atomType);
+    atomIndex++;
+    if (indata.eof())
+      break;
+    std::getline(indata, line);
+  }
+
+  if (nAtoms != atomIndex)
+    throw std::runtime_error("The number of atom types in the provided file does not match the number of atoms.");
+
+  return atomTypes;
+}
+
+void SfamAtomTypeIdentifier::writeAtomTypesToFile(const std::string& fileName, const AtomTypesHolder& atomTypes) {
+  std::ofstream outputFile(fileName);
+  if (!outputFile.is_open()) {
+    throw std::runtime_error("The file " + fileName + " cannot be opened for writing.");
+  }
+  for (const auto& atomType : atomTypes) {
+    outputFile << atomType << "\n";
+  }
+  outputFile.close();
+}
+
 SfamAtomTypeLevel SfamAtomTypeIdentifier::generateSfamAtomTypeLevelFromString(std::string sfamAtomTypeLevelString) {
   if (sfamAtomTypeLevelString == "elements")
     return SfamAtomTypeLevel::Elements;

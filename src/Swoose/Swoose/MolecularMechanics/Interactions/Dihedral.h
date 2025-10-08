@@ -34,9 +34,24 @@ class Dihedral {
   bool hasParameters() const;
   /** @brief Setter for the cosine pre-factor (typically: -1 for SFAM, +1 for GAFF) */
   void setCosinePreFactor(double cosPreFactor);
+  /**
+   * @brief Getter for the half barrier height in hartree.
+   * @return The half barrier height.
+   */
+  double getHalfBarrierHeight() const;
+  /**
+   * @brief Getter for the periodicity, i.e., how often the same potential shape applies on a full circle.
+   * @return The periodicity.
+   */
+  int getPeriodicity() const;
+  /**
+   * @brief Getter for the phase shift in rad.
+   * @return The angle phase shift
+   */
+  double getPhaseShift() const;
 
  private:
-  double halfBarrierHeight_;
+  double halfBarrierHeight_; // unit: kcal/mol
   int periodicity_;
   double phaseShift_;
   bool parametersAreAvailable_;

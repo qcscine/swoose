@@ -7,7 +7,6 @@
 
 #include "SfamParameters.h"
 #include "../AtomTypesHolder.h"
-#include "../Interactions/Electrostatic.h"
 #include "../MMExceptions.h"
 #include <Utils/Geometry/AtomCollection.h>
 
@@ -34,7 +33,7 @@ bool SfamParameters::sanityCheck(const AtomTypesHolder& atomTypes) const {
 std::vector<double> SfamParameters::getChargesForEachAtom(const AtomTypesHolder& atomTypes) const {
   std::vector<double> charges;
   charges.reserve(atomTypes.size());
-  for (int i = 0; i < atomTypes.size(); ++i) {
+  for (unsigned int i = 0; i < atomTypes.size(); ++i) {
     try {
       double charge = charges_.at(atomTypes.getAtomType(i));
       charges.push_back(charge);
@@ -48,11 +47,11 @@ std::vector<double> SfamParameters::getChargesForEachAtom(const AtomTypesHolder&
 }
 
 // c6 coefficients are stored as floats for efficiency
-void SfamParameters::prepareC6Matrix(const AtomTypesHolder& atomTypes) {
+void SfamParameters::prepareC6andC8Matrices(const AtomTypesHolder& atomTypes) {
   c6IndicesMap_.clear();
-  // Add atom types from vector to map. Afterwards, they'll be ordered.
-  for (int i = 0; i < atomTypes.size(); ++i)
-    c6IndicesMap_[atomTypes.getAtomType(i)] = 0;
+  // Add atom types from vector to map. Afterward, they'll be ordered.
+  for (const auto& atomType : atomTypes.uniqueAtomTypes())
+    c6IndicesMap_[atomType] = 0;
   // Adjust the indices
   int idx = 0;
   for (auto& element : c6IndicesMap_) {
@@ -61,10 +60,13 @@ void SfamParameters::prepareC6Matrix(const AtomTypesHolder& atomTypes) {
   }
   c6Matrix_.resize(idx, idx);
   c6Matrix_.setZero();
+  c8Matrix_.resize(idx, idx);
+  c8Matrix_.setZero();
 }
 
-void SfamParameters::resetC6Matrix() {
+void SfamParameters::resetC6andC8Matrices() {
   c6Matrix_.resize(0, 0);
+  c8Matrix_.resize(0, 0);
   c6IndicesMap_.clear();
 }
 
@@ -80,6 +82,17 @@ float SfamParameters::getC6(int indexOfAtomTypeA, int indexOfAtomTypeB) const {
   return c6Matrix_(indexOfAtomTypeA, indexOfAtomTypeB);
 }
 
+float SfamParameters::getC8(const std::string& a, const std::string& b) const {
+  if (c6IndicesMap_.find(a) == c6IndicesMap_.end() || c6IndicesMap_.find(b) == c6IndicesMap_.end())
+    throw std::runtime_error("C6 coefficient was requested for pair " + a + " - " + b +
+                             ". At least one of the two atom types is unknown.");
+  return c8Matrix_(c6IndicesMap_.at(a), c6IndicesMap_.at(b));
+}
+
+float SfamParameters::getC8(int indexOfAtomTypeA, int indexOfAtomTypeB) const {
+  return c8Matrix_(indexOfAtomTypeA, indexOfAtomTypeB);
+}
+
 void SfamParameters::setC6(const std::string& a, const std::string& b, float c6) {
   if (c6IndicesMap_.find(a) == c6IndicesMap_.end() || c6IndicesMap_.find(b) == c6IndicesMap_.end())
     throw std::runtime_error("C6 coefficient was set for pair " + a + " - " + b +
@@ -91,6 +104,19 @@ void SfamParameters::setC6(const std::string& a, const std::string& b, float c6)
 void SfamParameters::setC6(int indexOfAtomTypeA, int indexOfAtomTypeB, float c6) {
   c6Matrix_(indexOfAtomTypeA, indexOfAtomTypeB) = c6;
   c6Matrix_(indexOfAtomTypeB, indexOfAtomTypeA) = c6;
+}
+
+void SfamParameters::setC8(const std::string& a, const std::string& b, float c8) {
+  if (c6IndicesMap_.find(a) == c6IndicesMap_.end() || c6IndicesMap_.find(b) == c6IndicesMap_.end())
+    throw std::runtime_error("C6 coefficient was set for pair " + a + " - " + b +
+                             ". At least one of the two atom types is unknown.");
+  c8Matrix_(c6IndicesMap_[a], c6IndicesMap_[b]) = c8;
+  c8Matrix_(c6IndicesMap_[b], c6IndicesMap_[a]) = c8;
+}
+
+void SfamParameters::setC8(int indexOfAtomTypeA, int indexOfAtomTypeB, float c8) {
+  c8Matrix_(indexOfAtomTypeA, indexOfAtomTypeB) = c8;
+  c8Matrix_(indexOfAtomTypeB, indexOfAtomTypeA) = c8;
 }
 
 std::vector<double> SfamParameters::getNonCovalentParameters() const {
@@ -186,9 +212,17 @@ const std::map<std::string, int>& SfamParameters::getC6IndicesMap() const {
   return c6IndicesMap_;
 }
 
+Eigen::MatrixXf SfamParameters::getC6Matrix() const {
+  return c6Matrix_;
+}
+
+Eigen::MatrixXf SfamParameters::getC8Matrix() const {
+  return c8Matrix_;
+}
+
 int SfamParameters::evaluateNumDistinctAtomTypes(const AtomTypesHolder& atomTypes) const {
   std::vector<std::string> distinctAtomTypes;
-  for (int i = 0; i < atomTypes.size(); ++i) {
+  for (unsigned int i = 0; i < atomTypes.size(); ++i) {
     if (std::find(distinctAtomTypes.begin(), distinctAtomTypes.end(), atomTypes.getAtomType(i)) == distinctAtomTypes.end()) {
       distinctAtomTypes.push_back(atomTypes.getAtomType(i));
     }

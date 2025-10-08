@@ -46,6 +46,11 @@ class GaffAtomTypeIdentifier {
    */
   AtomTypesHolder getAtomTypes();
 
+  /*
+   * Function to read the atom types from file.
+   */
+  static std::vector<std::string> readAmberAtomTypes(const std::string& filePath, unsigned int nAtoms);
+
  private:
   bool atomTypeSet(int atomIndex) const;
   void setArraysForElementTypes();

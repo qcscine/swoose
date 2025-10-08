@@ -8,7 +8,6 @@
 #ifndef PDBPREPARATION_STRUCTURES_H
 #define PDBPREPARATION_STRUCTURES_H
 
-#include <Utils/Geometry/Atom.h>
 #include <Utils/Typenames.h>
 #include <list>
 #include <map>
@@ -19,20 +18,25 @@ namespace Utils {
 class Atom;
 }
 namespace StructurePreparation {
-
+/**
+ * @brief This struct represents an atom in a protein, characterized by its index, residue name, atom type, etc.
+ */
 struct ProteinAtom {
-  int index;
+  int index = std::numeric_limits<int>::infinity();
   std::string residueName;
   std::string atomType;
   Utils::Position position;
   bool isPhSensitive = false;
 };
 
+/**
+ * @brief This struct collects the atom indices involved in a peptide bond.
+ */
 struct PeptidBond {
-  int N;
-  int C;
-  int CA;
-  int O;
+  int N = std::numeric_limits<int>::infinity();
+  int C = std::numeric_limits<int>::infinity();
+  int CA = std::numeric_limits<int>::infinity();
+  int O = std::numeric_limits<int>::infinity();
 };
 
 struct ProtonationTypes {
@@ -42,6 +46,9 @@ struct ProtonationTypes {
   std::list<int> linear;
 };
 
+/**
+ * This struct collects data for some amino acids with their pKa value.
+ */
 struct AminoAcidCategorizer {
   std::vector<std::string> acids = {"ASP", "GLU", "CYS", "TYR"}; // in ref state protonated
   std::vector<std::string> bases = {"ARG", "HIS", "LYS"};        // in ref state deprotonated

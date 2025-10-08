@@ -33,7 +33,17 @@ struct ChargeRedistributionResult {
   std::vector<double> auxiliaryCharges;
   Utils::PositionCollection positionsOfAuxiliaryCharges;
 };
-
+/**
+ * @brief Construct a vector containing the point charges, atomic number, and positions. The
+ * vector will have 5 x n doubles, where n is the number of point charges. It is formatted as
+ * follows: <point-charge-1>, <atomic-number-1>, <x-coordinate-1>, <y-coordinate-1>, <z-coordinate-1>,
+ *          <point-charge-2>, <atomic-number-2>, <x-coordinate-2>, <y-coordinate-2>, <z-coordinate-2>,
+ *          ...
+ * @param structure                   The full structure.
+ * @param chargeRedistributionResult  The charges/redistribution of the charges after capping.
+ * @param listOfQmAtoms               The index list for the QM atoms.
+ * @return The charge list.
+ */
 std::vector<double> writeChargesAndPositionsAsList(const Utils::AtomCollection& structure,
                                                    const ChargeRedistributionResult& chargeRedistributionResult,
                                                    const std::vector<int>& listOfQmAtoms);

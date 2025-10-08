@@ -23,6 +23,7 @@ set(SWOOSE_MODULE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Topology/IndexedStructuralTopology.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Topology/IndexedStructuralTopologyCreator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/Topology/IndexedStructuralTopologyCreator.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/AtomTypesHolder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/AtomTypesHolder.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/SFAM/SfamAtomTypeIdentifier.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/SFAM/SfamAtomTypeIdentifier.h
@@ -110,6 +111,8 @@ set(SWOOSE_MODULE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/GAFF/GaffParameters.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/GAFF/GaffParameterParser.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/GAFF/GaffParameterParser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/GAFF/GaffOpenMMXMLFileParser.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/GAFF/GaffOpenMMXMLFileParser.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/GAFF/GaffParameterDefaultsProvider.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/GAFF/GaffParameterDefaultsProvider.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MolecularMechanics/GAFF/GaffDefaultParameters.h
@@ -133,10 +136,12 @@ set(SWOOSE_MODULE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/ParameterFileWriter.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/ReparametrizationHelper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/ReparametrizationHelper.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/MolecularSystemPartitioner.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/MolecularSystemPartitioner.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/FullHessianAssembler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/FullHessianAssembler.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/OpenMMExportHelper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ParametrizationUtils/OpenMMExportHelper.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/MolecularSystemPartitioner.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/MolecularSystemPartitioner.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/CalculationManager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/CalculationManager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Swoose/MMParametrization/ReferenceCalculationHelpers/DatabaseOrderNames.h
@@ -234,6 +239,7 @@ set(SWOOSE_APP_FILES
 set(SWOOSE_TEST_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/SfamMolecularMechanicsTest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/GaffMolecularMechanicsTest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/GaffOpenMMXmlFileParserTest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ParametrizationOfSmallSystemsTest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ParametrizationOfLargeSystemsTest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AtomicInformationReaderTest.cpp

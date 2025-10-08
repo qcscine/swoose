@@ -94,12 +94,16 @@ void writePointChargesFile(const Utils::PositionCollection& positions,
 
   // Then write the additional auxiliary charges if there are any
   for (int j = 0; j < int(chargeRedistributionResult.auxiliaryCharges.size()); ++j) {
+    double charge = chargeRedistributionResult.atomicCharges.at(j);
+    if (writeTurbomoleFormat && std::fabs(charge) < 2e-6) {
+      charge = 2e-6;
+    }
     if (writeTurbomoleFormat) {
       pcFile << chargeRedistributionResult.positionsOfAuxiliaryCharges.row(j) * Utils::Constants::angstrom_per_bohr << " ";
-      pcFile << chargeRedistributionResult.auxiliaryCharges.at(j) << "\n";
+      pcFile << charge << "\n";
     }
     else {
-      pcFile << chargeRedistributionResult.auxiliaryCharges.at(j) << " ";
+      pcFile << charge << " ";
       pcFile << chargeRedistributionResult.positionsOfAuxiliaryCharges.row(j) * Utils::Constants::angstrom_per_bohr << "\n";
     }
   }

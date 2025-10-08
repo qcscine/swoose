@@ -49,6 +49,12 @@ class Parametrizer : public Core::MMParametrizer {
    * @brief Getter for the name of the Parametrizer.
    */
   std::string name() const override;
+  /**
+   * @brief Getter for the atom types for each atom after parametrization.
+   *
+   * @throw runtime_error if the parametrization was done done before.
+   */
+  std::vector<std::string> getAtomTypes();
 
  private:
   /*

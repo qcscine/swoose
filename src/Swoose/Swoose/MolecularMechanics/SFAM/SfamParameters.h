@@ -41,12 +41,17 @@ class SfamParameters final : public MMParameters {
   /** @brief Getter for the partial atomic charges for each atom*/
   std::vector<double> getChargesForEachAtom(const AtomTypesHolder& atomTypes) const;
   /**
-   * @brief Resizes the C6 dispersion coefficient matrix to size NxN (N is number of distinct atom types).
+   * @brief Resizes the C6 and C8 dispersion coefficient matrices to size NxN (N is number of distinct atom types).
    *        Furthermore, it creates a map which stores the indices of each atom type in the matrix.
    */
-  void prepareC6Matrix(const AtomTypesHolder& atomTypes);
+  void prepareC6andC8Matrices(const AtomTypesHolder& atomTypes);
+  /** @brief Resets the C6 and C8 matrix and the indices map */
+  void resetC6andC8Matrices();
+
   /** @brief Getter for the C6 dispersion coefficient with indices of atom types given */
   float getC6(int indexOfAtomTypeA, int indexOfAtomTypeB) const;
+  /** @brief Returns the C6 matrix */
+  Eigen::MatrixXf getC6Matrix() const;
   /** @brief Getter for the C6 dispersion coefficient for atoms with atom types a and b */
   float getC6(const std::string& a, const std::string& b) const;
   /** @brief Getter for the non-covalent parameters a1, s8, a2, beta and the atomic charges scaling factor */
@@ -55,8 +60,19 @@ class SfamParameters final : public MMParameters {
   void setC6(int indexOfAtomTypeA, int indexOfAtomTypeB, float c6);
   /** @brief Setter for the C6 dispersion coefficient for atoms with atom types a and b */
   void setC6(const std::string& a, const std::string& b, float c6);
-  /** @brief Resets the C6 matrix and the indices map */
-  void resetC6Matrix();
+
+  // Note: The setter and getter for the C8 coefficients are only needed to export SFAM for OpenMM because the C8
+  // coefficient can be calculated from the C6 coefficient during an MM calculation.
+  void setC8(int indexOfAtomTypeA, int indexOfAtomTypeB, float c8);
+  /** @brief Setter for the C8 dispersion coefficient for atoms with atom types a and b */
+  void setC8(const std::string& a, const std::string& b, float c8);
+  /** @brief Getter for the C8 dispersion coefficient with indices of atom types given */
+  float getC8(int indexOfAtomTypeA, int indexOfAtomTypeB) const;
+  /** @brief Returns the C8 matrix */
+  Eigen::MatrixXf getC8Matrix() const;
+  /** @brief Getter for the C8 dispersion coefficient for atoms with atom types a and b */
+  float getC8(const std::string& a, const std::string& b) const;
+
   /** @brief Setter for the non-covalent parameters a1, s8, a2, beta and the atomic charges scaling factor */
   void setNonCovalentParameters(std::vector<double> nonCovalentParameters);
   /**
@@ -96,6 +112,7 @@ class SfamParameters final : public MMParameters {
  private:
   std::map<std::string, double> charges_;
   Eigen::MatrixXf c6Matrix_; // store as floats for efficiency
+  Eigen::MatrixXf c8Matrix_; // store as floats for efficiency
   std::map<std::string, int> c6IndicesMap_;
   std::vector<double> nonCovalentParameters_;
   std::map<DihedralType, DihedralParameters> dihedrals_;

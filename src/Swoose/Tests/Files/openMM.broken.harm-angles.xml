@@ -1,0 +1,51 @@
+<ForceField>
+	<Info>
+		Some info text.
+	</Info>
+	<AtomTypes>
+		<Type class="C" element="C" mass="12.01" name="protein-C"/>
+	</AtomTypes>
+	<Residues>
+		<Residue name="ALA">
+			<Atom charge="-0.4157" name="N" type="protein-N"/>
+	      		<Atom charge="0.2719" name="H" type="protein-H"/>
+	      		<Atom charge="0.0337" name="CA" type="protein-CX"/>
+      			<Atom charge="0.0823" name="HA" type="protein-H1"/>
+		        <Atom charge="-0.1825" name="CB" type="protein-CT"/>
+		        <Atom charge="0.0603" name="HB1" type="protein-HC"/>
+			<Atom charge="0.0603" name="HB2" type="protein-HC"/>
+     			<Atom charge="0.0603" name="HB3" type="protein-HC"/>
+		        <Atom charge="0.5973" name="C" type="protein-C"/>
+		        <Atom charge="-0.5679" name="O" type="protein-O"/>
+	  	        <Bond atomName1="N" atomName2="H"/>
+		        <Bond atomName1="N" atomName2="CA"/>
+		        <Bond atomName1="CA" atomName2="HA"/>
+		        <Bond atomName1="CA" atomName2="CB"/>
+		        <Bond atomName1="CA" atomName2="C"/>
+		        <Bond atomName1="CB" atomName2="HB1"/>
+		        <Bond atomName1="CB" atomName2="HB2"/>
+		        <Bond atomName1="CB" atomName2="HB3"/>
+		        <Bond atomName1="C" atomName2="O"/>
+		        <ExternalBond atomName="N"/>
+		        <ExternalBond atomName="C"/>
+		</Residue>
+	</Residues>
+	<HarmonicBondForce>
+		<Bond k="259407.99999999994" length="0.1525" type1="protein-C" type2="protein-C"/>
+		<Bond k="392459.19999999995" length="0.1409" type1="protein-C" type2="protein-CA"/>
+	</HarmonicBondForce>
+	<HarmonicAngleForce>
+		<Angle angle="2.0943951023931953" k="669.44" type3="protein-C" type2="protein-C" type3="protein-O"/>
+		<Angle angle="2.0943951023931953" k="669.44" type1="protein-C" type2="protein-C" type3="protein-OH"/>
+	</HarmonicAngleForce>
+	<PeriodicTorsionForce ordering="amber">
+		<Proper k1="15.167" periodicity1="2" phase1="3.141592653589793" type1="" type2="protein-C" type3="protein-C" type4=""/>
+		<Proper k1="15.167" periodicity1="2" phase1="3.141592653589793" type1="" type2="protein-C" type3="protein-CA" type4=""/>
+		<Improper k1="4.6024" periodicity1="2" phase1="3.141592653589793" type1="protein-CA" type2="protein-2C" type3="protein-CA" type4="protein-CA"/>
+	</PeriodicTorsionForce>
+	<NonbondedForce coulomb14scale="0.8333333333333334" lj14scale="0.5">
+		<UseAttributeFromResidue name="charge"/>
+		<Atom epsilon="0.359824" sigma="0.3399669508423535" type="protein-C"/>
+		<Atom epsilon="0.4577296" sigma="0.3399669508423535" type="protein-C8"/>
+	</NonbondedForce>
+</ForceField>

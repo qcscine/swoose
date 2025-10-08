@@ -13,6 +13,16 @@ namespace Scine {
 namespace SwooseUtilities {
 
 std::vector<std::list<int>> ConnectivityFileHandler::readListsOfNeighbors(const std::string& filename) {
+  /**
+   * Valid connectivity file example for one water molecule (atoms 0, 1, and 2) and a single ion without
+   * any bonding partners.
+   * "
+   * 1 2
+   * 0
+   * 0
+   *
+   * "
+   */
   std::vector<std::list<int>> listsOfNeighbors;
 
   std::ifstream indata(filename);
@@ -21,39 +31,34 @@ std::vector<std::list<int>> ConnectivityFileHandler::readListsOfNeighbors(const 
   }
 
   std::string line;
-  while (line.empty()) {
-    std::getline(indata, line);
-  }
-
-  while (!line.empty()) {
+  while (std::getline(indata, line)) {
     std::list<int> listForOneAtom;
-    std::regex rgx("\\s+");
-    std::sregex_token_iterator iter(line.begin(), line.end(), rgx, -1);
-    std::sregex_token_iterator end;
+    if (!line.empty()) {
+      std::regex rgx("\\s+");
+      std::sregex_token_iterator iter(line.begin(), line.end(), rgx, -1);
+      std::sregex_token_iterator end;
 
-    if (*iter == "")
-      iter++;
+      if (*iter == "")
+        iter++;
 
-    while (iter != end) {
-      int atomIndex = std::stoi(*iter++);
-      if (int(listsOfNeighbors.size()) == atomIndex) // atom cannot be bonded to itself
-        throw std::runtime_error("Error in connectivity file. Atom " + std::to_string(atomIndex) + " is bonded to itself.");
-      if (atomIndex >= 0)
-        listForOneAtom.push_back(atomIndex);
+      while (iter != end) {
+        int atomIndex = std::stoi(*iter++);
+        if (int(listsOfNeighbors.size()) == atomIndex) // atom cannot be bonded to itself
+          throw std::runtime_error("Error in connectivity file. Atom " + std::to_string(atomIndex) + " is bonded to itself.");
+        if (atomIndex >= 0)
+          listForOneAtom.push_back(atomIndex);
+      }
     }
-
     listsOfNeighbors.push_back(listForOneAtom);
-    if (indata.eof())
-      break;
-    std::getline(indata, line);
   }
 
   // Check for validity
   for (int i = 0; i < int(listsOfNeighbors.size()); ++i) {
     for (const auto& neighbor : listsOfNeighbors[i]) {
       bool indexIsValid = neighbor >= 0 && neighbor < int(listsOfNeighbors.size());
-      bool foundInCorrespondingPlace = std::find(listsOfNeighbors[neighbor].begin(), listsOfNeighbors[neighbor].end(), i) !=
-                                       listsOfNeighbors[neighbor].end();
+      bool foundInCorrespondingPlace = neighbor < int(listsOfNeighbors.size()) and
+                                       std::find(listsOfNeighbors[neighbor].begin(), listsOfNeighbors[neighbor].end(), i) !=
+                                           listsOfNeighbors[neighbor].end();
       if (!indexIsValid || !foundInCorrespondingPlace)
         throw std::runtime_error("Connectivity file is invalid! Error during check of atom with index: " + std::to_string(i));
     }

@@ -26,5 +26,13 @@ Utils::AutomaticDifferentiation::Second1D Angle::getInteraction(double angle) co
   return 0.5 * forceConstant_ * thetaDif * thetaDif;
 }
 
+double Angle::getEquilibriumAngle() const {
+  return equilibriumAngle_;
+}
+
+double Angle::getForceConstant() const {
+  return forceConstant_;
+}
+
 } // namespace MolecularMechanics
 } // namespace Scine

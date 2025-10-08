@@ -131,8 +131,8 @@ void writeAdditionalDataForTitration(ParametrizationData& data, int fragmentInde
   writeConstrainedAtomsFile(constrainedAtoms, constrFilename);
 }
 
-void saveAdditionalStructuresForTitration(ParametrizationData& data, TitrationResults& results, int fragmentIndex,
-                                          std::string referenceDataDir) {
+void loadAdditionalStructuresForTitration(ParametrizationData& data, TitrationResults& results, int fragmentIndex,
+                                          const std::string& referenceDataDir) {
   if (data.siteIspHSensitive.at(fragmentIndex)) {
     std::string filename = Utils::NativeFilenames::combinePathSegments(referenceDataDir, std::to_string(fragmentIndex),
                                                                        nonRefStateDir, "opt.xyz");
@@ -147,8 +147,8 @@ void saveAdditionalStructuresForTitration(ParametrizationData& data, TitrationRe
 }
 
 void parseElectronicEnergiesForTitration(ParametrizationData& data, TitrationResults& results, int fragmentIndex,
-                                         std::string referenceDataDir, bool parseTurbomoleOutput,
-                                         std::shared_ptr<Utils::Settings> settings) {
+                                         const std::string& referenceDataDir, bool parseTurbomoleOutput,
+                                         const std::shared_ptr<Utils::Settings>& settings) {
   // TODO: this is still very ugly
   if (data.siteIspHSensitive.at(fragmentIndex)) {
     // clean up
@@ -226,7 +226,7 @@ void readReferenceDataFromFiles(ParametrizationData& data, TitrationResults& tit
       data.vectorOfOptimizedStructures[i] = nullptr;
     }
     if (settings->getBool(SwooseUtilities::SettingsNames::titrate)) {
-      saveAdditionalStructuresForTitration(data, titrationResults, i, referenceDataDir);
+      loadAdditionalStructuresForTitration(data, titrationResults, i, referenceDataDir);
       parseElectronicEnergiesForTitration(data, titrationResults, i, referenceDataDir, parseTurbomoleOutput, settings);
     }
   }
@@ -351,7 +351,8 @@ void readReferenceDataFromFiles(ParametrizationData& data, TitrationResults& tit
   }
 }
 
-Utils::ExternalQC::TurbomoleMainOutputParser getPreparedTurbomoleParser(const std::string& referenceDataDir, int fragmentIndex) {
+Utils::ExternalQC::TurbomoleMainOutputParser getPreparedTurbomoleParser(const std::string& referenceDataDir,
+                                                                        const int fragmentIndex) {
   Utils::ExternalQC::TurbomoleFiles outputFiles;
   Utils::ExternalQC::setCorrectTurbomoleFileNames(
       outputFiles, Utils::NativeFilenames::combinePathSegments(referenceDataDir, std::to_string(fragmentIndex)));
@@ -359,7 +360,7 @@ Utils::ExternalQC::TurbomoleMainOutputParser getPreparedTurbomoleParser(const st
   return parser;
 }
 
-void writeConstrainedAtomsFile(const std::vector<int>& constrainedAtoms, std::string& constrainedAtomsFile) {
+void writeConstrainedAtomsFile(const std::vector<int>& constrainedAtoms, const std::string& constrainedAtomsFile) {
   if (!constrainedAtoms.empty()) {
     std::string constraintsString;
     for (const auto& c : constrainedAtoms) {

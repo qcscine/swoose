@@ -27,19 +27,20 @@ void QmRegionCandidateGenerator::generateQmRegionCandidates(std::vector<QmmmMode
                                                             std::vector<QmmmModel>& qmmmReferenceModels,
                                                             const Utils::AtomCollection& fullStructure,
                                                             const Utils::BondOrderCollection& bondOrders,
-                                                            const Utils::Settings& settings, Core::Log& log) {
+                                                            const Utils::Settings& settings, Core::Log& log,
+                                                            const std::vector<std::string>& excludedResidueTypes) {
   // Get from settings
   using namespace SwooseUtilities::SettingsNames;
-  std::string atomicInfoFilePath = settings.getString(atomicInformationFile);
-  int numStructures = settings.getInt(numAttemptsPerRadius);
-  double probability = settings.getDouble(cuttingProbability);
-  double initialRadius = settings.getDouble(initialRadiusForQmRegionSelection);
+  const std::string atomicInfoFilePath = settings.getString(atomicInformationFile);
+  const int numStructures = settings.getInt(numAttemptsPerRadius);
+  const double probability = settings.getDouble(cuttingProbability);
+  const double initialRadius = settings.getDouble(initialRadiusForQmRegionSelection);
   auto centerAtoms = settings.getIntList(qmRegionCenterAtoms);
-  int minSize = settings.getInt(qmRegionCandidateMinSize);
-  int maxSize = settings.getInt(qmRegionCandidateMaxSize);
+  const int minSize = settings.getInt(qmRegionCandidateMinSize);
+  const int maxSize = settings.getInt(qmRegionCandidateMaxSize);
   int maxSizeRef = settings.getInt(qmRegionRefMaxSize);
   int minSizeRef = static_cast<int>(0.95 * maxSizeRef); // TODO: Also setting?
-  int randomSeed = settings.getInt(qmRegionSelectionRandomSeed);
+  const int randomSeed = settings.getInt(qmRegionSelectionRandomSeed);
   auto listsOfNeighbors =
       SwooseUtilities::TopologyUtils::generateListsOfNeighborsFromBondOrderMatrix(fullStructure.size(), bondOrders, 0.4);
 
@@ -70,7 +71,8 @@ void QmRegionCandidateGenerator::generateQmRegionCandidates(std::vector<QmmmMode
 
   SwooseUtilities::FragmentAnalyzer fragmentAnalyzer(formalCharges, unpairedElectrons);
   SwooseUtilities::SubsystemGenerator generator(fullStructure, bondOrders, fragmentAnalyzer, 0.5,
-                                                std::numeric_limits<int>::max(), log, randomSeed, probability);
+                                                std::numeric_limits<int>::max(), log, randomSeed, probability,
+                                                excludedResidueTypes);
 
   if (probability == 1.0) {
     log.output << "Because a cutting probability of 1.0 was selected, only one QM region will be generated based on "
@@ -97,7 +99,7 @@ void QmRegionCandidateGenerator::generateQmRegionCandidates(std::vector<QmmmMode
         for (auto& centerAtom : centerAtoms) {
           std::vector<int> tempIndices;
           Utils::AtomCollection tempQmRegion =
-              generator.generateSubsystem(centerAtom, tempIndices, initialRadius * Utils::Constants::bohr_per_angstrom);
+              generator.generateSubsystem(centerAtom, tempIndices, r * Utils::Constants::bohr_per_angstrom);
           listOfMappings.push_back(tempIndices);
           subRegions.push_back(tempQmRegion);
         }
@@ -105,14 +107,16 @@ void QmRegionCandidateGenerator::generateQmRegionCandidates(std::vector<QmmmMode
         QmmmHelpers::addAllLinkAtoms(qmRegion, fullStructure, listsOfNeighbors, indices, mmBoundaryAtoms);
         indices.insert(indices.end(), mmBoundaryAtoms.size(), -1);
       }
-      else
+      else {
         qmRegion = generator.generateSubsystem(centerAtoms[0], indices, r * Utils::Constants::bohr_per_angstrom);
+      }
 
       std::sort(indices.begin(), indices.end());
       bool valid = fragmentAnalyzer.analyzeFragment(qmRegion, indices);
-      if (!valid)
+      if (!valid) {
         throw std::runtime_error(
             "The given system with its formal charges and numbers of unpaired electrons is not valid.");
+      }
 
       if (qmRegion.size() == fullStructure.size() || qmRegion.size() > maxSizeRef) // TODO: Add buffer, e.g., 20%?
         numExceededRefSizeLimit++;
@@ -136,6 +140,9 @@ void QmRegionCandidateGenerator::generateQmRegionCandidates(std::vector<QmmmMode
         qmmmReferenceModels.push_back(model);
         allQmAtomIndices.push_back(indices);
       }
+      std::cout << "Acceptable size " << hasAcceptableSize << " is reference model " << isReferenceModel << " : "
+                << qmRegion.size() << "|" << minSize << "|" << minSizeRef << "|" << maxSize << "|" << maxSizeRef
+                << " r=" << r << std::endl;
     }
     r += 0.1;
   }

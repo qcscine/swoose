@@ -164,7 +164,6 @@ TEST_F(AParametrizationOfSmallSystemsTest, GlutamineIsCorrectlyParametrizedInclu
   ASSERT_THROW(parametrizer.parametrize(structure), std::runtime_error);
 
   parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "read");
-  // TODO
 }
 
 TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithGaussian) {
@@ -211,10 +210,10 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithGau
   MolecularMechanics::SfamParameterParser parser(parFile, atomTypes);
   auto parameters = parser.parseParameters();
 
-  ASSERT_THAT(parameters->getNonCovalentParameters().size(), Eq(5));
+  ASSERT_THAT(parameters.getNonCovalentParameters().size(), Eq(5));
 
   // Check that the bond parameters are existing and have reasonable values
-  for (const auto& bond : parameters->getBonds()) {
+  for (const auto& bond : parameters.getBonds()) {
     bool reasonableForceConstant = (bond.second.getForceConstant() > 200) && (bond.second.getForceConstant() < 2000);
     ASSERT_TRUE(reasonableForceConstant);
     bool reasonableEqBondDistance =
@@ -223,7 +222,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithGau
   }
 
   // Check that the angle parameters are existing and have reasonable values
-  for (const auto& angle : parameters->getAngles()) {
+  for (const auto& angle : parameters.getAngles()) {
     bool reasonableForceConstant = (angle.second.getForceConstant() > 70) && (angle.second.getForceConstant() < 500);
     ASSERT_TRUE(reasonableForceConstant);
     bool reasonableEqAngle = (angle.second.getEquilibriumAngle() >= 0) && (angle.second.getEquilibriumAngle() <= 180);
@@ -231,7 +230,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithGau
   }
 
   // Check that the dihedral parameters are existing and have reasonable values
-  for (const auto& dihedral : parameters->getDihedrals()) {
+  for (const auto& dihedral : parameters.getDihedrals()) {
     bool reasonableHalfBarrierHeight = std::abs(dihedral.second.getHalfBarrierHeight()) < 7;
     ASSERT_TRUE(reasonableHalfBarrierHeight);
     bool reasonablePhaseShift = (dihedral.second.getPhaseShift() >= 0) && (dihedral.second.getPhaseShift() <= 180);
@@ -240,18 +239,18 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithGau
     ASSERT_TRUE(reasonablePeriodicity);
   }
 
-  ASSERT_FALSE(parameters->getImproperDihedrals().empty());
+  ASSERT_FALSE(parameters.getImproperDihedrals().empty());
 
   // Check atomic charges and c6 coefficients
   double sumOfAtomicCharges = 0.0;
-  std::vector<double> atomicCharges = parameters->getChargesForEachAtom(atomTypes);
+  std::vector<double> atomicCharges = parameters.getChargesForEachAtom(atomTypes);
   ASSERT_THAT(atomicCharges.size(), Eq(structure.size()));
   for (int i = 0; i < structure.size(); ++i) {
     double charge = atomicCharges[i];
     ASSERT_TRUE(std::abs(charge) < 1);
     sumOfAtomicCharges += charge;
     for (int j = 0; j < i; ++j) {
-      ASSERT_TRUE(parameters->getC6(atomTypes.getAtomType(i), atomTypes.getAtomType(j)) > 0);
+      ASSERT_TRUE(parameters.getC6(atomTypes.getAtomType(i), atomTypes.getAtomType(j)) > 0);
     }
   }
 
@@ -318,10 +317,10 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithout
   MolecularMechanics::SfamParameterParser parser(parFile, atomTypes);
   auto parameters = parser.parseParameters();
 
-  ASSERT_THAT(parameters->getNonCovalentParameters().size(), Eq(5));
+  ASSERT_THAT(parameters.getNonCovalentParameters().size(), Eq(5));
 
   // Check that the bond parameters are existing and have reasonable values
-  for (const auto& bond : parameters->getBonds()) {
+  for (const auto& bond : parameters.getBonds()) {
     bool reasonableForceConstant = (bond.second.getForceConstant() > 200) && (bond.second.getForceConstant() < 2000);
     ASSERT_TRUE(reasonableForceConstant);
     bool reasonableEqBondDistance =
@@ -330,7 +329,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithout
   }
 
   // Check that the angle parameters are existing and have reasonable values
-  for (const auto& angle : parameters->getAngles()) {
+  for (const auto& angle : parameters.getAngles()) {
     bool reasonableForceConstant = (angle.second.getForceConstant() > 70) && (angle.second.getForceConstant() < 500);
     ASSERT_TRUE(reasonableForceConstant);
     bool reasonableEqAngle = (angle.second.getEquilibriumAngle() >= 0) && (angle.second.getEquilibriumAngle() <= 180);
@@ -338,7 +337,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithout
   }
 
   // Check that the dihedral parameters are existing and have reasonable values
-  for (const auto& dihedral : parameters->getDihedrals()) {
+  for (const auto& dihedral : parameters.getDihedrals()) {
     bool reasonableHalfBarrierHeight = std::abs(dihedral.second.getHalfBarrierHeight()) < 7;
     ASSERT_TRUE(reasonableHalfBarrierHeight);
     bool reasonablePhaseShift = (dihedral.second.getPhaseShift() >= 0) && (dihedral.second.getPhaseShift() <= 180);
@@ -347,17 +346,17 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedWithout
     ASSERT_TRUE(reasonablePeriodicity);
   }
 
-  ASSERT_FALSE(parameters->getImproperDihedrals().empty());
+  ASSERT_FALSE(parameters.getImproperDihedrals().empty());
 
   // Check atomic charges and c6 coefficients
   double sumOfAtomicCharges = 0.0;
-  std::vector<double> atomicCharges = parameters->getChargesForEachAtom(atomTypes);
+  std::vector<double> atomicCharges = parameters.getChargesForEachAtom(atomTypes);
   for (int i = 0; i < structure.size(); ++i) {
     double charge = atomicCharges[i];
     ASSERT_TRUE(std::abs(charge) < 1);
     sumOfAtomicCharges += charge;
     for (int j = 0; j < i; ++j) {
-      ASSERT_TRUE(parameters->getC6(atomTypes.getAtomType(i), atomTypes.getAtomType(j)) > 0);
+      ASSERT_TRUE(parameters.getC6(atomTypes.getAtomType(i), atomTypes.getAtomType(j)) > 0);
     }
   }
 
@@ -424,10 +423,10 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedFromDat
   MolecularMechanics::SfamParameterParser parser(parFile, atomTypes);
   auto parameters = parser.parseParameters();
 
-  ASSERT_THAT(parameters->getNonCovalentParameters().size(), Eq(5));
+  ASSERT_THAT(parameters.getNonCovalentParameters().size(), Eq(5));
 
   // Check that the bond parameters are existing and have reasonable values
-  for (const auto& bond : parameters->getBonds()) {
+  for (const auto& bond : parameters.getBonds()) {
     bool reasonableForceConstant = (bond.second.getForceConstant() > 200) && (bond.second.getForceConstant() < 2000);
     ASSERT_TRUE(reasonableForceConstant);
     bool reasonableEqBondDistance =
@@ -436,7 +435,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedFromDat
   }
 
   // Check that the angle parameters are existing and have reasonable values
-  for (const auto& angle : parameters->getAngles()) {
+  for (const auto& angle : parameters.getAngles()) {
     bool reasonableForceConstant = (angle.second.getForceConstant() > 70) && (angle.second.getForceConstant() < 500);
     ASSERT_TRUE(reasonableForceConstant);
     bool reasonableEqAngle = (angle.second.getEquilibriumAngle() >= 0) && (angle.second.getEquilibriumAngle() <= 180);
@@ -444,7 +443,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedFromDat
   }
 
   // Check that the dihedral parameters are existing and have reasonable values
-  for (const auto& dihedral : parameters->getDihedrals()) {
+  for (const auto& dihedral : parameters.getDihedrals()) {
     bool reasonableHalfBarrierHeight = std::abs(dihedral.second.getHalfBarrierHeight()) < 7;
     ASSERT_TRUE(reasonableHalfBarrierHeight);
     bool reasonablePhaseShift = (dihedral.second.getPhaseShift() >= 0) && (dihedral.second.getPhaseShift() <= 180);
@@ -453,17 +452,17 @@ TEST_F(AParametrizationOfSmallSystemsTest, AlanineIsCorrectlyParametrizedFromDat
     ASSERT_TRUE(reasonablePeriodicity);
   }
 
-  ASSERT_FALSE(parameters->getImproperDihedrals().empty());
+  ASSERT_FALSE(parameters.getImproperDihedrals().empty());
 
   // Check atomic charges and c6 coefficients
   double sumOfAtomicCharges = 0.0;
-  std::vector<double> atomicCharges = parameters->getChargesForEachAtom(atomTypes);
+  std::vector<double> atomicCharges = parameters.getChargesForEachAtom(atomTypes);
   for (int i = 0; i < structure.size(); ++i) {
     double charge = atomicCharges[i];
     ASSERT_TRUE(std::abs(charge) < 1);
     sumOfAtomicCharges += charge;
     for (int j = 0; j < i; ++j) {
-      ASSERT_TRUE(parameters->getC6(atomTypes.getAtomType(i), atomTypes.getAtomType(j)) > 0);
+      ASSERT_TRUE(parameters.getC6(atomTypes.getAtomType(i), atomTypes.getAtomType(j)) > 0);
     }
   }
 
@@ -515,7 +514,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, EquilibriumValuesAreCorrectlyAssigned
   auto parameters = parser.parseParameters();
 
   // Check that the improper dihedral parameters are existing and have reasonable values
-  for (const auto& improper_dihedral : parameters->getImproperDihedrals())
+  for (const auto& improper_dihedral : parameters.getImproperDihedrals())
     ASSERT_TRUE(improper_dihedral.second.getEquilibriumAngle() == 0);
 }
 #endif
@@ -568,7 +567,7 @@ TEST_F(AParametrizationOfSmallSystemsTest, CustomConnectivityIsImportedCorrectly
   auto parameters = parser.parseParameters();
 
   // Check that the parameters contain only one bond
-  ASSERT_THAT(parameters->getBonds().size(), Eq(1)); // only one bond was specified in the custom conn. file above
+  ASSERT_THAT(parameters.getBonds().size(), Eq(1)); // only one bond was specified in the custom conn. file above
 }
 
 TEST_F(AParametrizationOfSmallSystemsTest, ConnectivityFileWithSelfBondedAtomsCausesException) {
@@ -611,6 +610,135 @@ TEST_F(AParametrizationOfSmallSystemsTest, ConnectivityFileWithSelfBondedAtomsCa
   }
 
   ASSERT_STREQ(exceptionString.c_str(), "Error in connectivity file. Atom 10 is bonded to itself.");
+}
+
+TEST_F(AParametrizationOfSmallSystemsTest, ConnectivityAndParametersCanBeExportedForOpenMM) {
+  const std::string xmlFileName = "./sfam.xml";
+
+  Utils::AtomCollection structure = Utils::ChemicalFileHandler::read(alanine_xyz_file).first;
+
+  parametrizer.settings().modifyInt(SwooseUtilities::SettingsNames::numberAtomsThreshold, 120);
+  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataDirectory, alanine_ref_calc_dir);
+  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::connectivityFilePath, connFile);
+  parametrizer.settings().modifyString(Utils::SettingsNames::parameterFilePath, parFile);
+  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::referenceDataMode, "read");
+  parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useGaussianOptionKey, true);
+  parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::useCsvInputFormat, false);
+  parametrizer.parametrize(structure);
+
+  parametrizer.settings().modifyBool(SwooseUtilities::SettingsNames::exportSfamForOpenMM, true);
+  parametrizer.settings().modifyString(SwooseUtilities::SettingsNames::sfamOpenMMFileName, xmlFileName);
+  parametrizer.setLog(silentLogger);
+
+  std::string exceptionString = "";
+  try {
+    parametrizer.parametrize(structure);
+  }
+  catch (const std::runtime_error& e) {
+    exceptionString = e.what();
+    std::cout << "Error during parametrization\n" << exceptionString << std::endl;
+  }
+  ASSERT_TRUE(boost::filesystem::exists(xmlFileName));
+
+  std::ifstream fileStream(xmlFileName);
+  ASSERT_TRUE(fileStream.good());
+  // Check if the main blocks of the xml file are present.
+  bool xmlForceFiledOpen = false;
+  bool xmlForceFiledClose = false;
+  bool xmlAtomTypesOpen = false;
+  bool xmlAtomTypesClose = false;
+  bool xmlResOpen = false;
+  bool xmlResClose = false;
+  bool xmlHarmBondOpen = false;
+  bool xmlHarmBondClose = false;
+  bool xmlHarmAngleOpen = false;
+  bool xmlHarmAngleClose = false;
+  bool xmlCustomTorsionOpen = false;
+  bool xmlCustomTorsionClose = false;
+  bool xmlCustomNonBondedOpen = false;
+  bool xmlCustomNonBondedClose = false;
+  bool xmlNonBondedOpen = false;
+  bool xmlNonBondedClose = false;
+  bool xmlCustomHBondOpen = false;
+  bool xmlCustomHBondClose = false;
+
+  std::string line;
+  while (std::getline(fileStream, line)) {
+    if (!xmlForceFiledOpen && line.find("<ForceField>") != std::string::npos) {
+      xmlForceFiledOpen = true;
+    }
+    if (!xmlForceFiledClose && line.find("</ForceField>") != std::string::npos) {
+      xmlForceFiledClose = true;
+    }
+    if (!xmlAtomTypesOpen && line.find("<AtomTypes>") != std::string::npos) {
+      xmlAtomTypesOpen = true;
+    }
+    if (!xmlAtomTypesClose && line.find("</AtomTypes>") != std::string::npos) {
+      xmlAtomTypesClose = true;
+    }
+    if (!xmlResOpen && line.find("<Residues>") != std::string::npos) {
+      xmlResOpen = true;
+    }
+    if (!xmlResClose && line.find("</Residues>") != std::string::npos) {
+      xmlResClose = true;
+    }
+    if (!xmlHarmBondOpen && line.find("<HarmonicBondForce>") != std::string::npos) {
+      xmlHarmBondOpen = true;
+    }
+    if (!xmlHarmBondClose && line.find("</HarmonicBondForce>") != std::string::npos) {
+      xmlHarmBondClose = true;
+    }
+    if (!xmlHarmAngleOpen && line.find("<HarmonicAngleForce>") != std::string::npos) {
+      xmlHarmAngleOpen = true;
+    }
+    if (!xmlHarmAngleClose && line.find("</HarmonicAngleForce>") != std::string::npos) {
+      xmlHarmAngleClose = true;
+    }
+    if (!xmlCustomTorsionOpen && line.find("<CustomTorsionForce") != std::string::npos) {
+      xmlCustomTorsionOpen = true;
+    }
+    if (!xmlCustomTorsionClose && line.find("</CustomTorsionForce>") != std::string::npos) {
+      xmlCustomTorsionClose = true;
+    }
+    if (!xmlCustomNonBondedOpen && line.find("<CustomNonbondedForce") != std::string::npos) {
+      xmlCustomNonBondedOpen = true;
+    }
+    if (!xmlCustomNonBondedClose && line.find("</CustomNonbondedForce>") != std::string::npos) {
+      xmlCustomNonBondedClose = true;
+    }
+    if (!xmlNonBondedOpen && line.find("<NonbondedForce") != std::string::npos) {
+      xmlNonBondedOpen = true;
+    }
+    if (!xmlNonBondedClose && line.find("</NonbondedForce>") != std::string::npos) {
+      xmlNonBondedClose = true;
+    }
+    if (!xmlCustomHBondOpen && line.find("<CustomHbondForce") != std::string::npos) {
+      xmlCustomHBondOpen = true;
+    }
+    if (!xmlCustomHBondClose && line.find("</CustomHbondForce>") != std::string::npos) {
+      xmlCustomHBondClose = true;
+    }
+  }
+  ASSERT_TRUE(xmlForceFiledOpen);
+  ASSERT_TRUE(xmlAtomTypesOpen);
+  ASSERT_TRUE(xmlResOpen);
+  ASSERT_TRUE(xmlHarmBondOpen);
+  ASSERT_TRUE(xmlHarmAngleOpen);
+  ASSERT_TRUE(xmlCustomTorsionOpen);
+  ASSERT_TRUE(xmlCustomNonBondedOpen);
+  ASSERT_TRUE(xmlNonBondedOpen);
+  ASSERT_TRUE(xmlCustomHBondOpen);
+  ASSERT_TRUE(xmlForceFiledClose);
+  ASSERT_TRUE(xmlAtomTypesClose);
+  ASSERT_TRUE(xmlResClose);
+  ASSERT_TRUE(xmlHarmBondClose);
+  ASSERT_TRUE(xmlHarmAngleClose);
+  ASSERT_TRUE(xmlCustomTorsionClose);
+  ASSERT_TRUE(xmlCustomNonBondedClose);
+  ASSERT_TRUE(xmlNonBondedClose);
+  ASSERT_TRUE(xmlCustomHBondClose);
+
+  boost::filesystem::remove(xmlFileName);
 }
 
 } // namespace Tests

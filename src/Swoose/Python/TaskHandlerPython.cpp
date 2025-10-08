@@ -114,7 +114,6 @@ void runTask(std::string mode, bool quantum, std::string structureFile, pybind11
   Swoose::TaskManagement::manageTasks(manager, mode, quantum, hessianRequired, structureFile, yamlSettings,
                                       yamlFileHandler.yamlFilePath, log);
 }
-// TODO: this is not tested yet
 void runPrepareAnalyze(std::string structureFile, pybind11::kwargs kwargs) {
   runTask("prepare-analyze", false, structureFile, kwargs);
 }

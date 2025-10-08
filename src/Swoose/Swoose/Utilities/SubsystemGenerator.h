@@ -44,7 +44,8 @@ class SubsystemGenerator {
    */
   SubsystemGenerator(const Utils::AtomCollection& fullStructure, const Utils::BondOrderCollection& bondOrders,
                      FragmentAnalyzer& fragmentAnalyzer, double bondOrderThreshold, int maximumSubsystemSize,
-                     Core::Log& log, int randomSeed = 42, double probabilityToDivideBond = 1.0);
+                     Core::Log& log, int randomSeed = 42, double probabilityToDivideBond = 1.0,
+                     std::vector<std::string> excludedResidueTypes = {});
 
   /**
    * @brief Generates a subsystem (fragment) from a given full system.
@@ -100,8 +101,12 @@ class SubsystemGenerator {
   Core::Log& log_;
   // Probability to cleave a bond that is in principle cleavable.
   double probabilityToDivideBond_;
+
+  const std::vector<std::string> excludedResidueTypes_;
   // Maximum number of fragmentation attempts for one fragment before an exception is thrown
   static constexpr int maxNumOfAttemptsForOneSubsystem_ = 100;
+
+  bool excludedResidueLabel(const std::string& label);
 };
 
 } // namespace SwooseUtilities

@@ -20,14 +20,13 @@ namespace MMParametrization {
 using namespace StructurePreparation;
 
 TitrationHelper::TitrationHelper(std::shared_ptr<Utils::Settings>& settings) : settings_(settings) {
-  // todo
 }
 
 Utils::AtomCollection TitrationHelper::changeProtonationState(const Utils::AtomCollection& refStructure,
-                                                              std::string residueName, bool isBase, int indexOfCriticalAtom,
-                                                              std::vector<int> superfluousHydrogens) {
-  Utils::AtomCollection newStructure;
-  newStructure = refStructure;
+                                                              const std::string& residueName, const bool isBase,
+                                                              const int indexOfCriticalAtom,
+                                                              const std::vector<int>& superfluousHydrogens) {
+  Utils::AtomCollection newStructure = refStructure;
   ProtonationHelper::removeProtonsFromStructure(newStructure, superfluousHydrogens);
   if (isBase) {
     ProtonationHandler handler;

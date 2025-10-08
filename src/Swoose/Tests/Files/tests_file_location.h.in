@@ -11,13 +11,19 @@
 #define TESTS_FILE_LOCATION_H
 
 const char* const melatonin_xyz_file = "@Tests_dir@melatonin.xyz";
+const char* const fragment_xyz_file = "@Tests_dir@fragment.xyz";
 const char* const plastocyanin_pdb_file = "@Tests_dir@plastocyanin.pdb";
 const char* const plastocyanin_H_xyz_file = "@Tests_dir@plastocyanin_H.xyz";
 const char* const melatonin_param_file = "@Tests_dir@melatonin_parameters.dat";
+const char* const fragment_connectivity_file = "@Tests_dir@fragment_connectivity.dat";
+const char* const fragment_parameter_file = "@Tests_dir@fragment_parameters.dat";
+const char* const fragment_insufficient_parameter_file = "@Tests_dir@fragment_parameters_insufficient.dat";
+const char* const fragment_missing_atom_types = "@Tests_dir@fragment_missing_atom_types.dat";
 const char* const melatonin_param_file_no_c6 = "@Tests_dir@melatonin_parameters_no_c6.dat";
 const char* const melatonin_connectivity_file = "@Tests_dir@melatonin_connectivity.dat";
 const char* const melatonin_connectivity_file_with_error = "@Tests_dir@melatonin_connectivity_with_error.dat";
 const char* const water_xyz_file = "@Tests_dir@water.xyz";
+const char* const ethanol_xyz_file = "@Tests_dir@ethanol.xyz";
 const char* const water_param_file = "@Tests_dir@water_parameters.dat";
 const char* const dermcidin_xyz_file = "@Tests_dir@dermcidin.xyz";
 const char* const dermcidin_fragment_xyz_file = "@Tests_dir@dermcidin_fragment.xyz";
@@ -40,5 +46,28 @@ const char* const insulin_parameter_file = "@Tests_dir@insulin_parameters.dat";
 const char* const gaff_parameter_file = "@Tests_dir@gaff.dat";
 const char* const gaff_dummy_atom_types_file = "@Tests_dir@gaff_dummy_atom_types.dat";
 const char* const qm_region_selection_yaml_file = "@Tests_dir@settings_qm_region_selection_direct.yaml";
+const char* const openmm_test_xml_file = "@Tests_dir@openMM.test.xml";
+const char* const openmm_broken_xml_file_bonds = "@Tests_dir@openMM.broken.harm-bonds.xml";
+const char* const openmm_broken_xml_file_angles = "@Tests_dir@openMM.broken.harm-angles.xml";
+const char* const openmm_broken_xml_file_dihedra = "@Tests_dir@openMM.broken.dihedra.xml";
+const char* const openmm_broken_xml_file_improper = "@Tests_dir@openMM.broken.improper.xml";
+const char* const openmm_broken_xml_file_lj = "@Tests_dir@openMM.broken.lj.xml";
+const char* const openmm_gaff_2_11_xml_file = "@Tests_dir@gaff-2.11.xml";
+const char* const openmm_amber99sbildn_xml_file = "@Tests_dir@amber99sbildn.xml";
+const char* const solvated_glycine_peptide_pdb_file = "@Tests_dir@8-gly-chain-opt-solvated.pdb";
+const char* const solvated_glycine_peptide_connectivity_file = "@Tests_dir@8-gly-chain-opt-solvated.connect.dat";
+const char* const solvated_glycine_peptide_charges_file = "@Tests_dir@8-gly-chain-opt-solvated.charges.csv";
+const char* const sars_cov2_protein_solvated_pdb_file = "@Tests_dir@sars-cov2-protein.solvated.pdb";
+const char* const sars_cov2_protein_solvated_atom_type_file = "@Tests_dir@sars-cov2-protein.solvated.atom-types.dat";
+const char* const sars_cov2_protein_solvated_charges_file = "@Tests_dir@sars-cov2-protein.solvated.pc";
+const char* const openmm_amber_protein_xml = "@Tests_dir@protein.ff14SB.xml";
+const char* const openmm_tip3pfb_xml = "@Tests_dir@tip3pfb.xml";
+const char* const openmm_tip3p_xml = "@Tests_dir@tip3p.xml";
+const char* const openmm_wi_ligand_xml = "@Tests_dir@4wi.ligand.xml";
+const char* const openmm_wi_ligand_xml_99 = "@Tests_dir@4wi.ligand.99.xml";
+const char* const sars_cov2_protein_solvated_pdb_file_99 = "@Tests_dir@sars-cov2-protein.solvated.99.pdb";
+const char* const sars_cov2_protein_solvated_atom_type_file_99 = "@Tests_dir@sars-cov2-protein.solvated.atom-types.99.dat";
+const char* const sars_cov2_protein_solvated_charges_file_99 = "@Tests_dir@sars-cov2-protein.solvated.99.pc";
+const char* const sars_cov2_protein_solvated_connectivity_file_99 = "@Tests_dir@sars-cov2-protein.solvated.connect.99.dat";
 
 #endif // TESTS_FILE_LOCATION_H

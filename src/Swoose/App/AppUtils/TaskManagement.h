@@ -133,7 +133,8 @@ void manageTasks(Core::ModuleManager& manager, std::string mode, bool quantum, b
   }
   else if (mode == "prepare-analyze" || mode == "prepare-protonate" || mode == "prepare-finalize" || mode == "prepare-automate") {
     auto processor = std::make_unique<Scine::StructurePreparation::StructureProcessor>();
-    Utils::nodeToSettings(processor->settings(), yamlNode, false); // TODO: allow superfluous?
+    // Enforce that every key is known for the time being (allowSuperfluous = false).
+    Utils::nodeToSettings(processor->settings(), yamlNode, false);
     Tasks::runPDBPreparationTask(*processor, structureFile, mode, log);
   }
   else {

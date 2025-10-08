@@ -39,8 +39,9 @@ double RepulsionTerm::evaluateRepulsionTerm(const Utils::AtomCollection& structu
   const auto& elementA = elements[firstAtom_];
   const auto& elementB = elements[secondAtom_];
 
-  const auto& effectiveChargeA = repulsionParameters.getEffectiveCharge(elementA);
-  const auto& effectiveChargeB = repulsionParameters.getEffectiveCharge(elementB);
+  RepulsionParameterHelper helper;
+  const auto& effectiveChargeA = helper.getEffectiveCharge(elementA);
+  const auto& effectiveChargeB = helper.getEffectiveCharge(elementB);
   const auto& betaRepulsion = repulsionParameters.getBetaRepulsion();
 
   auto R0 = repulsionParameters.getR0(firstAtom_, secondAtom_);
